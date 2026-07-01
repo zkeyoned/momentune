@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Momentune — 创意方案</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Serif+SC:wght@300;400;600;700&family=Space+Mono&display=swap');
+
+  :root {
+    --bg: #faf7f2;
+    --bg2: #f0e8da;
+    --ink: #2c2416;
+    --muted: #8b7a5e;
+    --rule: #d9cbb0;
+    --accent: #d4783b;
+    --accent2: #c0563d;
+    --warm-cream: #fdf6e8;
+    --film-grain: #e8dcc8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Serif SC', 'Playfair Display', Georgia, serif;
+    font-weight: 300;
+    line-height: 1.8;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* --- Noise texture overlay --- */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* --- Typography --- */
+  h1, h2, h3 {
+    font-family: 'Playfair Display', 'Noto Serif SC', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 5vw, 3.2rem);
+    line-height: 1.25;
+    color: var(--ink);
+  }
+
+  h2 {
+    font-size: clamp(1.5rem, 3vw, 1.9rem);
+    margin-bottom: 0.8rem;
+    color: var(--ink);
+    position: relative;
+    display: inline-block;
+  }
+
+  h2::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 48px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+    margin: 1.5rem 0 0.6rem;
+    color: var(--accent2);
+  }
+
+  p { margin-bottom: 1rem; }
+
+  .highlight {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* --- Layout --- */
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* --- Hero --- */
+  .hero {
+    position: relative;
+    text-align: center;
+    padding: 5rem 1.5rem 4rem;
+    background: linear-gradient(180deg, var(--warm-cream) 0%, var(--bg2) 40%, var(--bg) 100%);
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(212,120,59,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 60%, rgba(192,86,61,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(212,120,59,0.04) 0%, transparent 40%);
+    pointer-events: none;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 0.35em 1.2em;
+    border-radius: 100px;
+    margin-bottom: 1.8rem;
+  }
+
+  .hero h1 {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero .subtitle {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: var(--muted);
+    margin-bottom: 1.2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero .tagline-en {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--accent);
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* --- Section --- */
+  .section {
+    padding: 3rem 0;
+  }
+
+  .section + .section {
+    border-top: 1px solid var(--rule);
+  }
+
+  /* --- Feature Grid --- */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .feature-card {
+    background: var(--warm-cream);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(44,36,22,0.08);
+  }
+
+  .feature-card .icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .feature-card h3 {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+  }
+
+  .feature-card p {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* --- Flow Chart --- */
+  .flow-chart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 2.5rem 0;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+  }
+
+  .flow-step {
+    background: var(--warm-cream);
+    border: 1.5px solid var(--rule);
+    border-radius: 10px;
+    padding: 0.8rem 1.2rem;
+    text-align: center;
+    color: var(--ink);
+    font-weight: 400;
+    min-width: 80px;
+    transition: border-color 0.3s;
+  }
+
+  .flow-step .emoji {
+    display: block;
+    font-size: 1.4rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .flow-step:hover {
+    border-color: var(--accent);
+  }
+
+  .flow-arrow {
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin: 0 0.4rem;
+    font-weight: 700;
+  }
+
+  /* --- Tech Table --- */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 2rem 0;
+    border-radius: 10px;
+    border: 1px solid var(--rule);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  thead {
+    background: var(--bg2);
+  }
+
+  th {
+    text-align: left;
+    padding: 0.9rem 1.2rem;
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 0.75rem 1.2rem;
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+  }
+
+  td:first-child {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* --- Quote --- */
+  .quote-block {
+    background: var(--warm-cream);
+    border-left: 4px solid var(--accent);
+    padding: 1.5rem 2rem;
+    margin: 2.5rem 0;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+  }
+
+  .quote-block p {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  .quote-block .quote-author {
+    display: block;
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: normal;
+  }
+
+  /* --- Note / Callout --- */
+  .note {
+    background: var(--warm-cream);
+    border-left: 4px solid var(--accent2);
+    padding: 1.2rem 1.6rem;
+    margin: 2rem 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.95rem;
+    color: var(--muted);
+    line-height: 1.75;
+  }
+
+  .note strong { color: var(--accent2); }
+
+  /* --- Figure (SVG) --- */
+  .fig-wrap {
+    margin: 2.2rem auto 0.6rem;
+    max-width: 640px;
+  }
+
+  .fig-wrap svg { width: 100%; height: auto; display: block; }
+
+  .fig-cap {
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0.5rem 0 1.5rem;
+    text-transform: uppercase;
+  }
+
+  .mockup-wrap { margin: 2.2rem auto 0.6rem; max-width: 680px; }
+  .mockup-wrap svg { width: 100%; height: auto; display: block; }
+
+  /* --- Demo steps --- */
+  .demo {
+    counter-reset: step;
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+  }
+
+  .demo li {
+    position: relative;
+    padding: 0.7rem 0 0.7rem 2.6rem;
+    border-bottom: 1px dashed var(--rule);
+    font-size: 0.95rem;
+  }
+
+  .demo li:last-child { border-bottom: none; }
+
+  .demo li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0.6rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+  }
+
+  .demo li strong { color: var(--ink); font-weight: 600; }
+
+  /* --- Checklist --- */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { margin-bottom: 0.8rem; }
+  .checklist li:last-child { margin-bottom: 0; }
+
+  /* --- Contact / Footer --- */
+  .section-cta {
+    text-align: center;
+    padding: 4rem 0;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem 1.5rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  /* --- Responsive --- */
+  @media (max-width: 600px) {
+    .hero { padding: 3rem 1rem 2.5rem; }
+    .section { padding: 2rem 0; }
+    .flow-chart { flex-direction: column; gap: 0.6rem; }
+    .flow-arrow { transform: rotate(90deg); }
+    .feature-grid { grid-template-columns: 1fr; }
+    .quote-block { padding: 1.2rem 1.5rem; }
+  }
+
+  @media (max-width: 400px) {
+    .page { padding: 0 1rem; }
+    th, td { padding: 0.6rem 0.8rem; font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ====== HERO ====== -->
+<section class="hero">
+  <div class="hero-badge">TRAE AI 创造力大赛 · 生活娱乐赛道</div>
+  <h1>Momentune</h1>
+  <p class="subtitle">每个瞬间，都有一首属于它的旋律</p>
+  <p class="tagline-en">Every moment has its own melody.</p>
+</section>
+
+<!-- ====== SECTION 1: 项目概述 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>项目概述</h2>
+    <p>
+      <span class="highlight">Momentune</span>（Moment × Tune）是一款面向生活记录的 AI 驱动移动 Web 应用。用户在旅行、生活中拍下照片的瞬间，AI 会自动分析照片的情绪与场景，把它映射到一个<span class="highlight">情绪坐标</span>上，再从这个坐标推荐最贴合此刻的音乐，并将这一「瞬间」保存为一页图文音乐日记。通过<span class="highlight">时间线</span>回顾，让回忆可听、可见、可重温。
+    </p>
+
+    <table>
+      <tr><td>🏆 赛事</td><td>TRAE AI 创造力大赛</td></tr>
+      <tr><td>🎯 赛道</td><td>生活娱乐 — 造点新花样</td></tr>
+      <tr><td>📱 产品形态</td><td>移动端 Web App（PWA）</td></tr>
+      <tr><td>🎨 设计基调</td><td>温暖 · 文艺 · 胶片感</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ====== SECTION 2: 核心创意 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>核心创意</h2>
+
+    <div class="quote-block">
+      <p>"拍一张照片 → AI 读出它的情绪坐标 → 推荐一首最贴合的歌 → 写下此刻感受 → 存为一页日记。"</p>
+      <span class="quote-author">— Momentune 核心体验链路</span>
+    </div>
+
+    <p>
+      Momentune 的核心洞察是：<span class="highlight">每一张有意义的照片背后，都有一种难以名状的情绪</span>。AI 通过图像分析帮你「翻译」这种情绪，并用音乐来「表达」它。多年后翻看时，照片唤起画面，音乐唤起感受，形成复合的回忆体验。
+    </p>
+
+    <!-- 用户流程 -->
+    <h3>用户核心流程</h3>
+    <div class="flow-chart">
+      <div class="flow-step"><span class="emoji">📷</span>拍照 / 选照片</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="emoji">🤖</span>AI 读出情绪</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="emoji">🎵</span>智能推荐歌曲</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="emoji">✍️</span>写下感想</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="emoji">📔</span>保存日记</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step"><span class="emoji">📈</span>时间线回顾</div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== SECTION 3: 核心技术 — 情绪坐标映射 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>核心技术 · 情绪坐标映射</h2>
+
+    <p>
+      「AI 把视觉翻译成音乐」听起来很玄，Momentune 把它落成一个<span class="highlight">可解释、可复现的系统</span>：不靠模型凭感觉乱配，而是让照片和音乐在同一个「情绪坐标系」里相遇。
+    </p>
+
+    <p>
+      这个坐标系借鉴心理学的<span class="highlight">情绪二维模型（Valence–Arousal）</span>：横轴是<strong>情绪效价</strong>（消极 ↔ 积极），纵轴是<strong>唤醒度</strong>（平静 ↔ 高能）。任何一种情绪，都能落在这张图上的某一点。
+    </p>
+
+    <!-- V-A 情绪坐标图 -->
+    <div class="fig-wrap">
+      <svg viewBox="0 0 640 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="情绪二维坐标图：横轴情绪效价，纵轴唤醒度">
+        <defs>
+          <marker id="arr" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"/>
+          </marker>
+        </defs>
+
+        <!-- quadrant tints -->
+        <rect x="335" y="40" width="265" height="185" fill="rgba(212,120,59,0.11)"/>
+        <rect x="70"  y="40" width="265" height="185" fill="rgba(192,86,61,0.09)"/>
+        <rect x="70"  y="225" width="265" height="185" fill="rgba(139,122,94,0.07)"/>
+        <rect x="335" y="225" width="265" height="185" fill="rgba(212,120,59,0.05)"/>
+
+        <!-- axes -->
+        <line x1="70" y1="225" x2="600" y2="225" stroke="#c9b89a" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="335" y1="410" x2="335" y2="40" stroke="#c9b89a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- pole labels -->
+        <text x="596" y="216" text-anchor="end"   font-family="'Noto Serif SC',serif" font-size="13" fill="var(--ink)" font-weight="600">积极 · 愉悦</text>
+        <text x="74"  y="216" text-anchor="start" font-family="'Noto Serif SC',serif" font-size="13" fill="var(--ink)" font-weight="600">消极 · 低落</text>
+        <text x="335" y="30"  text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="13" fill="var(--ink)" font-weight="600">高能 · 激昂</text>
+        <text x="335" y="438" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="13" fill="var(--ink)" font-weight="600">平静 · 舒缓</text>
+
+        <!-- axis names -->
+        <text x="610" y="240" text-anchor="end" font-family="'Space Mono',monospace" font-size="10" fill="var(--accent)">VALENCE 效价</text>
+        <text x="345" y="52" text-anchor="start" font-family="'Space Mono',monospace" font-size="10" fill="var(--accent)">AROUSAL 唤醒度</text>
+
+        <!-- quadrant mood labels -->
+        <text x="467" y="135" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="14" fill="var(--muted)" font-style="italic">兴奋 · 雀跃</text>
+        <text x="202" y="135" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="14" fill="var(--muted)" font-style="italic">紧张 · 热烈</text>
+        <text x="202" y="320" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="14" fill="var(--muted)" font-style="italic">忧郁 · 沉静</text>
+        <text x="467" y="320" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="14" fill="var(--muted)" font-style="italic">温柔 · 惬意</text>
+
+        <!-- example dots -->
+        <!-- 黄昏海边 (BR) -->
+        <text x="500" y="288" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="12" fill="var(--ink)">📷 黄昏海边</text>
+        <circle cx="500" cy="300" r="6.5" fill="var(--accent)" stroke="#fff" stroke-width="2"/>
+        <text x="500" y="320" text-anchor="middle" font-family="'Space Mono',monospace" font-size="10.5" fill="var(--accent2)">暖调 Lo-fi</text>
+
+        <!-- 节日烟花 (TR) -->
+        <text x="510" y="108" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="12" fill="var(--ink)">📷 节日烟花</text>
+        <circle cx="510" cy="120" r="6.5" fill="var(--accent)" stroke="#fff" stroke-width="2"/>
+        <text x="510" y="140" text-anchor="middle" font-family="'Space Mono',monospace" font-size="10.5" fill="var(--accent2)">律动流行</text>
+
+        <!-- 雨天窗边 (BL) -->
+        <text x="178" y="290" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="12" fill="var(--ink)">📷 雨天窗边</text>
+        <circle cx="178" cy="302" r="6.5" fill="var(--accent)" stroke="#fff" stroke-width="2"/>
+        <text x="178" y="322" text-anchor="middle" font-family="'Space Mono',monospace" font-size="10.5" fill="var(--accent2)">慢调民谣</text>
+
+        <!-- 海上风暴 (TL) -->
+        <text x="170" y="104" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="12" fill="var(--ink)">📷 海上风暴</text>
+        <circle cx="170" cy="116" r="6.5" fill="var(--accent)" stroke="#fff" stroke-width="2"/>
+        <text x="170" y="136" text-anchor="middle" font-family="'Space Mono',monospace" font-size="10.5" fill="var(--accent2)">激烈摇滚</text>
+
+        <!-- origin -->
+        <circle cx="335" cy="225" r="2.5" fill="#c9b89a"/>
+      </svg>
+    </div>
+    <p class="fig-cap">情绪二维坐标系 · 照片与音乐在同一空间里被定位与匹配</p>
+
+    <h3>它是怎么运转的</h3>
+    <p>
+      <strong>① 照片定位</strong>：Vision 模型分析照片的视觉特征（色温、明暗、饱和度、场景、有无人物、时段、天气），输出一组 <span class="highlight">(效价, 唤醒度)</span> 坐标值。<br>
+      <strong>② 音乐定位</strong>：曲库里每首歌预先标好同一套 (效价, 唤醒度) 坐标（可借助开源音频特征数据，或由音频分析得出）。<br>
+      <strong>③ 最近邻匹配</strong>：在坐标系里找出离照片最近的几首歌，再叠加流派 / 年代等偏好做微调，推荐 3–5 首。
+    </p>
+
+    <div class="note">
+      <strong>一个具体例子。</strong>一张黄昏海边的照片 —— 暖色调、低饱和、画面安静 —— 被定位到「<strong>高效价 · 低唤醒</strong>」象限（温柔·惬意）。系统于是在同一象限里挑歌，推给你的会是舒缓的暖调 Lo-fi，而不是一首高能电子。这就是「为什么是这首歌」的可解释答案。
+    </div>
+
+    <p>
+      这套设计的价值在于：它既<span class="highlight">讲得清</span>（评委问“凭什么配这首歌”，有坐标可答），又<span class="highlight">防得住</span>（是一套设计出来的系统，而不是一句随手就能抄走的 prompt），还正好把跨模态情绪映射这个最独特的技术创意摆到了台面上。
+    </p>
+  </div>
+</section>
+
+<!-- ====== SECTION 4: 功能模块 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>功能模块</h2>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="icon">📷</div>
+        <h3>智能拍照</h3>
+        <p>调用手机相机或相册选取，支持实时预览与重新拍摄，记录拍摄时间。</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="icon">🤖</div>
+        <h3>AI 情绪分析</h3>
+        <p>场景识别、视觉特征提取（色调/明暗/天气/时段），输出照片的情绪坐标，作为配乐依据。</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="icon">🎵</div>
+        <h3>音乐推荐 & 播放器</h3>
+        <p>基于情绪坐标推荐 3–5 首歌，App 内直接播放完整歌曲，含封面、歌名、歌手信息。</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="icon">📔</div>
+        <h3>图文音乐日记</h3>
+        <p>照片 + AI 情绪描述 + 文字感想 + 歌曲封面组成的日记卡片，一键保存，形成日记列表。</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="icon">📅</div>
+        <h3>时间线回顾</h3>
+        <p>按时间倒序展示所有日记，瀑布流/卡片式布局，点击即可回顾当天的照片、文字和歌曲。</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="icon">📈</div>
+        <h3>年度情绪轨迹</h3>
+        <p>把每篇日记的情绪坐标连成一条曲线，生成「年度情绪回顾」，让你看见自己这一年的情绪起伏。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== SECTION 5: 界面预览 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>界面预览</h2>
+    <p>核心体验聚焦两屏：拍照后即刻看到情绪与配乐，写下感想后存成一页可回看的日记。</p>
+
+    <div class="mockup-wrap">
+      <svg viewBox="0 0 680 440" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="两张手机界面线框：拍照出歌屏与日记屏">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f6c98a"/>
+            <stop offset="55%" stop-color="#e89b6a"/>
+            <stop offset="100%" stop-color="#cf7e5a"/>
+          </linearGradient>
+        </defs>
+
+        <!-- ===== Phone 1 ===== -->
+        <rect x="70" y="20" width="220" height="380" rx="28" fill="var(--warm-cream)" stroke="var(--rule)" stroke-width="2"/>
+        <rect x="155" y="32" width="50" height="9" rx="4.5" fill="var(--rule)"/>
+        <!-- photo -->
+        <rect x="88" y="60" width="184" height="118" rx="12" fill="url(#sky)"/>
+        <circle cx="225" cy="100" r="16" fill="#fff" opacity="0.85"/>
+        <rect x="88" y="138" width="184" height="40" rx="0" fill="#b9694a" opacity="0.55"/>
+        <!-- emotion pill -->
+        <rect x="88" y="190" width="184" height="28" rx="14" fill="rgba(212,120,59,0.14)"/>
+        <text x="180" y="209" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="11.5" fill="var(--accent2)">🌅 温柔 · 惬意　V+ / A−</text>
+        <!-- song card -->
+        <rect x="88" y="228" width="184" height="68" rx="10" fill="#fff" stroke="var(--rule)" stroke-width="1.2"/>
+        <rect x="98" y="238" width="48" height="48" rx="8" fill="var(--bg2)"/>
+        <circle cx="122" cy="262" r="6" fill="var(--accent)"/>
+        <rect x="156" y="244" width="78" height="9" rx="4.5" fill="var(--ink)" opacity="0.7"/>
+        <rect x="156" y="262" width="54" height="8" rx="4" fill="var(--muted)" opacity="0.55"/>
+        <circle cx="252" cy="262" r="13" fill="var(--accent)"/>
+        <path d="M248,256 L259,262 L248,268 Z" fill="#fff"/>
+        <text x="180" y="320" text-anchor="middle" font-family="'Space Mono',monospace" font-size="10" fill="var(--muted)">♪ 为你推荐 3 首</text>
+        <!-- jump to full song -->
+        <rect x="104" y="332" width="152" height="27" rx="13.5" fill="none" stroke="var(--accent)" stroke-width="1.3"/>
+        <text x="180" y="350" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="11" fill="var(--accent)">▶ 播放完整版</text>
+        <text x="180" y="384" text-anchor="middle" font-family="'Space Mono',monospace" font-size="10.5" fill="var(--accent)">拍照 → 出歌</text>
+
+        <!-- ===== Phone 2 ===== -->
+        <rect x="390" y="20" width="220" height="380" rx="28" fill="var(--warm-cream)" stroke="var(--rule)" stroke-width="2"/>
+        <rect x="475" y="32" width="50" height="9" rx="4.5" fill="var(--rule)"/>
+        <!-- photo thumb -->
+        <rect x="408" y="60" width="184" height="92" rx="12" fill="url(#sky)"/>
+        <circle cx="545" cy="95" r="14" fill="#fff" opacity="0.85"/>
+        <!-- date -->
+        <text x="408" y="178" font-family="'Space Mono',monospace" font-size="10" fill="var(--muted)">2026 · 06 · 黄昏海边</text>
+        <!-- diary text -->
+        <text x="408" y="200" font-family="'Noto Serif SC',serif" font-size="11.5" fill="var(--ink)">今天的海，安静得像</text>
+        <text x="408" y="219" font-family="'Noto Serif SC',serif" font-size="11.5" fill="var(--ink)">一句没说出口的话。</text>
+        <!-- song mini bar -->
+        <rect x="408" y="236" width="184" height="44" rx="10" fill="rgba(212,120,59,0.08)"/>
+        <rect x="416" y="244" width="28" height="28" rx="6" fill="var(--bg2)"/>
+        <rect x="454" y="252" width="84" height="8" rx="4" fill="var(--ink)" opacity="0.6"/>
+        <rect x="454" y="266" width="56" height="7" rx="3.5" fill="var(--muted)" opacity="0.5"/>
+        <circle cx="572" cy="258" r="11" fill="var(--accent)"/>
+        <path d="M568,253 L577,258 L568,263 Z" fill="#fff"/>
+        <!-- emotion tag -->
+        <rect x="408" y="296" width="96" height="24" rx="12" fill="rgba(192,86,61,0.10)"/>
+        <text x="456" y="312" text-anchor="middle" font-family="'Noto Serif SC',serif" font-size="11" fill="var(--accent2)">温柔 · 惬意</text>
+        <text x="500" y="348" text-anchor="middle" font-family="'Space Mono',monospace" font-size="9.5" fill="var(--accent)">♪ App 内听完整版</text>
+        <text x="500" y="384" text-anchor="middle" font-family="'Space Mono',monospace" font-size="10.5" fill="var(--accent)">一页日记</text>
+      </svg>
+    </div>
+    <p class="fig-cap">低保真界面示意 · 拍照出歌屏（左）与日记屏（右）</p>
+  </div>
+</section>
+
+<!-- ====== SECTION 6: 目标用户 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>目标用户及痛点</h2>
+
+    <table>
+      <thead>
+        <tr><th>维度</th><th>说明</th></tr>
+      </thead>
+      <tr>
+        <td>👥 面向用户</td>
+        <td>喜欢旅行和生活记录的年轻人（18-35 岁），注重情感体验和个性化表达</td>
+      </tr>
+      <tr>
+        <td>📍 使用场景</td>
+        <td>旅行途中、城市漫步、日常生活中的美好瞬间——拍照后即刻记录</td>
+      </tr>
+      <tr>
+        <td>😣 当前痛点</td>
+        <td>照片只是画面，缺少情绪的载体；日记本太单调，纯文字无法还原感受；音乐收藏散落各处，无法与具体的记忆关联</td>
+      </tr>
+      <tr>
+        <td>💡 差异化</td>
+        <td>别的工具是「随手配个热门 BGM」，Momentune 是「按情绪精准匹配」，并把照片 + 时间 + 歌沉淀成一份可回放的情绪记忆</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- ====== SECTION 7: 差异化对比 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>差异化对比</h2>
+    <p>配乐这件事本身不稀奇，Momentune 的独特之处在于「情绪匹配 + 记忆沉淀」的组合。</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>能力</th><th>剪映 / 短视频随手配乐</th><th>日记类 App</th><th>音乐 App 推荐</th><th>Momentune</th></tr>
+        </thead>
+        <tr><td>配乐逻辑</td><td>热门 / 模板</td><td>无</td><td>听歌历史</td><td>照片情绪坐标匹配</td></tr>
+        <tr><td>解释性</td><td>无</td><td>—</td><td>弱</td><td>强（V-A 坐标可解释）</td></tr>
+        <tr><td>记忆沉淀</td><td>无</td><td>纯文字</td><td>无</td><td>图 + 文 + 歌 + 情绪</td></tr>
+        <tr><td>长期回看</td><td>无</td><td>时间线</td><td>无</td><td>时间线 + 年度情绪轨迹</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ====== SECTION 8: 技术方案 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>技术方案</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>层级</th><th>技术选型</th></tr>
+        </thead>
+        <tr><td>前端框架</td><td>React + TypeScript（移动端 Web + PWA）</td></tr>
+        <tr><td>移动端能力</td><td>浏览器相机 / 相册、Geolocation、本地存储</td></tr>
+        <tr><td>AI 图像分析</td><td>国内多模态视觉 API（Qwen-VL / GLM-4V / 豆包视觉），输出情绪坐标</td></tr>
+        <tr><td>情绪引擎</td><td>Valence–Arousal 二维坐标 + 最近邻匹配</td></tr>
+        <tr><td>音乐来源</td><td>接入用户网易云 / QQ 账号（开源接口 NeteaseCloudMusicApi），返回完整歌曲地址；免版权曲库预标情绪坐标做兜底</td></tr>
+        <tr><td>音乐播放</td><td>App 内直接流式播放完整歌曲（&lt;audio&gt;）；取不到的歌回退免版权曲库</td></tr>
+        <tr><td>后端服务</td><td>部署 Node 中间商（NeteaseCloudMusicApi）：用户登录授权后，以用户身份取歌曲地址</td></tr>
+        <tr><td>数据存储</td><td>IndexedDB（Demo 阶段）；可扩展账号 + 云同步</td></tr>
+        <tr><td>隐私处理</td><td>照片分析经用户授权、不留存原图，可演进为端侧处理</td></tr>
+      </table>
+    </div>
+
+    <h3>音乐来源与版权</h3>
+    <p>
+      音乐是这类产品的命脉，因此专门说明 Momentune 的做法。Momentune 不自建版权曲库，而是<span class="highlight">接入用户自己的网易云 / QQ 音乐账号</span>：用户授权登录后，App 借助开源接口（NeteaseCloudMusicApi）以用户自己的身份获取并播放歌曲。
+    </p>
+    <div class="note">
+      <strong>本质是为用户的账号提供一个第三方播放客户端</strong>——能听到什么、有没有完整版，完全取决于用户账号自身的会员与版权，因此<strong>完整版能直接在 App 内播放</strong>，版权责任也归于用户的平台账号。<br>注：该方案依赖非官方接口，需自行评估稳定性与合规；少数 VIP / 下架歌曲可能取不到，会自动回退到内置免版权曲库兜底，保证演示不哑火。
+    </div>
+  </div>
+</section>
+
+<!-- ====== SECTION 9: 演示动线 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>60 秒演示动线</h2>
+    <p>路演现场，一条能让评委「看得见、听得见」的高光动线：</p>
+    <ol class="demo">
+      <li><strong>拍 / 选一张照片</strong>——以一张黄昏海边为例。</li>
+      <li><strong>AI 现场分析</strong>——弹出情绪坐标：高效价 · 低唤醒（温柔 · 惬意）。</li>
+      <li><strong>给出推荐</strong>——同象限里推 3 首暖调慢歌。</li>
+      <li><strong>现场播放</strong>——点开第一首，完整歌曲直接在 App 里响起。</li>
+      <li><strong>写下感想并保存</strong>——一句话 + 照片 + 这首歌，存成一页日记。</li>
+      <li><strong>切到回顾</strong>——时间线里多出这一页，年度情绪轨迹上多出一个点。</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ====== SECTION 10: 价值 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>价值与意义</h2>
+
+    <p>
+      <strong>情感价值：</strong>Momentune 不是冷冰冰的工具，而是一本<span class="highlight">有温度的音乐日记</span>。它把每个人心中难以言说的情绪「翻译」出来，用照片和音乐共同构建一种比纯文字、纯图片都更丰富的记忆载体。
+    </p>
+    <p>
+      <strong>AI 驱动的「翻译官」：</strong>AI 在这里不是噱头，而是核心体验的发动机——把视觉翻译成情绪坐标，再映射成音乐。这种<span class="highlight">可解释的跨模态情绪映射</span>是 Momentune 最独特的技术创意。
+    </p>
+    <p>
+      <strong>商业潜力：</strong>清晰可落地的变现路径有三条——<span class="highlight">会员订阅</span>（无限日记 / 高级情绪分析 / 精美导出）、<span class="highlight">年度情绪相册付费打印</span>（把情绪轨迹做成实体回忆，契合「温度」调性）、以及与音乐平台的<span class="highlight">导流分成</span>。不画大饼，每条路都站得住。
+    </p>
+  </div>
+</section>
+
+<!-- ====== SECTION 11: 与大赛主题的契合度 ====== -->
+<section class="section">
+  <div class="page">
+    <h2>与大赛主题的契合</h2>
+
+    <div class="quote-block">
+      <p>"世界很大，放手去造"</p>
+      <span class="quote-author">— TRAE AI 创造力大赛主题</span>
+    </div>
+
+    <ul class="checklist">
+      <li>✅ <strong>真场景</strong> — 旅行、生活记录是数亿人的真实高频需求</li>
+      <li>✅ <strong>有温度</strong> — 把难以言说的情绪翻译成可听的音乐，照片不再只有画面</li>
+      <li>✅ <strong>AI 驱动</strong> — 情绪坐标映射是体验的发动机，而非装饰性功能</li>
+      <li>✅ <strong>可落地</strong> — Demo 阶段 Web App 即点即用，远期可拓展为原生 App，演示动线 60 秒能跑通</li>
+      <li>✅ <strong>赛道精准</strong> — 生活娱乐「造点新花样」，用 AI 让生活记录更有趣、更有温度</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ====== CTA ====== -->
+<section class="section-cta">
+  <div class="page">
+    <p class="tagline-en" style="color:var(--accent);font-size:1.15rem;">
+      Every moment has its own melody.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <p>Momentune · TRAE AI 创造力大赛参赛作品 · 生活娱乐赛道</p>
+</footer>
+
+</body>
+</html>
