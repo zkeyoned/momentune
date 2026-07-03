@@ -667,8 +667,8 @@ describe('扩展时段标签(13 类)', () => {
     expect(TIME_OF_DAY_VA_MAP.early_morning.v).toBeGreaterThan(0.55);
   });
 
-  it('第 4 轮:late_night V 值较低(深夜消极)', () => {
-    expect(TIME_OF_DAY_VA_MAP.late_night.v).toBeLessThan(0.3);
+  it('第 4 轮:late_night V 值偏低(深夜偏沉思)', () => {
+    expect(TIME_OF_DAY_VA_MAP.late_night.v).toBeLessThan(0.4);
   });
 });
 

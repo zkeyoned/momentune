@@ -1,0 +1,248 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  z-index: 1000;
+  animation: overlayIn 0.2s ease-out;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  background: var(--bg2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-align: center;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color var(--dur-hov) ease, background var(--dur-hov) ease;
+}
+
+.closeBtn:hover {
+  color: var(--ink);
+  background: var(--film-grain);
+}
+
+/* —— 平台标识 —— */
+.platformHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  justify-content: center;
+  margin-bottom: var(--space-md);
+}
+
+.platformIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.platformName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+
+.platformSub {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+
+/* —— QR 码 —— */
+.qrWrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto var(--space-md);
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 8px;
+  overflow: hidden;
+}
+
+.qr {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.qrPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+/* 扫描线 */
+.scanLine {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 8px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: scan 2s ease-in-out infinite;
+}
+
+@keyframes scan {
+  0%, 100% { top: 8px; opacity: 0.4; }
+  50% { top: calc(100% - 10px); opacity: 1; }
+}
+
+/* —— 提示文字 —— */
+.hint {
+  font-size: 0.85rem;
+  color: var(--ink);
+  margin: 0 0 var(--space-sm);
+}
+
+.platformTag {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* —— 等待状态 —— */
+.waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: var(--space-md);
+}
+
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--rule);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.waitingText {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+/* —— 手动触发按钮 —— */
+.mockBtn {
+  width: 100%;
+  padding: 0.7em 1em;
+  background: transparent;
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: border-color var(--dur-hov) ease, color var(--dur-hov) ease,
+    transform var(--dur-tap) var(--ease-tap);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mockBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.mockBtn:active {
+  transform: scale(var(--tap-scale));
+}
+
+/* —— 成功状态 —— */
+.successState {
+  padding: var(--space-xl) 0;
+  animation: successIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes successIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.successIcon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--space-sm);
+  border-radius: 50%;
+  background: var(--accent);
+  color: #2E2620;
+  font-size: 2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(232, 168, 124, 0.4);
+}
+
+.successTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+
+.successSub {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}

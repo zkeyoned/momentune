@@ -1,0 +1,379 @@
+/* ============================================================
+   Momentune — Global Styles
+   设计语言: Filmscape 胶片日记 (2026 重做)
+   - 暖调哑光黑底 + 暖琥珀主色 (Amber)
+   - 配色回归产品灵魂: 温暖、文艺、胶片感旅行日记
+       主色 = #E8A87C (warm amber, 夕阳/胶片暖光)
+       基础 = 暖调黑 + 分层暖灰
+       辅助 = 拍立得红 + 冲洗墨绿
+   - 字体: Fraunces (复古衬线, 有光学尺寸变化) + 思源宋体
+   - 颗粒噪点暖色化, 营造冲洗质感
+   - 移动端优先, 375 视口, 竖屏布局
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Noto+Serif+SC:wght@300;400;500;600;700&family=Caveat:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* —— 色彩 token (Filmscape 胶片日记) ——
+     变量名保留旧名(warm-cream 等)以避免大面积重命名,
+     但语义已改为胶片暖色调对应的层级。 */
+  --bg: #1A1614;            /* 主背景: 暖调哑光黑,带一丝棕调,比纯黑温暖 */
+  --bg2: #241E1B;           /* 次背景: 暖灰黑,卡片底/输入框底 */
+  --ink: #F5EFE6;           /* 主文字: 奶油米,像旧书页 */
+  --muted: #A89B8C;         /* 次要文字: 暖灰,像褪色照片 */
+  --rule: #3A322B;          /* 边框: 暖深灰,像胶片边沿 */
+  --accent: #E8A87C;        /* 暖琥珀主色: 夕阳/胶片暖光/拍立得暖橙 */
+  --accent2: #C38D5F;       /* 深琥珀: hover/激活态,更沉的焦糖色 */
+  --warm-cream: #241E1B;    /* 卡片底(保留变量名,现为暖卡片底) */
+  --film-grain: #2E2620;    /* 纹理层: 胶片底色 */
+  --accent-red: #D97356;    /* 拍立得标签红: 强调/警示,克制使用 */
+  --accent-green: #5C7A6B;  /* 冲洗墨绿: 辅助强调,克制使用 */
+  --shadow-soft: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-amber: 0 6px 20px rgba(232, 168, 124, 0.22);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 100px;
+
+  /* —— 字体 token ——
+     Fraunces: 复古衬线,有 opsz 光学尺寸变化,标题用大尺寸更立体
+     Caveat: 手写感,仅用于"写一句感想"区,克制使用
+     JetBrains Mono: 仅限元数据(时间戳/坐标/地点),不进正文 */
+  --font-serif: 'Noto Serif SC', 'Fraunces', Georgia, serif;
+  --font-display: 'Fraunces', 'Noto Serif SC', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-hand: 'Caveat', 'Noto Serif SC', cursive;
+
+  /* —— 间距 token (4pt grid) —— */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* —— 布局 token —— */
+  --app-max-width: 480px;
+  --nav-height: 60px;
+  --player-height: 64px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* —— 触感 token (统一交互反馈) —— */
+  --dur-tap: 0.12s;
+  --dur-hov: 0.2s;
+  --ease-tap: cubic-bezier(0.4, 0, 0.2, 1);
+  --tap-scale: 0.97;
+  --tap-scale-strong: 0.9;
+}
+
+/* —— 全局 focus-visible (键盘可访问性) ——
+   只在键盘导航时显示,鼠标点击不出现,避免污染视觉。
+   outline 形状自动跟随元素 border-radius,圆形按钮焦点也是圆形。 */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+/* —— 噪点纹理叠加 (胶片颗粒感,暖色调,营造冲洗质感) ——
+   opacity 提到 0.05 让颗粒可见但不抢戏,模拟 35mm 胶片显影颗粒 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+/* —— App shell (mobile-first, 居中容器) ——
+   布局策略: html/body/#root/.app-shell 全部 height:100% 固定视口高度,
+   .app-main 作为唯一滚动容器(overflow-y:auto),BottomNav/MusicPlayer 用
+   position:fixed 固定底部。避免 flex column + min-height:100vh 在某些
+   浏览器中阻止内容溢出滚动的问题。 */
+#root {
+  height: 100%;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: var(--app-max-width);
+  margin: 0 auto;
+  height: 100%;
+  background: var(--bg);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-main {
+  flex: 1;
+  overflow: hidden;
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
+}
+
+/* —— Typography —— */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+h1 {
+  font-size: clamp(1.8rem, 6vw, 2.4rem);
+}
+
+h2 {
+  font-size: clamp(1.4rem, 5vw, 1.7rem);
+  position: relative;
+  display: inline-block;
+  margin-bottom: var(--space-md);
+}
+
+h2::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+h3 {
+  font-size: 1.1rem;
+  color: var(--accent2);
+  margin: var(--space-md) 0 var(--space-sm);
+}
+
+p {
+  color: var(--ink);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.italic {
+  font-style: italic;
+}
+
+/* —— Common UI primitives —— */
+.badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.3em 0.9em;
+  border-radius: var(--radius-pill);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: 0.85em 1.6em;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  transition: transform var(--dur-tap) var(--ease-tap),
+    box-shadow var(--dur-hov) ease, background var(--dur-hov) ease,
+    border-color var(--dur-hov) ease, color var(--dur-hov) ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+  transform: scale(var(--tap-scale));
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #2E2620;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(232, 168, 124, 0.32);
+}
+
+.btn-primary:hover {
+  background: var(--accent2);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-lg {
+  padding: 1em 2em;
+  font-size: 1.05rem;
+}
+
+/* —— Card —— */
+.card {
+  background: var(--warm-cream);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-card);
+}
+
+/* —— Section spacing —— */
+.section {
+  padding: var(--space-xl) var(--space-md);
+}
+
+.section + .section {
+  border-top: 1px solid var(--rule);
+}
+
+/* —— Page wrapper —— */
+.page {
+  padding: var(--space-lg) var(--space-md);
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin-bottom: var(--space-md);
+}
+
+/* —— Pill / tag —— */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25em 0.7em;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  border-radius: var(--radius-pill);
+  background: rgba(232, 168, 124, 0.14);
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.tag-muted {
+  background: rgba(168, 155, 140, 0.12);
+  color: var(--muted);
+}
+
+/* —— Utility —— */
+.center {
+  text-align: center;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-lg { margin-bottom: var(--space-lg); }
+
+/* —— Loading shimmer (placeholder) —— */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg2) 0%,
+    var(--warm-cream) 50%,
+    var(--bg2) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* —— Scrollbar (subtle) —— */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: var(--radius-pill);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* —— Reduced motion —— */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

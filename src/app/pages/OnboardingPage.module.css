@@ -1,0 +1,315 @@
+/* ============================================================
+   Onboarding — 全屏问卷页
+   设计: 占满整个屏幕,柔和的淡入动画替代底部滑入,
+   顶部 grabber 可下拉关闭,内容区可滚动,底部固定操作按钮。
+   配色: Filmscape 胶片日记 (暖琥珀 #E8A87C)
+   ============================================================ */
+
+/* —— 全屏层(直接铺满,无半透明遮罩) —— */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* —— Sheet 主体(全屏撑满) —— */
+.sheet {
+  width: 100%;
+  max-width: var(--app-max-width);
+  height: 100%;
+  height: 100dvh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0s;
+}
+
+/* —— Grabber 拖把儿区 —— */
+.grabber {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-md);
+  cursor: grab;
+  touch-action: none; /* 让 touchmove 不被浏览器拦截 */
+  flex-shrink: 0;
+}
+
+.grabber:active {
+  cursor: grabbing;
+}
+
+.handle {
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--rule);
+  transition: background 0.2s ease;
+}
+
+.grabber:hover .handle {
+  background: var(--muted);
+}
+
+.skipBtn {
+  position: absolute;
+  right: var(--space-md);
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-hov) ease, background var(--dur-hov) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.skipBtn:hover {
+  color: var(--accent);
+  background: rgba(232, 168, 124, 0.08);
+}
+
+.skipBtn:active {
+  transform: translateY(-50%) scale(var(--tap-scale));
+}
+
+/* —— 进度 header —— */
+.header {
+  text-align: center;
+  padding: 0 var(--space-md) var(--space-sm);
+  flex-shrink: 0;
+}
+
+.progressDots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rule);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.dotActive {
+  background: var(--accent);
+  transform: scale(1.3);
+  box-shadow: 0 0 8px rgba(232, 168, 124, 0.5);
+}
+
+.dotDone {
+  background: var(--accent2);
+  opacity: 0.5;
+}
+
+.stepLabel {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* —— 可滚动问卷内容 —— */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-md) var(--space-md) var(--space-lg);
+}
+
+.qTitle {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin: 0 0 var(--space-xs);
+  color: var(--ink);
+}
+
+/* —— 年龄段 grid —— */
+.optionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.optionCard {
+  padding: var(--space-md) var(--space-sm);
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: var(--warm-cream);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--dur-hov) ease, background var(--dur-hov) ease,
+    transform var(--dur-tap) var(--ease-tap);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.optionCard:hover {
+  border-color: var(--accent);
+}
+
+.optionCard:active {
+  transform: scale(var(--tap-scale));
+}
+
+/* —— 平台/情绪/语言列表 —— */
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--warm-cream);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--dur-hov) ease, background var(--dur-hov) ease,
+    transform var(--dur-tap) var(--ease-tap);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.optionRow:hover {
+  border-color: var(--accent);
+}
+
+.optionRow:active {
+  transform: scale(var(--tap-scale));
+}
+
+.optionActive {
+  border-color: var(--accent);
+  background: rgba(232, 168, 124, 0.08);
+}
+
+.check {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.moodLabel {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.moodDesc {
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+/* —— 风格选择 —— */
+.selectedCount {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  margin: var(--space-sm) 0 0;
+}
+
+.genreGroup {
+  margin-top: var(--space-lg);
+}
+
+.genreGroupTitle {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--accent2);
+  margin: 0 0 var(--space-sm);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.genreGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.genreChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.5em 0.9em;
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  color: var(--ink);
+  background: var(--warm-cream);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: border-color var(--dur-hov) ease, background var(--dur-hov) ease,
+    transform var(--dur-tap) var(--ease-tap);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.genreChip:hover {
+  border-color: var(--accent);
+}
+
+.genreChip:active {
+  transform: scale(var(--tap-scale));
+}
+
+.genreLabel {
+  font-size: 0.85rem;
+}
+
+.hotDot {
+  color: var(--accent);
+  font-size: 0.7rem;
+}
+
+.skipGenreBtn {
+  margin-top: var(--space-lg);
+  font-size: 0.85rem;
+}
+
+/* —— 底部按钮固定区 —— */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  padding-bottom: calc(var(--space-md) + var(--safe-bottom));
+  border-top: 1px solid var(--rule);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.footer .btn {
+  flex: 1;
+}
+
+.footer .btn-ghost {
+  flex: 0 0 auto;
+}

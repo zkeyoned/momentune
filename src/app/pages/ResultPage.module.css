@@ -1,0 +1,83 @@
+.page {
+  padding-bottom: var(--space-2xl);
+}
+
+/* —— 轮盘选歌区 —— */
+.wheelSection {
+  padding: var(--space-md) var(--space-sm);
+  background: var(--bg);
+}
+
+.locationLine {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin: var(--space-sm) 0 0;
+}
+
+/* —— 感想 + 保存 ——
+   textarea 用 Caveat 手写感字体,落实"胶片日记"设计承诺 */
+.textarea {
+  width: 100%;
+  padding: var(--space-md);
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--warm-cream);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 168, 124, 0.12);
+}
+
+.textarea::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+/* —— Loading state —— */
+.previewWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--bg2);
+}
+
+.analyzing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-lg) 0;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--rule);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

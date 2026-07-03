@@ -29,3 +29,4 @@ export * from './musicToVA.js';
 export * from './match.js';
 export * from './recommend.js';
 export * from './preference.js';
+export * from './musicLibrary.js';

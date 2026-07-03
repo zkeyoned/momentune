@@ -4,12 +4,12 @@
  * 对应算法设计文档「第 4 部分:匹配算法」
  *
  * 评分维度:
- * 1. score_va    (0.45) V-A 加权欧氏距离
- * 2. score_scene (0.17) 场景标签匹配
- * 3. score_pref  (0.15) 用户偏好匹配
- * 4. score_scene_fit (0.10) 场景适配度(先验/历史)
+ * 1. score_va    (0.40) V-A 加权欧氏距离
+ * 2. score_scene (0.15) 场景标签匹配
+ * 3. score_pref  (0.25) 用户偏好匹配(从 0.15 提升到 0.25)
+ * 4. score_scene_fit (0.08) 场景适配度(先验/历史)
  * 5. score_ref_sim   (0.05) 参考歌曲相似度
- * 6. score_hot   (0.08) 热歌度(加性策略)
+ * 6. score_hot   (0.07) 热歌度(加性策略)
  *
  * 热歌乘性 boost(推荐策略):
  * final = base × (1 + 0.20 × hot_boost × recency)
@@ -150,7 +150,7 @@ export function calcScorePref(
   );
   const platformScore = calcPlatformMatch(userPref.platform, song.layer);
 
-  return 0.40 * vaProximity + 0.30 * genreScore + 0.15 * languageScore + 0.15 * platformScore;
+  return 0.25 * vaProximity + 0.50 * genreScore + 0.15 * languageScore + 0.10 * platformScore;
 }
 
 // ============================================================================
@@ -244,9 +244,9 @@ export function calcHotBoostByRecency(
   const baseBoost: Record<Song['hotRecency'], number> = {
     this_week: 1.0,
     this_month: 0.85,
-    half_year: 0.70,
-    older: 0.50,
-    never: 0.30,
+    half_year: 0.75,
+    older: 0.65, // 经典歌曲有持久流行度,不打太低
+    never: 0.45, // 兜底层保底
   };
   let boost = baseBoost[recency];
 

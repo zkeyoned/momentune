@@ -1,0 +1,115 @@
+.wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* —— 触发按钮 —— */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--bg2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: border-color var(--dur-hov) ease, color var(--dur-hov) ease,
+    background var(--dur-hov) ease, transform var(--dur-tap) var(--ease-tap);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.trigger:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.trigger:active {
+  transform: scale(var(--tap-scale));
+}
+
+.triggerOpen {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(232, 168, 124, 0.08);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rule);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dot[data-on='true'] {
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(232, 168, 124, 0.6);
+}
+
+.triggerLabel {
+  letter-spacing: 0.04em;
+}
+
+.caret {
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+/* —— 遮罩(点外部关闭) —— */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: transparent;
+}
+
+/* —— 浮层 —— */
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 91;
+  width: min(320px, 86vw);
+  padding: var(--space-md);
+  background: var(--bg2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  animation: popIn 0.16s var(--ease-tap);
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.popoverHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--rule);
+}
+
+.popoverTitle {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.popoverHint {
+  font-size: 0.7rem;
+  color: var(--muted);
+}

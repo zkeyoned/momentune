@@ -24,13 +24,14 @@ import {
   // 用户偏好
   initUserPreference,
   processInteraction,
+  // 音乐库
+  HOT_CHART_2026,
   // 工具
   findNearestEmotionLabel,
   resolveEmotionLabels,
   calcVADistance,
   // 配置(展示调参)
   MATCH_WEIGHTS,
-  EMOTION_VA_COORDINATES,
   // 类型
   type PhotoFeatures,
   type Song,
@@ -75,69 +76,7 @@ function createSamplePhoto(): PhotoFeatures {
 // ============================================================================
 
 function createSampleLibrary(): Song[] {
-  const songs: Song[] = [];
-
-  // 辅助:按情绪标签构造歌曲
-  const make = (
-    id: string,
-    title: string,
-    artist: string,
-    layer: Song['layer'],
-    label: keyof typeof EMOTION_VA_COORDINATES,
-    genres: Song['genres'],
-    sceneTags: Song['sceneTags'],
-    language: Song['language'] = 'mandarin',
-    hotRecency: Song['hotRecency'] = 'never',
-    decade = 2020,
-  ): Song => {
-    const va = EMOTION_VA_COORDINATES[label];
-    return {
-      songId: id,
-      title,
-      artist,
-      layer,
-      va: { v: va.v, a: va.a, confidence: layer === 'fallback' ? 0.65 : 0.85, source: 'manual' },
-      genres,
-      sceneTags,
-      language,
-      hotRecency,
-      decade,
-    };
-  };
-
-  // 热歌层(hot):抖音/汽水/网易云榜单
-  songs.push(make('h1', '孤勇者', '陈奕迅', 'hot', 'Epic', ['pop'], ['city_night'], 'mandarin', 'this_month', 2020));
-  songs.push(make('h2', '起风了', '买辣椒也用券', 'hot', 'Nostalgic', ['pop'], ['campus'], 'mandarin', 'this_month', 2018));
-  songs.push(make('h3', '错位时空', '艾辰', 'hot', 'Missing', ['pop'], ['late_night_emo'], 'mandarin', 'this_week', 2021));
-  songs.push(make('h4', '白月光与朱砂痣', '大籽', 'hot', 'Romantic', ['pop'], ['cafe_afternoon'], 'mandarin', 'this_month', 2020));
-  songs.push(make('h5', '飞鸟和蝉', '任然', 'hot', 'Melancholic', ['pop'], ['seaside_dusk'], 'mandarin', 'half_year', 2020));
-  songs.push(make('h6', '踏山河', '是七叔呢', 'hot', 'Epic', ['guofeng'], ['travel'], 'mandarin', 'this_month', 2021));
-  songs.push(make('h7', '黑月光', '毛不易', 'hot', 'Dark', ['pop'], ['city_night'], 'mandarin', 'half_year', 2023));
-  songs.push(make('h8', '星辰大海', '黄霄雲', 'hot', 'Exciting', ['pop'], ['morning_sunrise'], 'mandarin', 'this_week', 2021));
-
-  // 情绪层(emotion):emo163 数据集
-  songs.push(make('e1', '夜曲', '周杰伦', 'emotion', 'Melancholic', ['pop', 'rnb'], ['late_night_emo'], 'mandarin', 'older', 2005));
-  songs.push(make('e2', '晴天', '周杰伦', 'emotion', 'Nostalgic', ['pop'], ['campus'], 'mandarin', 'older', 2003));
-  songs.push(make('e3', '七里香', '周杰伦', 'emotion', 'Romantic', ['pop'], ['cafe_afternoon'], 'mandarin', 'older', 2004));
-  songs.push(make('e4', '稻香', '周杰伦', 'emotion', 'Healing', ['pop', 'folk'], ['morning_sunrise'], 'mandarin', 'older', 2008));
-  songs.push(make('e5', '遇见', '孙燕姿', 'emotion', 'Missing', ['pop'], ['rainy_window'], 'mandarin', 'older', 2003));
-  songs.push(make('e6', '后来', '刘若英', 'emotion', 'Touching', ['pop'], ['campus'], 'mandarin', 'older', 2001));
-  songs.push(make('e7', '成都', '赵雷', 'emotion', 'Nostalgic', ['folk'], ['travel'], 'mandarin', 'older', 2017));
-  songs.push(make('e8', '理想三旬', '陈鸿宇', 'emotion', 'Melancholic', ['folk'], ['rainy_window'], 'mandarin', 'older', 2015));
-  songs.push(make('e9', '南山南', '马頔', 'emotion', 'Lonely', ['folk'], ['late_night_emo'], 'mandarin', 'older', 2014));
-  songs.push(make('e10', '奇妙能力歌', '陈粒', 'emotion', 'Fresh', ['folk'], ['cafe_afternoon'], 'mandarin', 'older', 2015));
-  songs.push(make('e11', '光年之外', '邓紫棋', 'emotion', 'Epic', ['pop'], ['travel'], 'mandarin', 'older', 2016));
-  songs.push(make('e12', '泡沫', '邓紫棋', 'emotion', 'Touching', ['pop'], ['late_night_emo'], 'mandarin', 'older', 2014));
-
-  // 兜底层(fallback):免版权
-  songs.push(make('f1', '安静钢琴曲', 'RoyaltyFree', 'fallback', 'Peaceful', ['lofi'], ['cafe_afternoon'], 'instrumental', 'never', 2020));
-  songs.push(make('f2', '雨夜轻音乐', 'RoyaltyFree', 'fallback', 'Relaxing', ['lofi'], ['rainy_window'], 'instrumental', 'never', 2020));
-  songs.push(make('f3', '深夜电子', 'RoyaltyFree', 'fallback', 'Dark', ['electronic'], ['city_night'], 'instrumental', 'never', 2021));
-  songs.push(make('f4', '晨光Ambient', 'RoyaltyFree', 'fallback', 'Fresh', ['electronic'], ['morning_sunrise'], 'instrumental', 'never', 2020));
-  songs.push(make('f5', '公路旅行BGM', 'RoyaltyFree', 'fallback', 'Exciting', ['electronic'], ['road_trip'], 'instrumental', 'never', 2021));
-  songs.push(make('f6', '海边Lo-fi', 'RoyaltyFree', 'fallback', 'Dreamy', ['lofi'], ['seaside_dusk'], 'instrumental', 'never', 2020));
-
-  return songs;
+  return HOT_CHART_2026 as Song[];
 }
 
 // ============================================================================
@@ -222,12 +161,12 @@ async function main() {
   const answers: OnboardingAnswers = {
     platform: 'netease',
     referenceSongs: [
-      { title: '夜曲', artist: '周杰伦' },
-      { title: '成都', artist: '赵雷' },
+      { title: '山歌王', artist: '功夫胖/GAI周延' },
+      { title: 'POWER', artist: 'Kanye West' },
     ],
-    mood: 'empathizing',
-    genres: ['pop', 'folk'],
-    languages: ['mandarin'],
+    mood: 'igniting',
+    genres: ['rap', 'electronic', 'rnb'],
+    languages: ['mandarin', 'english'],
   };
 
   const library = createSampleLibrary();
@@ -273,7 +212,26 @@ async function main() {
       ` [${track.song.layer}] ${label}` +
       ` 分=${fmtScore(track.breakdown.finalScore)}` +
       ` 距离=${fmtScore(dist)}` +
+      ` 风格=[${track.song.genres.join(',')}]` +
       `${track.isExplore ? ' ⭐探索' : ''}`,
+    );
+  });
+
+  // 调试:候选池 Top 20 得分明细
+  console.log(`\n🔍 候选池 Top 20 得分明细(按 finalScore 排序):`);
+  const allScored = [...result.coreTracks, ...result.extendedTracks]
+    .sort((a, b) => b.breakdown.finalScore - a.breakdown.finalScore)
+    .slice(0, 20);
+  allScored.forEach((track, i) => {
+    const b = track.breakdown;
+    console.log(
+      `  ${String(i + 1).padStart(2)}. ${track.song.title.padEnd(20)}` +
+      ` VA=${fmtScore(b.scoreVA)}` +
+      ` 场景=${fmtScore(b.scoreScene)}` +
+      ` 偏好=${fmtScore(b.scorePref)}` +
+      ` 热歌=${fmtScore(b.scoreHot)}` +
+      ` 最终=${fmtScore(b.finalScore)}` +
+      ` [${track.song.genres.join(',')}]`,
     );
   });
 

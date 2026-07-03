@@ -77,8 +77,8 @@ export const GPS_REQUEST_TIMEOUT = 800;
 export const LATE_NIGHT_ADJUSTMENT = {
   startHour: 22,
   endHour: 5,
-  vDelta: -0.08, // V 减 0.08
-  aDelta: -0.10, // A 减 0.10
+  vDelta: -0.03, // V 微调减 0.03(深夜偏沉思,但不一定忧伤)
+  aDelta: -0.05, // A 减 0.05(深夜整体能量稍低)
 } as const;
 
 /** 冲突置信度阈值:低于此值走纯兜底(色调+时段+天气) */
@@ -96,12 +96,12 @@ export const VA_DISTANCE_WEIGHTS = {
 
 /** 主匹配各维度权重(加性策略,总和=1.0) */
 export const MATCH_WEIGHTS = {
-  scoreVA: 0.40, // V-A 距离(核心,从 0.45 让渡 0.05 给偏好)
-  scoreScene: 0.15, // 场景标签(从 0.17 让渡 0.02 给偏好)
-  scorePref: 0.25, // 用户偏好(从 0.15 提升到 0.25,用户选择更影响结果)
-  scoreSceneFit: 0.08, // 场景适配(从 0.10 让渡 0.02 给偏好)
+  scoreVA: 0.30, // V-A 距离(情绪匹配,从 0.35 降)
+  scoreScene: 0.10, // 场景标签(从 0.12 降)
+  scorePref: 0.35, // 用户偏好(从 0.30 提升到 0.35,风格优先)
+  scoreSceneFit: 0.08, // 场景适配
   scoreRefSim: 0.05, // 参考歌相似度
-  scoreHot: 0.07, // 热歌度(从 0.08 微降)
+  scoreHot: 0.12, // 热歌度(从 0.10 微升)
 } as const;
 
 /** 场景适配度贝叶斯平滑系数 m(先验权重,越大越偏向先验) */
@@ -127,7 +127,7 @@ export const CONFIDENCE_PENALTY = {
 // ============================================================================
 
 /** 阶段 1 候选池:V-A 距离上限 */
-export const CANDIDATE_POOL_VA_DISTANCE = 0.45;
+export const CANDIDATE_POOL_VA_DISTANCE = 0.60;
 
 /** 阶段 1 候选池:冷门情绪放宽阈值 */
 export const CANDIDATE_POOL_VA_DISTANCE_LOOSE = 0.60;
@@ -142,10 +142,10 @@ export const CORE_MAX_SAME_ARTIST = 1;
 export const CORE_MAX_SAME_LABEL = 2;
 
 /** 阶段 1 热歌占比下限(8 首中至少 N 首) */
-export const CORE_MIN_HOT_COUNT = 3;
+export const CORE_MIN_HOT_COUNT = 2;
 
 /** 阶段 1 热歌占比上限(8 首中至多 N 首) */
-export const CORE_MAX_HOT_COUNT = 6;
+export const CORE_MAX_HOT_COUNT = 5;
 
 /** 阶段 1 兜底层最多 */
 export const CORE_MAX_FALLBACK = 1;
@@ -259,13 +259,13 @@ export const PREF_WEIGHT_CLAMP = {
 } as const;
 
 /** 冷启动期前 N 次推荐 */
-export const COLD_START_INTERACTIONS = 5;
+export const COLD_START_INTERACTIONS = 3;
 
-/** 冷启动期 score_pref 权重降为 */
-export const COLD_START_PREF_WEIGHT = 0.08;
+/** 冷启动期 score_pref 权重降为(从 0.35 降到 0.22,不是完全忽略) */
+export const COLD_START_PREF_WEIGHT = 0.22;
 
 /** 冷启动期释放给 score_hot 的权重 */
-export const COLD_START_HOT_WEIGHT_BOOST = 0.07;
+export const COLD_START_HOT_WEIGHT_BOOST = 0.03;
 
 /** 时段偏好显著阈值(某情绪占比超过此值则触发加成) */
 export const HOURLY_EMOTION_BIAS_THRESHOLD = 0.60;

@@ -249,8 +249,8 @@ describe('calcHotBoostByRecency', () => {
     expect(calcHotBoostByRecency('this_week')).toBe(1.0);
   });
 
-  it('从未上榜 → boost = 0.30', () => {
-    expect(calcHotBoostByRecency('never')).toBe(0.30);
+  it('从未上榜 → boost = 0.45', () => {
+    expect(calcHotBoostByRecency('never')).toBe(0.45);
   });
 
   it('boost 随新鲜度递减', () => {
@@ -272,7 +272,7 @@ describe('calcHotBoostByRecency', () => {
 
   it('never 不衰减', () => {
     const listedDate = Date.now() - 100 * 24 * 60 * 60 * 1000;
-    expect(calcHotBoostByRecency('never', listedDate)).toBe(0.30);
+    expect(calcHotBoostByRecency('never', listedDate)).toBe(0.45);
   });
 });
 
@@ -289,9 +289,9 @@ describe('calcHotBoostMultiplier 乘性 boost', () => {
     expect(calcHotBoostMultiplier(song)).toBeCloseTo(1 + HOT_BOOST_MAX, 6);
   });
 
-  it('非热歌 → 1 + 0.20×0.30 = 1.06', () => {
+  it('非热歌 → 1 + 0.20×0.45 = 1.09', () => {
     const song = createSong({ hotRecency: 'never' });
-    expect(calcHotBoostMultiplier(song)).toBeCloseTo(1 + HOT_BOOST_MAX * 0.30, 4);
+    expect(calcHotBoostMultiplier(song)).toBeCloseTo(1 + HOT_BOOST_MAX * 0.45, 4);
   });
 
   it('boost 范围 [1.0, 1.20]', () => {

@@ -108,13 +108,13 @@ export const TIME_OF_DAY_VA_MAP: Readonly<Record<TimeOfDay, VACoordinate & { rea
   golden_hour:  { v: 0.68, a: 0.42, reason: '黄金时刻,温暖浪漫' },
   dusk:         { v: 0.55, a: 0.35, reason: '浪漫怀旧' },
   blue_hour:    { v: 0.42, a: 0.38, reason: '蓝调时刻,忧郁静谧' },
-  night:        { v: 0.32, a: 0.45, reason: '孤独神秘' },
-  midnight:     { v: 0.22, a: 0.30, reason: '深夜emo,极低V' },
+  night:        { v: 0.42, a: 0.50, reason: '深夜多元:霓虹/独处/夜生活,中性偏中唤醒' },
+  midnight:     { v: 0.28, a: 0.32, reason: '深夜emo,极低V低A' },
   // —— 第 4 轮新增 4 类时段 ——
   early_morning:{ v: 0.62, a: 0.45, reason: '一日之始,积极中等唤醒' },
   afternoon:    { v: 0.58, a: 0.48, reason: '平稳,中性偏积极' },
   evening:      { v: 0.45, a: 0.40, reason: '日落过渡,偏沉思' },
-  late_night:   { v: 0.25, a: 0.35, reason: '深夜0-2点,消极低唤醒' },
+  late_night:   { v: 0.32, a: 0.38, reason: '深夜0-2点,偏沉思中等偏低唤醒' },
 } as const;
 
 // ============================================================================

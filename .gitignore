@@ -7,3 +7,8 @@ coverage/
 .env.local
 .vscode/
 .idea/
+
+# Capacitor 原生工程(由 cap add 生成,不入库)
+ios/
+android/
+.capacitor/

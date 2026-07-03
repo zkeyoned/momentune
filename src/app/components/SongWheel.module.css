@@ -1,0 +1,233 @@
+/* ============================================================
+   SongWheel — 垂直 Cover-Flow 轮盘选歌器
+   配色: Filmscape 胶片日记 (暖琥珀 #E8A87C)
+   ============================================================ */
+
+.card {
+  max-width: 380px;
+  margin: 0 auto;
+  padding: var(--space-md);
+  background: var(--bg);
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 暖光氛围:从照片侧(左)向右渗入,氛围渗透替代原花括号符号连接 */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -10%;
+  width: 65%;
+  height: 85%;
+  transform: translateY(-50%);
+  background: radial-gradient(
+    ellipse at left center,
+    rgba(232, 168, 124, 0.11) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+/* —— 左:照片(拍立得化,奶油米边框 + 底部手写题字) —— */
+.photo {
+  flex: 0 0 180px;
+  width: 180px;
+  height: 240px;
+  border-radius: var(--radius-sm);
+  background: var(--ink);  /* 奶油米拍立得纸边 */
+  padding: 8px 8px 0;
+  box-sizing: border-box;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.photoImg {
+  width: 100%;
+  flex: 1;
+  object-fit: cover;
+  border-radius: 2px;
+  display: block;
+  min-height: 0;
+}
+
+/* 拍立得底部题字区:手写感字体,深色字在奶油米底上 */
+.photoChip {
+  font-family: var(--font-hand);
+  font-size: 0.98rem;
+  color: #2E2620;
+  text-align: center;
+  padding: 9px 4px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+/* —— 右:垂直滚轮视口 —— */
+.viewport {
+  flex: 0 0 100px;
+  width: 100px;
+  height: 240px;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  cursor: grab;
+  touch-action: pan-y;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 18%,
+    #000 82%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 18%,
+    #000 82%,
+    transparent 100%
+  );
+}
+
+.viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.track {
+  display: flex;
+  flex-direction: column;
+  padding: 78px 0;
+  gap: 12px;
+}
+
+/* —— 单张封面 —— */
+.cover {
+  width: 100%;
+  height: 84px;
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 70ms linear, opacity 120ms ease-out;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.art {
+  width: 84px;
+  height: 84px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--rule);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.artInitial {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* 居中激活态:黑胶光泽 + 抬起暖阴影(替代原绿描边)
+   inset 顶部高光模拟黑胶唱片反光,外阴影让封面"抬起" */
+.coverActive .art {
+  border-color: var(--accent);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.45),
+    0 0 14px rgba(232, 168, 124, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+/* 播放中波形(封面右上角) */
+.playingDot {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+  padding: 2px 3px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(4px);
+}
+
+.bar {
+  width: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  animation: barWave 0.9s ease-in-out infinite;
+}
+
+.bar:nth-child(1) { height: 60%; animation-delay: -0.4s; }
+.bar:nth-child(2) { height: 100%; animation-delay: -0.2s; }
+.bar:nth-child(3) { height: 70%; animation-delay: 0s; }
+
+@keyframes barWave {
+  0%, 100% { transform: scaleY(0.4); }
+  50% { transform: scaleY(1); }
+}
+
+.pausedBadge {
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  font-size: 0.55rem;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 4px;
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(4px);
+}
+
+/* —— 下方:当前居中曲目信息 —— */
+.now {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+}
+
+.nowTitle {
+  font-family: var(--font-display);
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nowMood {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}

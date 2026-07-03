@@ -438,13 +438,13 @@ describe('processInteraction 完整偏好更新', () => {
 // ============================================================================
 
 describe('isColdStart', () => {
-  it('interactionCount < 5 → 冷启动', () => {
-    const pref = createDefaultUserPreference({ interactionCount: 3 });
+  it('interactionCount < 3 → 冷启动', () => {
+    const pref = createDefaultUserPreference({ interactionCount: 2 });
     expect(isColdStart(pref)).toBe(true);
   });
 
-  it('interactionCount >= 5 → 非冷启动', () => {
-    const pref = createDefaultUserPreference({ interactionCount: 5 });
+  it('interactionCount >= 3 → 非冷启动', () => {
+    const pref = createDefaultUserPreference({ interactionCount: 3 });
     expect(isColdStart(pref)).toBe(false);
   });
 });

@@ -1,0 +1,93 @@
+.page {
+  padding-bottom: var(--space-2xl);
+}
+
+.photoWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--bg2);
+}
+
+.photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photoOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--space-lg) var(--space-md) var(--space-sm);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+.emotionPill {
+  display: inline-block;
+  padding: 0.3em 0.9em;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: rgba(232, 168, 124, 0.85);
+  border-radius: var(--radius-pill);
+  backdrop-filter: blur(4px);
+}
+
+.location {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-mono);
+}
+
+.meta {
+  font-size: 0.78rem;
+  margin-bottom: var(--space-xs);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 8vw, 2.3rem);
+  font-weight: 600;
+  margin: 0 0 var(--space-md);
+  font-variation-settings: "opsz" 144;
+}
+
+/* 心情文本用手写感字体,和 ResultPage textarea 呼应,落实"胶片日记"体验 */
+.text {
+  font-family: var(--font-hand);
+  font-size: 1.25rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  color: var(--ink);
+}
+
+.songList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+}
+
+.deleteBtn {
+  color: var(--accent2);
+  border-color: var(--accent2);
+}
+
+.deleteBtn:hover {
+  background: rgba(195, 141, 95, 0.08);
+}

@@ -1,0 +1,94 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.contentSection {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--space-md) var(--space-sm);
+  overflow: hidden;
+}
+
+.hero {
+  text-align: center;
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 暖色光晕:模拟胶片冲洗时的暖光扩散 */
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: -20%;
+  width: 140%;
+  height: 180%;
+  background:
+    radial-gradient(ellipse at 30% 30%, rgba(232, 168, 124, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 70%, rgba(195, 141, 95, 0.12) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* 胶片编号小标签:像胶卷盒上的戳记 */
+.filmBadge {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  color: var(--accent2);
+  border: 1px solid var(--accent2);
+  padding: 2px 9px;
+  border-radius: var(--radius-sm);
+  opacity: 0.72;
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+}
+
+.title {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 9vw, 2.6rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  margin: 0 0 3px;
+  /* Fraunces 光学尺寸:大字号时更立体 */
+  font-variation-settings: "opsz" 144;
+}
+
+.taglineEn {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-hand);
+  font-size: 1.1rem;
+  font-style: italic;
+  color: var(--accent);
+  margin: 0;
+  letter-spacing: 0.01em;
+  opacity: 0.92;
+}
+
+/* —— section 标题栏(h2 + 右上角收纳按钮) —— */
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  flex-shrink: 0;
+}
+
+/* sectionHead 内的 h2 取消自带下边距,避免和按钮对不齐 */
+.sectionHead h2 {
+  margin-bottom: 0;
+}

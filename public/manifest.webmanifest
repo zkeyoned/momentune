@@ -1,0 +1,26 @@
+{
+  "name": "Momentune · 瞬间旋律",
+  "short_name": "Momentune",
+  "description": "拍照→AI情绪分析→音乐推荐→图文音乐日记",
+  "theme_color": "#faf7f2",
+  "background_color": "#faf7f2",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "scope": "/",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

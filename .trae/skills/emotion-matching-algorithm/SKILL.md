@@ -1,6 +1,6 @@
 ---
 name: "emotion-matching-algorithm"
-description: "Designs and refines the photo-to-music emotion matching algorithm for Momentune. Invoke when discussing V-A coordinate mapping, scene recognition, GPS fallback, music library tagging, or matching formula design."
+description: "Designs and refines the photo-to-music emotion matching algorithm for Momentune. Invoke when discussing V-A coordinate mapping, scene recognition, GPS fallback, music library tagging, or matching formula design. Algorithm is DONE (v0.1.0, 403/403 tests passed), now working on frontend skeleton (React + TS + PWA)."
 ---
 
 # Momentune 情绪匹配算法设计师

@@ -1,0 +1,83 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import { fileURLToPath, URL } from 'node:url';
+
+// 注意：本文件用于 Vite 前端构建（dev/build/preview）。
+// 单元测试配置见 vitest.config.ts，二者互不影响。
+
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'icon.svg'],
+      manifest: {
+        name: 'Momentune · 瞬间旋律',
+        short_name: 'Momentune',
+        description: '拍照→AI情绪分析→音乐推荐→图文音乐日记',
+        // 深色主题:智能绿主色 + 深蓝黑底
+        theme_color: '#0d1117',
+        background_color: '#0d1117',
+        display: 'standalone',
+        display_override: ['standalone', 'fullscreen', 'window-controls-overlay'],
+        orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
+        lang: 'zh-CN',
+        categories: ['lifestyle', 'music', 'photography'],
+        icons: [
+          {
+            src: '/icon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
+            purpose: 'any',
+          },
+          {
+            src: '/icon-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,woff}'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+      },
+      devOptions: {
+        enabled: false,
+      },
+    }),
+  ],
+  resolve: {
+    alias: {
+      '@algorithm': fileURLToPath(new URL('./src/algorithm', import.meta.url)),
+      '@config': fileURLToPath(new URL('./src/algorithm/config', import.meta.url)),
+      '@app': fileURLToPath(new URL('./src/app', import.meta.url)),
+    },
+  },
+  server: {
+    port: 5173,
+    host: true,
+    open: false,
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+    target: 'es2020',
+  },
+});

@@ -3,7 +3,9 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022", "DOM"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client", "vite-plugin-pwa/client"],
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -19,6 +21,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": false,
+    "allowImportingTsExtensions": false,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -27,11 +30,13 @@
     "baseUrl": ".",
     "paths": {
       "@algorithm/*": ["src/algorithm/*"],
-      "@config/*": ["src/algorithm/config/*"]
+      "@config/*": ["src/algorithm/config/*"],
+      "@app/*": ["src/app/*"]
     }
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.tsx",
     "data/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]

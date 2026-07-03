@@ -1,0 +1,327 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  flex: 1;
+  min-height: 0;
+}
+
+/* —— 取景框(自适应剩余高度,填满可用空间,避免溢出被裁) —— */
+.viewfinder {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  flex: 1;
+  min-height: 0;
+  background: #000;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(232, 168, 124, 0.1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 摄像头实时画面(填满取景框,始终镜像预览) */
+.cameraVideo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+  transform: scaleX(-1);
+}
+
+/* 胶片暗角:边缘略暗的镜头感 vignette(替代原扫描线,去掉工具感) */
+.viewfinder::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 52%,
+    rgba(0, 0, 0, 0.38) 100%
+  );
+  pointer-events: none;
+}
+
+/* 隐藏 canvas(用于截帧,不可见) */
+.hiddenCanvas {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* 胶片定位点:四角暖琥珀小光点,替代原扫描仪 L 角标 */
+.corner {
+  position: absolute;
+  z-index: 3;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.75;
+  box-shadow: 0 0 8px rgba(232, 168, 124, 0.55);
+}
+
+.corner[data-pos='tl'] { top: 11px; left: 11px; }
+.corner[data-pos='tr'] { top: 11px; right: 11px; }
+.corner[data-pos='bl'] { bottom: 11px; left: 11px; }
+.corner[data-pos='br'] { bottom: 11px; right: 11px; }
+
+.vfCenter {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.vfIcon {
+  font-size: 2.6rem;
+  opacity: 0.7;
+  filter: grayscale(0.2);
+}
+
+.vfHint {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+/* —— 取景框顶部信息条(模式/状态) —— */
+.vfTopBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.vfMode {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  color: #fff;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: rgba(232, 168, 124, 0.88);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.vfStatus {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.vfStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  box-shadow: 0 0 6px var(--accent-red);
+  animation: recPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes recPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* —— 控制区:相册 + 快门 + 翻转 (统一圆形,紧凑) —— */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: var(--space-sm) 0;
+  flex-shrink: 0;
+}
+
+/* 小圆按钮通用样式(相册 / 翻转) */
+.miniBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(22, 27, 34, 0.7);
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color var(--dur-hov) ease, color var(--dur-hov) ease,
+    transform var(--dur-tap) var(--ease-tap), background var(--dur-hov) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.miniBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(232, 168, 124, 0.1);
+}
+
+.miniBtn:active {
+  transform: scale(var(--tap-scale));
+}
+
+.miniBtn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* 翻转按钮按压时旋转 */
+.flipBtn:active {
+  transform: scale(var(--tap-scale)) rotate(180deg);
+}
+
+/* 快门大圆钮:暖琥珀金属质感,像相机金属快门键 */
+.shutter {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(232, 168, 124, 0.85);
+  background: var(--bg2);
+  padding: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--dur-tap) var(--ease-tap),
+    box-shadow var(--dur-hov) ease;
+  box-shadow: 0 0 0 2px var(--bg), 0 6px 20px rgba(232, 168, 124, 0.32);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shutter:hover {
+  box-shadow: 0 0 0 2px var(--bg), 0 8px 28px rgba(232, 168, 124, 0.45);
+}
+
+.shutter:active {
+  transform: scale(var(--tap-scale-strong));
+}
+
+.shutter:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.shutterInner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: background 0.2s ease;
+}
+
+.shutter:active .shutterInner {
+  background: var(--accent2);
+}
+
+.shutter:disabled .shutterInner {
+  background: var(--muted);
+}
+
+/* —— 示例入口 —— */
+.samplesToggle {
+  align-self: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-style: italic;
+  background: transparent;
+  padding: var(--space-xs) var(--space-md);
+  border-bottom: 1px dashed var(--rule);
+  transition: color 0.2s ease;
+  cursor: pointer;
+}
+
+.samplesToggle:hover {
+  color: var(--accent);
+}
+
+.samples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.samplesTitle {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+}
+
+.sampleItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: var(--warm-cream);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--dur-hov) ease,
+    transform var(--dur-tap) var(--ease-tap);
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.sampleItem:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.sampleItem:active {
+  transform: scale(var(--tap-scale));
+}
+
+.sampleImg {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--bg2);
+}
+
+.sampleLabel {
+  font-size: 0.75rem;
+  color: var(--ink);
+  text-align: center;
+  font-weight: 500;
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
