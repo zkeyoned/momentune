@@ -1,15 +1,11 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { useMemo, useRef, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SAMPLE_PHOTOS } from '../services/mockApi';
 import type { SamplePhoto } from '../services/mockApi';
 import { useAnalysisStore } from '../stores/analysisStore';
-import {
-  isNative,
-  takeNativePhoto,
-  pickNativePhoto,
-  hapticImpact,
-  hapticNotify,
-} from '../services/nativeBridge';
+import { isNative, hapticImpact, hapticNotify } from '../services/nativeBridge';
+import { createPhotoStrategy } from '../services/photoStrategy';
+import { useCameraManager } from '../hooks/useCameraManager';
 import styles from './PhotoCapture.module.css';
 
 interface PhotoCaptureProps {
@@ -22,66 +18,16 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
   const setPending = useAnalysisStore((s) => s.setPending);
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [cameraReady, setCameraReady] = useState(false);
-  const [cameraError, setCameraError] = useState(false);
-  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
   const native = isNative();
 
-  // Web 环境:启动摄像头预览。原生环境用系统相机,不需要预览。
-  useEffect(() => {
-    if (variant !== 'full' || native) return;
+  // 摄像头资源管理(Web 环境)
+  const camera = useCameraManager(videoRef, variant === 'full' && !native);
 
-    let cancelled = false;
-    const startCamera = async () => {
-      try {
-        // 先停掉旧流
-        streamRef.current?.getTracks().forEach((t) => t.stop());
-
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-        setCameraReady(true);
-        setCameraError(false);
-      } catch {
-        if (!cancelled) setCameraError(true);
-      }
-    };
-    startCamera();
-
-    return () => {
-      cancelled = true;
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    };
-  }, [variant, native, facingMode]);
-
-  // Web 快门:从视频帧截取一张照片(始终镜像,与预览一致)
-  const captureFrame = (): string | null => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.videoWidth === 0) return null;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-    // 始终水平镜像,与 CSS 预览一致
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0);
-    return canvas.toDataURL('image/jpeg', 0.9);
-  };
+  // 平台拍照策略
+  const photoStrategy = useMemo(
+    () => createPhotoStrategy(camera.captureFrame, fileRef),
+    [camera.captureFrame],
+  );
 
   /** 提交照片到分析流程 */
   const submitPhoto = (
@@ -107,43 +53,25 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
   // —— 拍照 ——
   const handleShutter = async () => {
     void hapticImpact('medium');
-
-    // 原生环境:调系统相机
-    if (native) {
-      const photo = await takeNativePhoto();
-      if (photo && photo.path) {
-        submitPhoto(photo.path, 'camera', `抓拍 ${new Date().toLocaleTimeString()}`);
-      }
-      return;
+    const photoData = await photoStrategy.capturePhoto();
+    if (photoData) {
+      submitPhoto(photoData, 'camera', `抓拍 ${new Date().toLocaleTimeString()}`);
     }
-
-    // Web 环境:从视频截帧
-    const dataUrl = captureFrame();
-    if (!dataUrl) return;
-    submitPhoto(dataUrl, 'camera', `抓拍 ${new Date().toLocaleTimeString()}`);
   };
 
   // —— 切换前后置 ——
   const handleFlip = () => {
     void hapticImpact('light');
-    setFacingMode((m) => (m === 'environment' ? 'user' : 'environment'));
+    camera.flipCamera();
   };
 
   // —— 选照片(相册) ——
   const handleAlbum = async () => {
     void hapticImpact('light');
-
-    // 原生环境:调系统相册
-    if (native) {
-      const photo = await pickNativePhoto();
-      if (photo && photo.path) {
-        submitPhoto(photo.path, 'album', '我的照片');
-      }
-      return;
+    const photoData = await photoStrategy.pickPhoto();
+    if (photoData) {
+      submitPhoto(photoData, 'album', '我的照片');
     }
-
-    // Web 环境:触发 file input
-    fileRef.current?.click();
   };
 
   const handlePick = (photo: SamplePhoto) => {
@@ -199,7 +127,7 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
     );
   }
 
-  const isFront = facingMode === 'user';
+  const isFront = camera.facingMode === 'user';
 
   return (
     <div className={styles.wrap}>
@@ -225,7 +153,7 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
             {/* 顶部信息条(模式 + 状态) */}
             <div className={styles.vfTopBar}>
               <span className={styles.vfMode}>{isFront ? '自拍' : '后置'}</span>
-              {cameraReady && (
+              {camera.isReady && (
                 <span className={styles.vfStatus}>
                   <span className={styles.vfStatusDot} aria-hidden />
                   LIVE
@@ -237,19 +165,18 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
             <span className={styles.corner} data-pos="tr" aria-hidden />
             <span className={styles.corner} data-pos="bl" aria-hidden />
             <span className={styles.corner} data-pos="br" aria-hidden />
-            {!cameraReady && !cameraError && (
+            {!camera.isReady && !camera.hasError && (
               <span className={styles.vfCenter} aria-hidden>
                 <span className={styles.vfIcon}>📷</span>
                 <span className={styles.vfHint}>正在启动摄像头...</span>
               </span>
             )}
-            {cameraError && (
+            {camera.hasError && (
               <span className={styles.vfCenter} aria-hidden>
                 <span className={styles.vfIcon}>📷</span>
                 <span className={styles.vfHint}>无法访问摄像头</span>
               </span>
             )}
-            <canvas ref={canvasRef} className={styles.hiddenCanvas} />
           </>
         )}
       </div>
@@ -275,7 +202,7 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
           type="button"
           className={styles.shutter}
           onClick={handleShutter}
-          disabled={!native && !cameraReady}
+          disabled={!native && !camera.isReady}
           aria-label="拍照"
         >
           <span className={styles.shutterInner} />

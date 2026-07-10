@@ -1,5 +1,6 @@
 .page {
-  padding-bottom: var(--space-2xl);
+  /* 预留底部空间避开 fixed MusicPlayer(约 90px) + BottomNav(72px) + safe-area */
+  padding-bottom: calc(var(--nav-height) + 110px + var(--safe-bottom));
 }
 
 /* —— 轮盘选歌区 —— */

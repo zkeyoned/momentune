@@ -1,3 +1,9 @@
+/* ============================================================
+   BottomNav — 暖色胶片设计稿风格
+   5 项: 首页 / 回忆 / [相机凸起] / 收藏 / 我的
+   中间相机按钮 58px 圆形 caramel 渐变,凸出导航栏
+   ============================================================ */
+
 .nav {
   position: fixed;
   bottom: 0;
@@ -7,26 +13,35 @@
   max-width: var(--app-max-width);
   height: calc(var(--nav-height) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
-  background: rgba(26, 22, 20, 0.88);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  /* 旧纸奶油底 + 毛玻璃 */
+  background: rgba(217, 202, 168, 0.94);
+  backdrop-filter: blur(16px) saturate(1.05);
+  -webkit-backdrop-filter: blur(16px) saturate(1.05);
   border-top: 1px solid var(--rule);
   display: flex;
+  align-items: center;
   z-index: 100;
+  box-shadow: 0 -6px 24px rgba(90, 64, 38, 0.08);
 }
 
+/* 普通 tab 项(左右两侧) */
 .tab {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   position: relative;
+  height: 100%;
   color: var(--muted);
   text-decoration: none;
-  font-size: 0.72rem;
+  background: transparent;
+  border: 0;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
   letter-spacing: 0.04em;
+  cursor: pointer;
   transition: color var(--dur-hov) ease,
     transform var(--dur-tap) var(--ease-tap);
   -webkit-tap-highlight-color: transparent;
@@ -36,7 +51,7 @@
   transform: scale(var(--tap-scale));
 }
 
-/* 激活态:顶部小条指示 + 颜色加重 + 图标轻微抬升 */
+/* 激活态: caramel 主色 + 顶部小条指示 */
 .tab.active {
   color: var(--accent);
 }
@@ -48,7 +63,7 @@
   left: 50%;
   transform: translateX(-50%);
   width: 24px;
-  height: 2px;
+  height: 2.5px;
   background: var(--accent);
   border-radius: 0 0 2px 2px;
   animation: tabIndicator 0.3s var(--ease-tap);
@@ -65,6 +80,17 @@
   }
 }
 
+/* 禁用态(收藏暂未开放) */
+.disabled {
+  color: var(--muted);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.disabled:active {
+  transform: none;
+}
+
 .icon {
   display: flex;
   align-items: center;
@@ -78,7 +104,57 @@
 }
 
 .label {
-  font-family: var(--font-serif);
-  font-size: 0.7rem;
+  font-family: var(--font-sans);
+  font-size: 0.66rem;
   letter-spacing: 0.05em;
+  font-weight: 400;
+}
+
+/* —— 中间凸起相机按钮 ——
+   58px 圆形 caramel 渐变,向上凸出导航栏 16px
+   设计稿: linear-gradient(145deg,#D08A5E,#B0623C) */
+.cameraBtn {
+  flex: 1;
+  position: relative;
+  height: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cameraBtnInner {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #B9754F, #8B5236);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #E8DCC0;
+  box-shadow: 0 8px 20px rgba(139, 82, 54, 0.45),
+    0 0 0 4px rgba(217, 202, 168, 0.94);
+  transition: transform var(--dur-tap) var(--ease-tap),
+    box-shadow var(--dur-hov) ease;
+}
+
+.cameraBtnInner svg {
+  width: 24px;
+  height: 24px;
+}
+
+.cameraBtn:hover .cameraBtnInner {
+  box-shadow: 0 10px 26px rgba(139, 82, 54, 0.55),
+    0 0 0 4px rgba(217, 202, 168, 0.94);
+}
+
+.cameraBtn:active .cameraBtnInner {
+  transform: translateX(-50%) scale(0.92);
 }

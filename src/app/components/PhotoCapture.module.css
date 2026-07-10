@@ -47,15 +47,6 @@
   pointer-events: none;
 }
 
-/* 隐藏 canvas(用于截帧,不可见) */
-.hiddenCanvas {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* 胶片定位点:四角暖琥珀小光点,替代原扫描仪 L 角标 */
 .corner {
   position: absolute;

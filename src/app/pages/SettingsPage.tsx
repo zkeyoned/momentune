@@ -108,12 +108,6 @@ export function SettingsPage() {
           </div>
         )}
       </section>
-
-      <section className="section">
-        <h2>关于</h2>
-        <p className="muted">Momentune · TRAE AI 创造力大赛参赛作品</p>
-        <p className="muted mt-sm">照片情绪 → 音乐推荐 → 图文日记</p>
-      </section>
     </div>
   );
 }

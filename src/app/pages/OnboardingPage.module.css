@@ -10,7 +10,7 @@
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: var(--bg);
+  background: rgba(10, 10, 10, 0.92);
   display: flex;
   justify-content: center;
   animation: fadeIn 0.25s ease;
@@ -66,21 +66,23 @@
   right: var(--space-md);
   top: 50%;
   transform: translateY(-50%);
-  background: transparent;
-  border: none;
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35em 0.8em;
   font-family: var(--font-serif);
-  font-size: 0.85rem;
-  padding: 4px 8px;
+  font-size: 0.78rem;
+  color: var(--ink);
+  background: var(--warm-cream);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: color var(--dur-hov) ease, background var(--dur-hov) ease;
+  transition: border-color var(--dur-hov) ease, background var(--dur-hov) ease,
+    transform var(--dur-tap) var(--ease-tap);
   -webkit-tap-highlight-color: transparent;
 }
 
 .skipBtn:hover {
-  color: var(--accent);
-  background: rgba(232, 168, 124, 0.08);
+  border-color: var(--accent);
 }
 
 .skipBtn:active {
@@ -236,6 +238,60 @@
   margin: var(--space-sm) 0 0;
 }
 
+/* sticky 已选标签栏 */
+.selectedBar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  margin-top: var(--space-sm);
+  background: linear-gradient(to bottom, var(--bg) 70%, transparent);
+}
+
+.selectedBar .selectedCount {
+  margin: 2px 0 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.selectedChips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.selectedChips::-webkit-scrollbar {
+  display: none;
+}
+
+.selectedChip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3em 0.7em;
+  font-family: var(--font-serif);
+  font-size: 0.75rem;
+  color: var(--accent2);
+  background: rgba(232, 168, 124, 0.12);
+  border: 1px solid rgba(232, 168, 124, 0.3);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background var(--dur-hov) ease;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+
+.selectedChip:hover {
+  background: rgba(232, 168, 124, 0.2);
+}
+
 .genreGroup {
   margin-top: var(--space-lg);
 }
@@ -289,9 +345,22 @@
   font-size: 0.7rem;
 }
 
-.skipGenreBtn {
+.genreFooterBtns {
+  display: flex;
+  gap: var(--space-sm);
   margin-top: var(--space-lg);
-  font-size: 0.85rem;
+  position: sticky;
+  bottom: 0;
+  padding-top: var(--space-md);
+  background: linear-gradient(to top, var(--bg) 60%, transparent);
+}
+
+.genreFooterBtns .btn {
+  flex: 1;
+}
+
+.genreFooterBtns .btn-ghost {
+  flex: 0 0 auto;
 }
 
 /* —— 底部按钮固定区 —— */

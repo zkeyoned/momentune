@@ -7,9 +7,8 @@
  *  3. 风格偏好(至少 3 个,可跳过)
  *  4. 情绪偏好
  *  5. 语言偏好
- *  6. 平台连接(可跳过,稍后在设置里再绑)
  *
- * 完成后由 OnboardingPage 调用 mockApi 初始化 UserPreference 并写入 userStore。
+ * 完成后由 OnboardingPage 调用 initUserPreference 初始化 UserPreference 并写入 userStore。
  */
 
 import { create } from 'zustand';
@@ -21,7 +20,7 @@ import type {
   PlatformPreference,
 } from '@algorithm/index';
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 
 interface OnboardingState {
   step: number;

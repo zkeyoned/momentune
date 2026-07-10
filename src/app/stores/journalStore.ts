@@ -10,6 +10,34 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import type { EmotionLabel, Song } from '@algorithm/index';
 import type { JournalEntry } from '../types';
 
+/**
+ * mock 种子歌曲:从 HOT_CHART_2026 中精选 3 组(每组 2 首),
+ * 与种子日记的情绪/场景匹配,便于时间线/日历页直接展示歌曲行。
+ * 后续接入真实推荐结果时,这些 mock 数据会被替换。
+ */
+function mockSong(
+  songId: string,
+  title: string,
+  artist: string,
+  v: number,
+  a: number,
+  genres: Song['genres'],
+  sceneTags: Song['sceneTags'],
+): Song {
+  return {
+    songId,
+    title,
+    artist,
+    layer: 'hot',
+    va: { v, a, confidence: 0.9, source: 'manual' },
+    genres,
+    sceneTags,
+    language: 'mandarin',
+    hotRecency: 'this_month',
+    decade: 2026,
+  };
+}
+
 /** mock 种子日记(避免空状态影响演示) */
 function seedJournals(): JournalEntry[] {
   const now = Date.now();
@@ -38,8 +66,11 @@ function seedJournals(): JournalEntry[] {
         isMixed: true,
         displayLabel: '温柔 · 惬意',
       },
-      songs: [] as Song[],
-      text: '今天的海,安静得像一句没说出口的话。',
+      songs: [
+        mockSong('hot_lianren_lironghao', '恋人', '李荣浩', 0.78, 0.32, ['pop', 'rnb'], ['wine_night', 'first_date']),
+        mockSong('hot_renjianyanhuo_chengxiang', '人间烟火', '程响', 0.7, 0.3, ['pop'], ['cafe_afternoon', 'city_walk']),
+      ],
+      text: '今天的海,安静得像一句没说出口的话。落日把潮汐染成蜂蜜色,耳机里循环着李荣浩,世界突然很慢。',
       location: '舟山 · 朱家尖',
     },
     {
@@ -65,8 +96,11 @@ function seedJournals(): JournalEntry[] {
         isMixed: true,
         displayLabel: '清冷 · 孤寂',
       },
-      songs: [] as Song[],
-      text: '末班车开过,路灯把影子拉得很长。',
+      songs: [
+        mockSong('hot_natianxiayule_zhoujielun', '那天下雨了', '周杰伦', 0.4, 0.45, ['pop'], ['rainy_window', 'rainy_day']),
+        mockSong('hot_jietuo_zhengrunze', '解脱', '郑润泽', 0.35, 0.5, ['pop'], ['breakup', 'late_night_emo']),
+      ],
+      text: '末班车开过,路灯把影子拉得很长。武康路的梧桐在风里翻了个身,像是替我说了句晚安。',
       location: '上海 · 武康路',
     },
     {
@@ -91,8 +125,11 @@ function seedJournals(): JournalEntry[] {
         isMixed: false,
         displayLabel: '壮阔 · 敬畏',
       },
-      songs: [] as Song[],
-      text: '爬了四个小时,云海在脚下翻涌。值了。',
+      songs: [
+        mockSong('hot_benteng_zhoushen', '奔腾', '周深', 0.85, 0.55, ['guofeng', 'pop'], ['travel', 'mountain_top']),
+        mockSong('hot_longyaohuaxia_longyoulin', '龙耀华夏', '龙友林', 0.82, 0.6, ['guofeng', 'guofengrock'], ['festival', 'travel']),
+      ],
+      text: '爬了四个小时,云海在脚下翻涌。第一缕光从远山后溢出来时,整个人被震住了。值了。',
       location: '黄山 · 光明顶',
     },
   ];
@@ -126,6 +163,25 @@ export const useJournalStore = create<JournalState>()(
     {
       name: 'momentune-journals',
       storage: createJSONStorage(() => localStorage),
+      version: 2,
+      // 升级到 v2 时:对旧版种子日记(seed-*)补上 mock 歌曲,
+      // 不影响用户真实创建的日记。
+      migrate: (persistedState: unknown, version: number) => {
+        if (!persistedState || typeof persistedState !== 'object') return persistedState;
+        const state = persistedState as { journals?: JournalEntry[] };
+        if (!Array.isArray(state.journals)) return persistedState;
+        const fresh = seedJournals();
+        const seedMap = new Map(fresh.map((j) => [j.id, j]));
+        state.journals = state.journals.map((j) => {
+          // 仅对旧版种子日记(seed-*)且 songs 为空的条目补歌曲
+          if (version < 2 && j.id.startsWith('seed-') && (!j.songs || j.songs.length === 0)) {
+            const freshSeed = seedMap.get(j.id);
+            if (freshSeed) return { ...j, songs: freshSeed.songs, text: freshSeed.text };
+          }
+          return j;
+        });
+        return state;
+      },
     },
   ),
 );
