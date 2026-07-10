@@ -12,3 +12,7 @@ coverage/
 ios/
 android/
 .capacitor/
+
+# 任务书 & 设计稿（不入库）
+TRAE-任务书.md
+Momentune.html
