@@ -55,6 +55,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,woff}'],
+        // Noto Serif SC 中文字体 woff 文件约 2.1MB,超过 Workbox 默认 2MB 限制
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         clientsClaim: true,
       },

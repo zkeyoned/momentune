@@ -29,7 +29,14 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
     [camera.captureFrame],
   );
 
-  /** 提交照片到分析流程 */
+  /**
+   * 提交照片到分析流程
+   *
+   * - 示例照片(带 features):直接 setPending 跳转
+   * - 相机/相册(无 features):用占位 features + needsFeatureEstimation 标记,
+   *   立即跳转到 ResultPage,特征估计在 runAnalysis 的 loading 态下完成
+   *   (用户可见"AI 正在感受…"),避免快门后界面无响应。
+   */
   const submitPhoto = (
     dataUrl: string,
     source: 'camera' | 'album' | 'sample',
@@ -37,15 +44,28 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
     location?: string,
     features?: SamplePhoto['features'],
   ) => {
-    const sampleFeatures =
-      features ?? SAMPLE_PHOTOS[Math.floor(Math.random() * SAMPLE_PHOTOS.length)]!.features;
-    setPending({
-      features: sampleFeatures,
-      previewUrl: dataUrl,
-      source,
-      title,
-      location,
-    });
+    if (features) {
+      // 示例照片:已有预设特征,直接进入分析
+      setPending({
+        features,
+        previewUrl: dataUrl,
+        source,
+        title,
+        location,
+      });
+    } else {
+      // 相机/相册:占位特征(随机一个示例的特征),标记需要估计
+      const placeholder =
+        SAMPLE_PHOTOS[Math.floor(Math.random() * SAMPLE_PHOTOS.length)]!.features;
+      setPending({
+        features: placeholder,
+        previewUrl: dataUrl,
+        source,
+        title,
+        location,
+        needsFeatureEstimation: true,
+      });
+    }
     void hapticNotify('success');
     navigate('/result');
   };
@@ -220,6 +240,30 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
           </svg>
         </button>
       </div>
+
+      {/* 摄像头不可用时,显示示例照片作为 fallback(桌面测试/无摄像头场景) */}
+      {camera.hasError && !native && (
+        <div className={styles.samples}>
+          <p className={styles.samplesTitle}>摄像头不可用 · 点示例照片即分析</p>
+          <div className={styles.grid}>
+            {SAMPLE_PHOTOS.map((p) => (
+              <button
+                key={p.id}
+                className={styles.sampleItem}
+                onClick={() => handlePick(p)}
+              >
+                <img
+                  src={p.previewUrl}
+                  alt={p.title}
+                  className={styles.sampleImg}
+                  loading="lazy"
+                />
+                <span className={styles.sampleLabel}>{p.title}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Web 环境的 file input fallback */}
       {!native && (

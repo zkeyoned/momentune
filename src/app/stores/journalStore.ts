@@ -46,7 +46,7 @@ function seedJournals(): JournalEntry[] {
     {
       id: 'seed-1',
       createdAt: now - day * 1,
-      photoUrl: 'https://picsum.photos/seed/beach-sunset/600/450',
+      photoUrl: '/samples/beach-sunset.svg',
       photoTitle: '黄昏 · 海边',
       photoFeatures: {
         hue: { hue: 30, tone: 'warm', confidence: 0.88 },
@@ -76,7 +76,7 @@ function seedJournals(): JournalEntry[] {
     {
       id: 'seed-2',
       createdAt: now - day * 3,
-      photoUrl: 'https://picsum.photos/seed/city-night/600/450',
+      photoUrl: '/samples/city-night.svg',
       photoTitle: '城市 · 夜归',
       photoFeatures: {
         hue: { hue: 220, tone: 'cool', confidence: 0.85 },
@@ -106,7 +106,7 @@ function seedJournals(): JournalEntry[] {
     {
       id: 'seed-3',
       createdAt: now - day * 7,
-      photoUrl: 'https://picsum.photos/seed/mountain-sunrise/600/450',
+      photoUrl: '/samples/mountain-sunrise.svg',
       photoTitle: '清晨 · 山顶',
       photoFeatures: {
         hue: { hue: 45, tone: 'warm', confidence: 0.87 },

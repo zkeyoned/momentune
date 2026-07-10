@@ -4,8 +4,8 @@ import { findNearestEmotionLabel } from '@algorithm/index';
 import { getEmotionDisplay } from '../config/emotionDisplay';
 import styles from './SongWheel.module.css';
 
-/** 由歌曲 V-A 生成暖色域封面 overlay(叠在 picsum 底图上,营造情绪色调)
- *  暖色域 hue 15-55(橙红到金黄),不再用全色域 HSL,统一胶片暖调 */
+/** 由歌曲 V-A 生成暖色域封面渐变(纯 CSS,无外部图床依赖)
+ *  暖色域 hue 15-55(橙红到金黄),统一胶片暖调 */
 function coverOverlay(song: Song): string {
   const { v, a } = song.va;
   const hue = Math.round(15 + v * 40);
@@ -13,11 +13,6 @@ function coverOverlay(song: Song): string {
   const alpha1 = 0.58 + a * 0.18;
   const alpha2 = 0.78 + a * 0.14;
   return `linear-gradient(135deg, hsla(${hue}, ${sat}%, 46%, ${alpha1}) 0%, hsla(${hue + 22}, ${sat}%, 30%, ${alpha2}) 100%)`;
-}
-
-/** 稳定封面底图(基于 songId 的 picsum 占位,真实图片质感) */
-function coverImage(song: Song): string {
-  return `https://picsum.photos/seed/${encodeURIComponent(song.songId)}/200/200`;
 }
 
 function coverInitial(title: string): string {
@@ -169,7 +164,7 @@ export function SongWheel({
                   <div
                     className={styles.art}
                     style={{
-                      backgroundImage: `${coverOverlay(song)}, url(${coverImage(song)})`,
+                      backgroundImage: coverOverlay(song),
                     }}
                     aria-hidden
                   >

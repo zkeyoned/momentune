@@ -48,7 +48,7 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
   {
     id: 'beach-sunset',
     title: '黄昏 · 海边',
-    previewUrl: 'https://picsum.photos/seed/beach-sunset/600/450',
+    previewUrl: '/samples/beach-sunset.svg',
     location: '舟山 · 朱家尖',
     features: {
       hue: { hue: 30, tone: 'warm', confidence: 0.88 },
@@ -65,7 +65,7 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
   {
     id: 'city-night',
     title: '城市 · 夜归',
-    previewUrl: 'https://picsum.photos/seed/city-night/600/450',
+    previewUrl: '/samples/city-night.svg',
     location: '上海 · 武康路',
     features: {
       hue: { hue: 220, tone: 'cool', confidence: 0.85 },
@@ -82,7 +82,7 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
   {
     id: 'festival-fireworks',
     title: '节日 · 烟火',
-    previewUrl: 'https://picsum.photos/seed/festival-fireworks/600/450',
+    previewUrl: '/samples/festival-fireworks.svg',
     location: '大阪 · 天神祭',
     features: {
       hue: { hue: 350, tone: 'warm', confidence: 0.86 },
@@ -99,7 +99,7 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
   {
     id: 'rainy-window',
     title: '雨天 · 窗边',
-    previewUrl: 'https://picsum.photos/seed/rainy-window/600/450',
+    previewUrl: '/samples/rainy-window.svg',
     location: '杭州 · 西湖',
     features: {
       hue: { hue: 200, tone: 'cool', confidence: 0.84 },
@@ -116,7 +116,7 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
   {
     id: 'mountain-sunrise',
     title: '清晨 · 山顶',
-    previewUrl: 'https://picsum.photos/seed/mountain-sunrise/600/450',
+    previewUrl: '/samples/mountain-sunrise.svg',
     location: '黄山 · 光明顶',
     features: {
       hue: { hue: 45, tone: 'warm', confidence: 0.87 },

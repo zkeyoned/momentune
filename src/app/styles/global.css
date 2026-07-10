@@ -13,7 +13,10 @@
    - 移动端优先, 375 视口, 竖屏布局
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400;1,6..72,500&family=Noto+Serif+SC:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+/* 字体自托管:通过 @fontsource npm 包加载 woff2(Vite 构建时打包到 dist/assets)
+   不再依赖 Google Fonts CDN,断网也可正常显示衬线字体。
+   @font-face 声明在各 @fontsource 包的 CSS 中,font-family 名字与下方
+   --font-serif / --font-display / --font-sans / --font-mono 变量完全一致。 */
 
 :root {
   /* —— 色彩 token (旧纸胶片 · 老旧复古调) ——

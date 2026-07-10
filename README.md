@@ -15,23 +15,56 @@ Momentune（Moment × Tune）是一款面向生活记录的「照片 → 情绪 
 
 ## 技术栈
 
-- 前端：React + TypeScript（移动端 Web + PWA）
-- 后端：Node 中间商（NeteaseCloudMusicApi），用户授权后以其身份取歌曲地址
-- AI 分析：国内多模态视觉 API（Qwen-VL / GLM-4V / 豆包视觉），输出情绪坐标
-- 音乐：接入用户网易云 / QQ 账号取完整歌曲 + 免版权曲库（预标 V-A 坐标）兜底
-- 存储：IndexedDB（Dexie.js）
-- 地图与定位：高德 / Mapbox + 浏览器 Geolocation
+- 前端：React + TypeScript（移动端 Web + PWA，Vite 构建）
+- 情绪匹配算法：自研 V-A 坐标系映射（`src/algorithm/`，609 单测覆盖）
+- 音乐数据：NeteaseCloudMusicApi（仅构建期脚本取播放地址，零运行时依赖）
+- 字体：@fontsource 自托管（woff2，离线可用）
+- 存储：localStorage（Zustand persist）
+- 容器：Capacitor（可选，打包原生 App）
 
 ## 目录结构
 
 ```
 momentune/
-├── docs/          # 项目文档（介绍、创意方案 HTML）
-├── server/        # 音乐中间商服务（NeteaseCloudMusicApi）
-├── src/           # Demo 源代码（前端）
-├── public/        # 静态资源（图片、图标）
-├── data/          # 模拟数据（音乐库、情绪坐标）
-└── README.md      # 项目说明
+├── src/
+│   ├── algorithm/        # 情绪匹配算法核心（照片→V-A、音乐→V-A、推荐匹配）
+│   │   ├── config/       # 算法配置（情绪标签、风格标签、场景矩阵、权重）
+│   │   └── __tests__/    # 算法单测（609 tests）
+│   └── app/              # 前端应用
+│       ├── components/   # UI 组件（MusicPlayer、SongWheel、PhotoCapture 等）
+│       ├── pages/        # 页面（Home、Result、Timeline、Calendar、Journal 等）
+│       ├── stores/       # Zustand 状态管理（analysis、player、journal 等）
+│       ├── services/     # 服务层（mockApi、photoHeuristic、photoStrategy 等）
+│       ├── hooks/        # 自定义 Hooks
+│       └── styles/       # 全局样式
+├── scripts/              # 构建期脚本（fetch-song-urls：批量取网易云播放地址）
+├── public/
+│   └── samples/          # 示例照片（SVG 渐变占位图，离线可用）
+├── docs/                 # 项目文档（介绍、创意方案、算法设计）
+└── README.md
+```
+
+## Demo 阶段说明
+
+本项目处于 Demo 阶段，以下功能以务实方案实现，后续可平滑升级：
+
+| 模块 | Demo 方案 | 后续升级方向 |
+|------|----------|-------------|
+| 照片情绪分析 | Canvas 像素统计 + 模板匹配（`photoHeuristic.ts`） | 接入多模态视觉 API（Qwen-VL / GLM-4V） |
+| 音乐播放 | 网易云试听 URL + 模拟播放兜底 | 接入用户账号播放完整歌曲 |
+| 音乐库 | 算法内置 2026 热歌榜（60+ 首） | 实时热歌榜 + 用户导入 |
+| 定位 | 不依赖 GPS | 高德 / Mapbox + Geolocation |
+| 存储 | localStorage | IndexedDB（Dexie.js） |
+
+## 开发
+
+```bash
+npm install          # 安装依赖
+npm run typecheck    # 类型检查
+npm test             # 运行算法单测（609 tests）
+npm run dev          # 启动开发服务器
+npm run build        # 构建生产包
+npm run fetch:urls   # 批量取网易云播放地址（构建期，需 cookie）
 ```
 
 ## 赛事信息
