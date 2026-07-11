@@ -62,7 +62,8 @@ export function useCameraManager(
         }
         setIsReady(true);
         setHasError(false);
-      } catch {
+      } catch (err) {
+        console.error('[useCameraManager] getUserMedia 失败:', err);
         if (!cancelled) {
           setIsReady(false);
           setHasError(true);

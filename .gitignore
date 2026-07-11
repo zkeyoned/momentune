@@ -13,6 +13,9 @@ ios/
 android/
 .capacitor/
 
+# 本地生成的歌词文件 (npm run fetch:urls 会生成,不上库)
+public/lyrics/
+
 # 任务书 & 设计稿（不入库）
 TRAE-任务书.md
 Momentune.html

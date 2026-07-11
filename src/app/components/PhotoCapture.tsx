@@ -151,17 +151,39 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
 
   return (
     <div className={styles.wrap}>
-      {/* —— 取景框 —— */}
+      {/* —— 主入口:从相册选择(demo 主路径,最醒目) —— */}
+      <button
+        type="button"
+        className={styles.primaryAlbum}
+        onClick={handleAlbum}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <circle cx="8.5" cy="10.5" r="1.8" />
+          <path d="M21 16l-5-5L5 19" />
+        </svg>
+        <span className={styles.primaryAlbumText}>
+          <span className={styles.primaryAlbumTitle}>从相册选择照片</span>
+          <span className={styles.primaryAlbumHint}>推荐 · 最快入口</span>
+        </span>
+      </button>
+
+      {/* —— 分隔线 —— */}
+      <div className={styles.divider}>
+        <span className={styles.dividerLine} aria-hidden />
+        <span className={styles.dividerText}>或拍照</span>
+        <span className={styles.dividerLine} aria-hidden />
+      </div>
+
+      {/* —— 取景框(次要入口) —— */}
       <div className={styles.viewfinder}>
         {native ? (
-          // 原生环境:不显示预览,显示取景框引导
           <span className={styles.vfCenter} aria-hidden>
             <span className={styles.vfIcon}>📷</span>
             <span className={styles.vfHint}>点击下方按钮拍照</span>
           </span>
         ) : (
           <>
-            {/* Web 环境:实时摄像头预览(CSS 始终镜像) */}
             <video
               ref={videoRef}
               className={styles.cameraVideo}
@@ -170,7 +192,6 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
               autoPlay
             />
 
-            {/* 顶部信息条(模式 + 状态) */}
             <div className={styles.vfTopBar}>
               <span className={styles.vfMode}>{isFront ? '自拍' : '后置'}</span>
               {camera.isReady && (
@@ -194,41 +215,15 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
             {camera.hasError && (
               <span className={styles.vfCenter} aria-hidden>
                 <span className={styles.vfIcon}>📷</span>
-                <span className={styles.vfHint}>无法访问摄像头</span>
+                <span className={styles.vfHint}>无法访问摄像头 · 用上方相册入口</span>
               </span>
             )}
           </>
         )}
       </div>
 
-      {/* —— 控制区:相册 + 快门 + 翻转 —— */}
+      {/* —— 拍照控制:快门 + 翻转(次要) —— */}
       <div className={styles.controls}>
-        {/* 左:相册 */}
-        <button
-          type="button"
-          className={`${styles.miniBtn} ${styles.albumBtn}`}
-          onClick={handleAlbum}
-          aria-label="从相册选择"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <circle cx="8.5" cy="10.5" r="1.8" />
-            <path d="M21 16l-5-5L5 19" />
-          </svg>
-        </button>
-
-        {/* 中:快门 */}
-        <button
-          type="button"
-          className={styles.shutter}
-          onClick={handleShutter}
-          disabled={!native && !camera.isReady}
-          aria-label="拍照"
-        >
-          <span className={styles.shutterInner} />
-        </button>
-
-        {/* 右:翻转前后置 */}
         <button
           type="button"
           className={`${styles.miniBtn} ${styles.flipBtn}`}
@@ -239,12 +234,25 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
             <path d="M3 7h13l-3-3M21 17H8l3 3" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
+
+        <button
+          type="button"
+          className={styles.shutter}
+          onClick={handleShutter}
+          disabled={!native && !camera.isReady}
+          aria-label="拍照"
+        >
+          <span className={styles.shutterInner} />
+        </button>
+
+        {/* 占位保持快门居中 */}
+        <span className={styles.controlsSpacer} aria-hidden />
       </div>
 
-      {/* 摄像头不可用时,显示示例照片作为 fallback(桌面测试/无摄像头场景) */}
+      {/* 摄像头不可用时,显示示例照片作为 fallback */}
       {camera.hasError && !native && (
         <div className={styles.samples}>
-          <p className={styles.samplesTitle}>摄像头不可用 · 点示例照片即分析</p>
+          <p className={styles.samplesTitle}>示例照片 · 点任一即分析</p>
           <div className={styles.grid}>
             {SAMPLE_PHOTOS.map((p) => (
               <button
@@ -265,7 +273,6 @@ export function PhotoCapture({ onPick, variant = 'full' }: PhotoCaptureProps) {
         </div>
       )}
 
-      {/* Web 环境的 file input fallback */}
       {!native && (
         <input
           ref={fileRef}

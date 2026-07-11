@@ -138,13 +138,93 @@
   50% { opacity: 0.4; }
 }
 
-/* —— 控制区:相册 + 快门 + 翻转 (统一圆形,紧凑) —— */
+/* —— 主入口:从相册选择(demo 主路径,最醒目) —— */
+.primaryAlbum {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(232, 168, 124, 0.35);
+  transition: transform var(--dur-tap) var(--ease-tap),
+    box-shadow var(--dur-hov) ease;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.primaryAlbum:hover {
+  box-shadow: 0 8px 28px rgba(232, 168, 124, 0.5);
+}
+
+.primaryAlbum:active {
+  transform: scale(0.98);
+}
+
+.primaryAlbum svg {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.primaryAlbumText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.primaryAlbumTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.primaryAlbumHint {
+  font-size: 0.75rem;
+  opacity: 0.82;
+}
+
+/* —— 分隔线 —— */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+  padding: 2px 0;
+  flex-shrink: 0;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.dividerText {
+  white-space: nowrap;
+}
+
+/* —— 控制区:快门 + 翻转 (次要) —— */
 .controls {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 24px;
   padding: var(--space-sm) 0;
+  flex-shrink: 0;
+}
+
+.controlsSpacer {
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
 }
 

@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import { fileURLToPath, URL } from 'node:url';
 
 // 注意：本文件用于 Vite 前端构建（dev/build/preview）。
@@ -9,6 +10,10 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   plugins: [
     react(),
+    // 自签名 HTTPS:让 dev server 走 https://localhost:5173,
+    // 满足 getUserMedia 的安全上下文要求(现场需要真拍照时的保险)。
+    // 仅影响 dev/preview,build 不受影响。
+    basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon.svg'],
@@ -76,6 +81,30 @@ export default defineConfig({
     port: 5173,
     host: true,
     open: false,
+    proxy: {
+      // 网易云音频代理:绕过 CORS/ORB 限制
+      // router 是 http-proxy-middleware 的有效选项,Vite 类型定义未包含,此处用 any
+      '/api/audio-proxy': {
+        changeOrigin: true,
+        router: (req: any) => {
+          const fullUrl = new URL(req.url ?? '', 'http://localhost');
+          const targetUrl = fullUrl.searchParams.get('url');
+          if (!targetUrl) return 'http://localhost';
+          return new URL(targetUrl).origin;
+        },
+        configure: (proxy: any) => {
+          proxy.on('proxyReq', (proxyReq: any, req: any) => {
+            const fullUrl = new URL(req.url ?? '', 'http://localhost');
+            const targetUrl = fullUrl.searchParams.get('url');
+            if (!targetUrl) return;
+            const target = new URL(targetUrl);
+            proxyReq.path = target.pathname + target.search;
+            proxyReq.setHeader('host', target.host);
+            proxyReq.setHeader('Referer', 'https://music.163.com/');
+          });
+        },
+      } as any,
+    },
   },
   build: {
     outDir: 'dist',

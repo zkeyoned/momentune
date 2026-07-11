@@ -278,6 +278,28 @@ function normalizeFeatures(raw: Record<string, unknown>): PhotoFeatures {
 // ---------------------------------------------------------------------------
 
 /**
+ * 无 API key 时返回确定性 mock 照片特征。
+ * 不依赖网络,不抛错,让 demo 流程顺畅走通。
+ */
+function getMockFeatures(): PhotoFeatures {
+  return {
+    hue: {
+      hue: 35,
+      tone: 'warm',
+      confidence: 0.5,
+    },
+    luminance: { value: 0.55, level: 'mid', confidence: 0.5 },
+    saturation: { value: 0.6, level: 'mid', confidence: 0.5 },
+    scene: { type: 'nature', confidence: 0.5 },
+    timeOfDay: { value: 'golden_hour', confidence: 0.5 },
+    weather: { value: 'sunny', confidence: 0.5 },
+    people: { count: 0, dominantEmotion: 'none', confidence: 0.5 },
+    composition: { type: 'landscape', confidence: 0.5 },
+    overallConfidence: 0.5,
+  };
+}
+
+/**
  * 用 Qwen-VL 分析照片,返回 PhotoFeatures。
  *
  * 失败情况(均抛错,由调用方降级):
@@ -292,9 +314,9 @@ export async function analyzePhotoWithQwen(
   imageDataUrl: string,
 ): Promise<PhotoFeatures> {
   const apiKey = import.meta.env.VITE_QWEN_API_KEY;
-  // key 为空:直接抛错,不发请求,由调用方降级到 Canvas
+  // key 为空:返回确定性 mock 特征,不发请求,不抛错
   if (!apiKey || apiKey.trim() === '') {
-    throw new Error('VITE_QWEN_API_KEY 未配置');
+    return getMockFeatures();
   }
 
   // 压缩图片,省 token 提速

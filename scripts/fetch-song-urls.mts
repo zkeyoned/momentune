@@ -1,5 +1,5 @@
 /**
- * 批量获取歌曲真实播放地址的一次性脚本（构建期工具）
+ * 批量获取歌曲真实播放地址、封面和歌词的一次性脚本（构建期工具）
  *
  * 用法:
  *   # 全量
@@ -9,12 +9,14 @@
  *   # 带网易云 cookie(拿到完整歌曲而非试听片段)
  *   NETEASE_COOKIE='MUSIC_U=xxxx' npm run fetch:urls
  *
- * 产出: src/app/services/songPreviewUrls.ts
+ * 产出:
+ *   - src/app/services/songPreviewUrls.ts (含 coverUrl)
+ *   - public/lyrics/{songId}.lrc (歌词文件,不上库)
  * 运行时不依赖任何网易云接口,本脚本仅在构建期执行。
  */
 
 import { createRequire } from 'node:module';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { HOT_CHART_2026 } from '../src/algorithm/musicLibrary.ts';
@@ -22,7 +24,7 @@ import type { Song } from '../src/algorithm/types.ts';
 
 const require = createRequire(import.meta.url);
 // NeteaseCloudMusicApi 是 CommonJS 包,用 createRequire 加载
-const { search, song_url_v1, song_url } = require('NeteaseCloudMusicApi');
+const { search, song_url_v1, song_url, song_detail, lyric } = require('NeteaseCloudMusicApi');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -38,6 +40,7 @@ const sleepMax = 1000;
 
 // 输出文件路径
 const OUTPUT_PATH = resolve(__dirname, '../src/app/services/songPreviewUrls.ts');
+const LYRICS_DIR = resolve(__dirname, '../public/lyrics');
 
 // ============================================================================
 // 工具函数
@@ -214,6 +217,7 @@ interface FetchOutcome {
   matchedTitle: string;
   url: string;
   isTrial: boolean;
+  coverUrl?: string;
 }
 
 async function main() {
@@ -226,6 +230,11 @@ async function main() {
   console.log(`总歌曲数: ${songs.length}${limit > 0 ? ` (试跑前 ${limit} 首)` : ''}`);
   console.log(`Cookie: ${cookie ? '已提供' : '未提供(部分歌可能只拿到试听/null)'}`);
   console.log('');
+
+  // 确保歌词目录存在
+  if (!existsSync(LYRICS_DIR)) {
+    mkdirSync(LYRICS_DIR, { recursive: true });
+  }
 
   const successes: FetchOutcome[] = []; // 完整歌曲
   const trials: FetchOutcome[] = []; // 试听片段
@@ -277,6 +286,34 @@ async function main() {
     } else {
       successes.push(outcome);
       console.log(`  [完整] ${urlResult.url.slice(0, 60)}...`);
+    }
+
+    // 步骤 3:取专辑封面
+    try {
+      const detailRes = await song_detail({ ids: String(searchResult.neteaseId), cookie });
+      const picUrl = detailRes?.body?.songs?.[0]?.al?.picUrl;
+      if (picUrl) {
+        outcome.coverUrl = `${picUrl}?param=200y200`;
+        console.log(`  [封面] ${outcome.coverUrl.slice(0, 60)}...`);
+      }
+    } catch (e) {
+      console.warn(`  [封面] 获取失败: ${(e as Error).message}`);
+    }
+    await randSleep();
+
+    // 步骤 4:取歌词
+    try {
+      const lyricRes = await lyric({ id: searchResult.neteaseId, cookie });
+      const lrcText = lyricRes?.body?.lrc?.lyric;
+      if (lrcText && !lrcText.includes('纯音乐') && !lrcText.includes('此歌曲为没有填词的纯音乐')) {
+        const lrcPath = resolve(LYRICS_DIR, `${outcome.songId}.lrc`);
+        writeFileSync(lrcPath, lrcText, 'utf-8');
+        console.log(`  [歌词] 已保存 ${outcome.songId}.lrc`);
+      } else {
+        console.log(`  [歌词] 无歌词或纯音乐,跳过`);
+      }
+    } catch (e) {
+      console.warn(`  [歌词] 获取失败: ${(e as Error).message}`);
     }
 
     await randSleep();
@@ -344,6 +381,8 @@ function writeOutputFile(results: FetchOutcome[]): void {
   lines.push('  url: string;');
   lines.push('  /** 是否为试听片段 */');
   lines.push('  isTrial: boolean;');
+  lines.push('  /** 专辑封面 URL(网易云 al.picUrl + ?param=200y200) */');
+  lines.push('  coverUrl?: string;');
   lines.push('}');
   lines.push('');
   lines.push('export const SONG_PREVIEW_URLS: Record<string, SongPreview> = {');
@@ -353,8 +392,9 @@ function writeOutputFile(results: FetchOutcome[]): void {
     lines.push(
       `  // ${r.title} - ${r.artist} (网易云: ${r.matchedTitle}, id: ${r.neteaseId})`,
     );
+    const coverUrlStr = r.coverUrl ? `, coverUrl: '${r.coverUrl}'` : '';
     lines.push(
-      `  '${r.songId}': { neteaseId: ${r.neteaseId}, url: '${r.url}', isTrial: ${r.isTrial} },`,
+      `  '${r.songId}': { neteaseId: ${r.neteaseId}, url: '${r.url}', isTrial: ${r.isTrial}${coverUrlStr} },`,
     );
   }
 

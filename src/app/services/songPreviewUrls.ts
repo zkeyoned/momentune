@@ -17,6 +17,8 @@ export interface SongPreview {
   url: string;
   /** 是否为试听片段 */
   isTrial: boolean;
+  /** 专辑封面 URL(网易云 al.picUrl + ?param=200y200) */
+  coverUrl?: string;
 }
 
 export const SONG_PREVIEW_URLS: Record<string, SongPreview> = {
