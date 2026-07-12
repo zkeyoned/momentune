@@ -5,8 +5,19 @@ import { useUserStore } from '../stores/userStore';
 import { useJournalStore } from '../stores/journalStore';
 import { usePlayerStore } from '../stores/playerStore';
 import { buildEmotionDisplayLabel } from '../services/mockApi';
+import { getEmotionDisplay } from '../config/emotionDisplay';
 import { SongWheel } from '../components/SongWheel';
+import { MusicPlayer } from '../components/MusicPlayer';
 import styles from './ResultPage.module.css';
+
+/** 格式化拍摄日期:2026 · 07 · 13 形式(参考设计稿) */
+function fmtShootDate(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y} · ${m} · ${day}`;
+}
 
 export function ResultPage() {
   const navigate = useNavigate();
@@ -74,6 +85,7 @@ export function ResultPage() {
   }
 
   const displayLabel = buildEmotionDisplayLabel(result.primaryLabel, result.secondaryLabel);
+  const primaryEmotion = getEmotionDisplay(result.primaryLabel);
   const allSongs = [
     ...result.recommendation.coreTracks.map((t) => t.song),
     ...result.recommendation.extendedTracks.map((t) => t.song),
@@ -104,39 +116,69 @@ export function ResultPage() {
 
   return (
     <div className={styles.page}>
-      {/* —— 照片 + 歌曲轮盘 —— */}
+      {/* —— 拍立得照片(居中放大 + 轻微旋转 + 拍摄日期) —— */}
+      <section className={styles.photoSection}>
+        <div className={styles.polaroid}>
+          <img
+            src={pending.previewUrl}
+            alt={pending.title}
+            className={styles.polaroidImg}
+          />
+        </div>
+        <div className={styles.photoMeta}>
+          <span className={styles.photoDate}>{fmtShootDate()}</span>
+          {pending.location && (
+            <span className={styles.photoLoc}>@ {pending.location}</span>
+          )}
+        </div>
+      </section>
+
+      {/* —— 情绪一句话 —— */}
+      <p className={styles.moodLine}>
+        这一刻的心情，像是 <span className={styles.moodTag}>{primaryEmotion.zh}</span>
+      </p>
+
+      {/* —— 封面胶卷(横向滚动) —— */}
       <section className={styles.wheelSection}>
         <SongWheel
           songs={allSongs}
-          photoUrl={pending.previewUrl}
-          photoTitle={pending.title}
           currentSongId={currentSongId}
           isPlaying={isPlaying}
           onSelect={(song) => playTrack(song, allSongs)}
         />
-
-        {pending.location && (
-          <p className={styles.locationLine}>@ {pending.location}</p>
-        )}
       </section>
 
-      {/* —— 写感想 + 保存 —— */}
-      <section className="section">
-        <h2>写一句感想</h2>
-        <textarea
-          className={styles.textarea}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="今天的情绪,一句话记下来…"
-          rows={3}
-        />
+      {/* —— 内嵌毛玻璃播放器 —— */}
+      <section className={styles.playerSection}>
+        <div className={styles.glassCard}>
+          <MusicPlayer inline />
+        </div>
       </section>
 
+      {/* —— 感想输入区(毛玻璃卡片内) —— */}
+      <section className={styles.inputSection}>
+        <div className={styles.glassCard}>
+          <label className={styles.inputLabel}>写一句感想</label>
+          <textarea
+            className={styles.textarea}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="今天的情绪，一句话记下来…"
+            rows={2}
+          />
+        </div>
+      </section>
+
+      {/* —— 底部按钮(同一行两端对齐) —— */}
       <div className={styles.actions}>
-        <Link to="/" className="btn btn-ghost">
+        <Link to="/" className={`btn btn-ghost ${styles.actionBtn}`}>
           再拍一张
         </Link>
-        <button className="btn btn-primary" onClick={handleSave} disabled={saved}>
+        <button
+          className={`btn btn-primary ${styles.actionBtn}`}
+          onClick={handleSave}
+          disabled={saved}
+        >
           {saved ? '已保存 ✓' : '保存为日记'}
         </button>
       </div>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Momentune 结果页预览 v2 · 毛玻璃播放器</title>
+<style>
+  :root {
+    --bg: #C9B894;
+    --ink: #3A3128;
+    --muted: #8A7A62;
+    --accent: #A9633E;
+    --glass: rgba(250, 244, 230, 0.42);
+    --glass-border: rgba(255, 250, 240, 0.55);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: Georgia, 'Songti SC', 'STSong', serif;
+    background: #2A241D;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 24px 12px 60px; gap: 16px;
+  }
+  h1 { color: #E8DCC0; font-size: 16px; font-weight: 500; }
+  .note { color: #9A8B70; font-size: 12px; max-width: 380px; text-align: center; line-height: 1.7; }
+
+  .phone {
+    width: 375px; max-width: 100%;
+    background:
+      radial-gradient(circle at 20% 12%, rgba(232,168,124,0.28), transparent 42%),
+      radial-gradient(circle at 85% 55%, rgba(138,90,60,0.22), transparent 45%),
+      var(--bg);
+    border-radius: 28px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .phone::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.05; pointer-events: none; z-index: 5;
+  }
+  .scroll-area { padding: 20px 0 0; }
+
+  /* ===== 拍立得 ===== */
+  .polaroid {
+    width: 200px; margin: 0 auto;
+    background: #33291E; border-radius: 12px;
+    padding: 9px 9px 26px;
+    box-shadow: 0 8px 24px rgba(40,30,20,0.35);
+    transform: rotate(-1.2deg);
+  }
+  .polaroid .photo {
+    width: 100%; aspect-ratio: 3/4; border-radius: 4px;
+    background:
+      radial-gradient(circle at 40% 30%, #D9B48A 0%, transparent 55%),
+      linear-gradient(160deg, #B08D6A 0%, #8A6A50 55%, #5C4636 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,244,230,0.75); font-size: 13px; font-style: italic;
+  }
+  .polaroid .caption {
+    text-align: center; margin-top: 8px;
+    color: #C9B894; font-size: 10px; letter-spacing: 2px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  .mood-line {
+    text-align: center; margin: 12px 0 2px;
+    color: var(--muted); font-size: 12.5px; font-style: italic;
+  }
+  .mood-line .emo { color: var(--accent); font-weight: 700; font-style: normal; }
+
+  /* ===== 封面胶卷 ===== */
+  .film-strip {
+    display: flex; gap: 14px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    padding: 14px calc(50% - 40px) 6px;
+    scrollbar-width: none;
+  }
+  .film-strip::-webkit-scrollbar { display: none; }
+  .cover-card {
+    flex-shrink: 0; width: 80px; height: 80px;
+    border-radius: 14px; scroll-snap-align: center;
+    position: relative; overflow: hidden;
+    transform: scale(0.86); opacity: 0.55;
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s, box-shadow 0.28s;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(58,49,40,0.2);
+  }
+  .cover-card.active {
+    transform: scale(1.06); opacity: 1;
+    box-shadow: 0 6px 18px rgba(58,49,40,0.3), 0 0 0 2.5px var(--accent);
+  }
+  .cover-card .art { position: absolute; inset: 0; }
+
+  /* ===== 毛玻璃播放器卡片 ===== */
+  .glass-player {
+    margin: 10px 16px 0;
+    background: var(--glass);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 28px rgba(58,49,40,0.16), inset 0 1px 0 rgba(255,255,255,0.4);
+    padding: 14px 16px 12px;
+    position: relative; z-index: 2;
+  }
+  .gp-row1 { display: flex; align-items: center; gap: 12px; }
+
+  .reel {
+    width: 48px; height: 48px; flex-shrink: 0;
+    border-radius: 50%;
+    background: #3A3128;
+    display: flex; align-items: center; justify-content: center;
+    animation: spin 4s linear infinite;
+    animation-play-state: paused;
+    box-shadow: inset 0 0 0 2px #2C2620, 0 2px 8px rgba(0,0,0,0.3);
+    position: relative;
+  }
+  .reel.playing { animation-play-state: running; }
+  .reel .cover {
+    width: 68%; height: 68%; border-radius: 50%;
+    overflow: hidden; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .reel .cover::after {
+    content: '';
+    position: absolute;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #2C2620;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.28);
+  }
+  .reel::after {
+    content: '';
+    position: absolute; inset: 4px; border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, transparent 0deg 40deg, rgba(255,255,255,0.07) 40deg 45deg);
+    pointer-events: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .reel { animation: none !important; } }
+
+  .gp-info { flex: 1; min-width: 0; }
+  .gp-title {
+    font-size: 15.5px; font-weight: 700; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .gp-sub {
+    font-size: 11.5px; color: var(--muted); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .gp-sub .emo { color: var(--accent); }
+
+  .gp-controls { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .ctrl {
+    width: 38px; height: 38px; border: none; background: transparent;
+    color: var(--ink); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.12s, background 0.12s;
+  }
+  .ctrl:active { transform: scale(0.88); background: rgba(58,49,40,0.08); }
+  .ctrl svg { width: 19px; height: 19px; }
+  .ctrl-play {
+    width: 50px; height: 50px;
+    background: var(--accent); color: #FAF4E6;
+    box-shadow: 0 4px 14px rgba(169,99,62,0.45);
+  }
+  .ctrl-play:active { transform: scale(0.92); }
+  .ctrl-play svg { width: 21px; height: 21px; }
+
+  .gp-row2 { margin-top: 10px; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 3px; border-radius: 3px;
+    background: linear-gradient(to right, var(--accent) var(--p, 0%), rgba(58,49,40,0.2) var(--p, 0%));
+    outline: none; cursor: pointer; display: block;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); opacity: 0.7;
+    transition: opacity .15s, transform .15s; border: none;
+  }
+  input[type=range]:active::-webkit-slider-thumb { opacity: 1; transform: scale(1.35); }
+  input[type=range]::-moz-range-thumb {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--accent); opacity: 0.7; border: none;
+  }
+  .gp-time {
+    display: flex; justify-content: space-between; margin-top: 5px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px; color: var(--muted);
+  }
+
+  /* ===== 毛玻璃感想输入(同材质) ===== */
+  .glass-journal {
+    margin: 12px 16px 0;
+    background: var(--glass);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 28px rgba(58,49,40,0.12), inset 0 1px 0 rgba(255,255,255,0.4);
+    padding: 12px 16px;
+  }
+  .glass-journal textarea {
+    width: 100%; background: transparent; border: none;
+    font-family: inherit; font-size: 14px; font-style: italic;
+    color: var(--ink); resize: none; outline: none;
+    min-height: 46px; line-height: 1.6;
+  }
+  .glass-journal textarea::placeholder { color: var(--muted); opacity: 0.75; }
+
+  .actions { display: flex; gap: 12px; margin: 14px 16px 16px; }
+  .btn {
+    flex: 1; height: 46px; border-radius: 999px;
+    border: none; font-family: inherit; font-size: 14.5px;
+    cursor: pointer; transition: transform 0.12s;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-ghost {
+    background: var(--glass);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    color: var(--ink); border: 1px solid var(--glass-border);
+  }
+  .btn-primary { background: var(--accent); color: #FAF4E6; box-shadow: 0 4px 14px rgba(169,99,62,0.35); }
+
+  .bottom-nav {
+    height: 56px; background: rgba(201,184,148,0.7);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(58,49,40,0.12);
+    display: flex; align-items: center; justify-content: space-around;
+    color: var(--muted); font-size: 11px;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+  <h1>结果页 v2 · 毛玻璃播放器</h1>
+  <p class="note">歌名文字区 + 素输入框 → 换成两张毛玻璃卡片:卡带播放器(可点播放,卡带盘转) + 同材质的感想输入 · 背景加了两团暖色光晕让玻璃的模糊感显出来</p>
+
+  <div class="phone">
+    <div class="scroll-area">
+
+      <div class="polaroid">
+        <div class="photo">(你拍的照片)</div>
+        <div class="caption">2026 · 07 · 11</div>
+      </div>
+
+      <p class="mood-line">这一刻的心情,像是 <span class="emo" id="mEmo">霓虹暧昧</span></p>
+
+      <div class="film-strip" id="strip"></div>
+
+      <!-- 毛玻璃播放器 -->
+      <div class="glass-player">
+        <div class="gp-row1">
+          <div class="reel" id="reel"><div class="cover" id="reelCover"></div></div>
+          <div class="gp-info">
+            <div class="gp-title" id="mTitle">CHANEL</div>
+            <div class="gp-sub"><span id="mArtist">Tyla</span> · <span class="emo" id="mEmo2">霓虹暧昧</span></div>
+          </div>
+          <div class="gp-controls">
+            <button class="ctrl" id="btnPrev" aria-label="上一首">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zM20 6l-9 6 9 6z"/></svg>
+            </button>
+            <button class="ctrl ctrl-play" id="playBtn" aria-label="播放">
+              <svg id="iconPlay" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13c0 .8.9 1.3 1.6.9l10-6.5c.6-.4.6-1.4 0-1.8l-10-6.5c-.7-.4-1.6.1-1.6.9z"/></svg>
+              <svg id="iconPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6.5" y="5" width="4" height="14" rx="1.5"/><rect x="13.5" y="5" width="4" height="14" rx="1.5"/></svg>
+            </button>
+            <button class="ctrl" id="btnNext" aria-label="下一首">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM4 6l9 6-9 6z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="gp-row2">
+          <input type="range" id="prog" min="0" max="1000" value="0">
+          <div class="gp-time"><span id="tCur">0:00</span><span>3:02</span></div>
+        </div>
+      </div>
+
+      <!-- 毛玻璃感想 -->
+      <div class="glass-journal">
+        <textarea placeholder="✎ 今天的情绪,一句话记下来…" rows="2"></textarea>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost">再拍一张</button>
+        <button class="btn btn-primary">保存为日记</button>
+      </div>
+
+      <div class="bottom-nav">
+        <span>时间线</span><span>日历</span><span style="width:52px"></span><span>收藏</span><span>我的</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">玻璃材质三件套:半透明底 rgba(250,244,230,0.42) + backdrop-filter blur(16px) + 高光描边 · 底部导航也顺手做了半透明,滚动时内容会从它下面透过去</p>
+
+<script>
+  const SONGS = [
+    { t: '潜', a: '周深', e: '深海独白', g: 'radial-gradient(circle at 30% 30%, #4A6B8A, transparent 60%), linear-gradient(150deg, #1E3A52, #3D5A73)' },
+    { t: 'CHANEL', a: 'Tyla', e: '霓虹暧昧', g: 'radial-gradient(circle at 65% 25%, #E8A87C, transparent 55%), linear-gradient(135deg, #8A4B6B, #C77B4A)' },
+    { t: 'People', a: 'Libianca', e: '微醺夜谈', g: 'radial-gradient(circle at 40% 70%, #6B8A5A, transparent 55%), linear-gradient(160deg, #2E4A2A, #7A9B6A)' },
+    { t: '梦哑', a: '任然', e: '雨夜低语', g: 'radial-gradient(circle at 50% 20%, #9A8AB8, transparent 60%), linear-gradient(140deg, #3A3252, #6B5A8A)' },
+    { t: '奔腾', a: '周深', e: '破晓辽阔', g: 'radial-gradient(circle at 30% 60%, #E8C87C, transparent 55%), linear-gradient(125deg, #B8763A, #E8A85C)' },
+  ];
+  const strip = document.getElementById('strip');
+  const reel = document.getElementById('reel');
+  const reelCover = document.getElementById('reelCover');
+  const playBtn = document.getElementById('playBtn');
+  const iconPlay = document.getElementById('iconPlay');
+  const iconPause = document.getElementById('iconPause');
+  const prog = document.getElementById('prog');
+  const tCur = document.getElementById('tCur');
+  let active = 1, playing = false, timer = null;
+  const DURATION = 182;
+
+  SONGS.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'cover-card' + (i === active ? ' active' : '');
+    card.innerHTML = `<div class="art" style="background:${s.g}"></div>`;
+    card.addEventListener('click', () => select(i, true));
+    strip.appendChild(card);
+  });
+  const cards = strip.children;
+
+  function select(i, scroll) {
+    active = i;
+    for (let k = 0; k < cards.length; k++) cards[k].classList.toggle('active', k === i);
+    document.getElementById('mTitle').textContent = SONGS[i].t;
+    document.getElementById('mArtist').textContent = SONGS[i].a;
+    document.getElementById('mEmo').textContent = SONGS[i].e;
+    document.getElementById('mEmo2').textContent = SONGS[i].e;
+    reelCover.style.background = SONGS[i].g;
+    prog.value = 0; updateProg();
+    if (scroll) cards[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
+
+  let scrollTimer;
+  strip.addEventListener('scroll', () => {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      const mid = strip.scrollLeft + strip.clientWidth / 2;
+      let best = 0, bestD = Infinity;
+      for (let k = 0; k < cards.length; k++) {
+        const c = cards[k];
+        const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid);
+        if (d < bestD) { bestD = d; best = k; }
+      }
+      if (best !== active) select(best, false);
+    }, 90);
+  });
+
+  playBtn.addEventListener('click', () => {
+    playing = !playing;
+    reel.classList.toggle('playing', playing);
+    iconPlay.style.display = playing ? 'none' : 'block';
+    iconPause.style.display = playing ? 'block' : 'none';
+    if (playing) {
+      timer = setInterval(() => {
+        let v = Number(prog.value) + 1000 / DURATION / 2;
+        if (v >= 1000) v = 0;
+        prog.value = v; updateProg();
+      }, 500);
+    } else clearInterval(timer);
+  });
+  document.getElementById('btnPrev').addEventListener('click', () => select((active + SONGS.length - 1) % SONGS.length, true));
+  document.getElementById('btnNext').addEventListener('click', () => select((active + 1) % SONGS.length, true));
+
+  function updateProg() {
+    const p = Number(prog.value) / 1000;
+    prog.style.setProperty('--p', (p * 100) + '%');
+    const s = Math.floor(p * DURATION);
+    tCur.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+  prog.addEventListener('input', updateProg);
+  updateProg();
+  select(active, false);
+  requestAnimationFrame(() => cards[active].scrollIntoView({ block: 'nearest', inline: 'center' }));
+</script>
+</body>
+</html>

@@ -13,7 +13,9 @@ ios/
 android/
 .capacitor/
 
-# 本地生成的歌词文件 (npm run fetch:urls 会生成,不上库)
+# 本地生成的音频/封面/歌词 (npm run fetch:urls 会下载,版权内容不上库)
+public/audio/
+public/covers/
 public/lyrics/
 
 # 任务书 & 设计稿（不入库）

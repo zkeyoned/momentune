@@ -7,6 +7,8 @@
  * 说明:
  *   - 完整歌曲(isTrial=false):可完整播放
  *   - 试听片段(isTrial=true):约 30s-1min,标记后前端提示
+ *   - localFile: 本地音频文件,优先于 url 播放(同源,无过期/跨域/混合内容问题)
+ *   - coverUrl: 优先指向本地 /covers/{songId}.jpg,下载失败时为远程 URL
  *   - 未收录的歌不在此表中,前端自动回退到模拟播放
  */
 
@@ -17,8 +19,10 @@ export interface SongPreview {
   url: string;
   /** 是否为试听片段 */
   isTrial: boolean;
-  /** 专辑封面 URL(网易云 al.picUrl + ?param=200y200) */
+  /** 专辑封面(优先本地 /covers/{songId}.jpg,失败时为远程 URL) */
   coverUrl?: string;
+  /** 本地音频文件 web 路径(优先于 url 播放,同源无过期) */
+  localFile?: string;
 }
 
 export const SONG_PREVIEW_URLS: Record<string, SongPreview> = {

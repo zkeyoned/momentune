@@ -1,5 +1,5 @@
 /**
- * 批量获取歌曲真实播放地址、封面和歌词的一次性脚本（构建期工具）
+ * 批量获取歌曲真实播放地址、封面和歌词并下载到本地的一次性脚本（构建期工具）
  *
  * 用法:
  *   # 全量
@@ -10,15 +10,21 @@
  *   NETEASE_COOKIE='MUSIC_U=xxxx' npm run fetch:urls
  *
  * 产出:
- *   - src/app/services/songPreviewUrls.ts (含 coverUrl)
- *   - public/lyrics/{songId}.lrc (歌词文件,不上库)
+ *   - src/app/services/songPreviewUrls.ts (含 coverUrl / localFile)
+ *   - public/audio/{songId}.mp3   (本地音频,不上库)
+ *   - public/covers/{songId}.jpg  (本地封面,不上库)
+ *   - public/lyrics/{songId}.lrc  (歌词文件,不上库)
+ *
  * 运行时不依赖任何网易云接口,本脚本仅在构建期执行。
+ * 下载总量约 300MB,需十几分钟。每首之间 sleep 1s 防风控。
  */
 
 import { createRequire } from 'node:module';
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, createWriteStream, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
 import { HOT_CHART_2026 } from '../src/algorithm/musicLibrary.ts';
 import type { Song } from '../src/algorithm/types.ts';
 
@@ -37,10 +43,14 @@ const cookie = process.env.NETEASE_COOKIE ?? '';
 const limit = process.env.LIMIT ? Number(process.env.LIMIT) : 0; // 0 = 全量
 const sleepMin = 500;
 const sleepMax = 1000;
+/** 每首之间固定 sleep 1s 防风控 */
+const INTER_SONG_SLEEP = 1000;
 
 // 输出文件路径
 const OUTPUT_PATH = resolve(__dirname, '../src/app/services/songPreviewUrls.ts');
 const LYRICS_DIR = resolve(__dirname, '../public/lyrics');
+const AUDIO_DIR = resolve(__dirname, '../public/audio');
+const COVERS_DIR = resolve(__dirname, '../public/covers');
 
 // ============================================================================
 // 工具函数
@@ -86,6 +96,33 @@ function artistMatches(resultArtists: string[], targetArtist: string): boolean {
     }
   }
   return false;
+}
+
+/**
+ * 流式下载文件到本地
+ * @returns 文件字节数(用 statSync 兜底,content-length 不一定准)
+ */
+async function downloadFile(url: string, dest: string): Promise<number> {
+  const res = await fetch(url, {
+    headers: {
+      // 网易云音频/图片对 Referer 不强制,加上保险
+      Referer: 'https://music.163.com/',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    },
+  });
+  if (!res.ok || !res.body) {
+    throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  }
+  // Readable.fromWeb 将 Web ReadableStream 转 Node Stream,流式写盘不占内存
+  await pipeline(Readable.fromWeb(res.body as any), createWriteStream(dest));
+  return statSync(dest).size;
+}
+
+/** 人类可读的文件大小 */
+function fmtSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / 1024 / 1024).toFixed(2)}MB`;
 }
 
 // ============================================================================
@@ -218,6 +255,10 @@ interface FetchOutcome {
   url: string;
   isTrial: boolean;
   coverUrl?: string;
+  /** 本地音频文件 web 路径(下载成功时填) */
+  localFile?: string;
+  /** 本地音频字节数(汇总用) */
+  audioSize?: number;
 }
 
 async function main() {
@@ -225,21 +266,32 @@ async function main() {
   const songs = limit > 0 ? allSongs.slice(0, limit) : allSongs;
 
   console.log('========================================');
-  console.log('Momentune · 歌曲播放地址批量获取脚本');
+  console.log('Momentune · 歌曲播放地址 + 本地下载脚本');
   console.log('========================================');
   console.log(`总歌曲数: ${songs.length}${limit > 0 ? ` (试跑前 ${limit} 首)` : ''}`);
   console.log(`Cookie: ${cookie ? '已提供' : '未提供(部分歌可能只拿到试听/null)'}`);
+  console.log(`音频目录: ${AUDIO_DIR}`);
+  console.log(`封面目录: ${COVERS_DIR}`);
+  console.log(`歌词目录: ${LYRICS_DIR}`);
   console.log('');
 
-  // 确保歌词目录存在
-  if (!existsSync(LYRICS_DIR)) {
-    mkdirSync(LYRICS_DIR, { recursive: true });
+  // 确保目录存在
+  for (const dir of [LYRICS_DIR, AUDIO_DIR, COVERS_DIR]) {
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   }
 
   const successes: FetchOutcome[] = []; // 完整歌曲
   const trials: FetchOutcome[] = []; // 试听片段
   const failedSearch: { songId: string; title: string; artist: string }[] = []; // 搜索失败
   const failedUrl: { songId: string; title: string; artist: string; neteaseId: number }[] = []; // 拿不到地址
+
+  // 本地下载统计
+  let audioOk = 0;
+  let audioFail = 0;
+  let coverOk = 0;
+  let coverFail = 0;
+  let totalAudioBytes = 0;
+  const audioFailures: { songId: string; title: string; reason: string }[] = [];
 
   for (let i = 0; i < songs.length; i++) {
     const song = songs[i]!;
@@ -251,7 +303,7 @@ async function main() {
     if (!searchResult) {
       console.warn(`  [搜索失败] 没有匹配结果,跳过`);
       failedSearch.push({ songId: song.songId, title: song.title, artist: song.artist });
-      await randSleep();
+      await sleep(INTER_SONG_SLEEP);
       continue;
     }
     console.log(`  [搜索] neteaseId=${searchResult.neteaseId} (${searchResult.matchedTitle})`);
@@ -266,7 +318,7 @@ async function main() {
         artist: song.artist,
         neteaseId: searchResult.neteaseId,
       });
-      await randSleep();
+      await sleep(INTER_SONG_SLEEP);
       continue;
     }
 
@@ -287,21 +339,39 @@ async function main() {
       successes.push(outcome);
       console.log(`  [完整] ${urlResult.url.slice(0, 60)}...`);
     }
+    await randSleep();
 
-    // 步骤 3:取专辑封面
+    // 步骤 3:取专辑封面 + 下载到本地
+    let remotePicUrl: string | undefined;
     try {
       const detailRes = await song_detail({ ids: String(searchResult.neteaseId), cookie });
       const picUrl = detailRes?.body?.songs?.[0]?.al?.picUrl;
       if (picUrl) {
-        outcome.coverUrl = `${picUrl}?param=200y200`;
-        console.log(`  [封面] ${outcome.coverUrl.slice(0, 60)}...`);
+        remotePicUrl = `${picUrl}?param=200y200`;
+        console.log(`  [封面] ${remotePicUrl.slice(0, 60)}...`);
       }
     } catch (e) {
       console.warn(`  [封面] 获取失败: ${(e as Error).message}`);
     }
+
+    // 封面下载到本地:失败不中断,回退用远程 picUrl
+    if (remotePicUrl) {
+      const coverPath = resolve(COVERS_DIR, `${outcome.songId}.jpg`);
+      try {
+        await downloadFile(remotePicUrl, coverPath);
+        outcome.coverUrl = `/covers/${outcome.songId}.jpg`;
+        coverOk++;
+        console.log(`  [封面下载] ✓ /covers/${outcome.songId}.jpg`);
+      } catch (e) {
+        // 下载失败回退到远程 URL
+        outcome.coverUrl = remotePicUrl;
+        coverFail++;
+        console.warn(`  [封面下载] ✗ 失败,回退远程: ${(e as Error).message}`);
+      }
+    }
     await randSleep();
 
-    // 步骤 4:取歌词
+    // 步骤 4:取歌词并写入文件
     try {
       const lyricRes = await lyric({ id: searchResult.neteaseId, cookie });
       const lrcText = lyricRes?.body?.lrc?.lyric;
@@ -316,7 +386,27 @@ async function main() {
       console.warn(`  [歌词] 获取失败: ${(e as Error).message}`);
     }
 
-    await randSleep();
+    // 步骤 5:下载音频到本地(核心):单曲失败不中断整体流程
+    const audioPath = resolve(AUDIO_DIR, `${outcome.songId}.mp3`);
+    try {
+      const size = await downloadFile(urlResult.url, audioPath);
+      outcome.localFile = `/audio/${outcome.songId}.mp3`;
+      outcome.audioSize = size;
+      totalAudioBytes += size;
+      audioOk++;
+      console.log(`  [音频下载] ✓ ${fmtSize(size)} /audio/${outcome.songId}.mp3`);
+    } catch (e) {
+      audioFail++;
+      audioFailures.push({
+        songId: outcome.songId,
+        title: outcome.title,
+        reason: (e as Error).message,
+      });
+      console.warn(`  [音频下载] ✗ 失败(回退远程 url): ${(e as Error).message}`);
+    }
+
+    // 每首之间固定 sleep 1s 防风控
+    await sleep(INTER_SONG_SLEEP);
   }
 
   // ============================================================================
@@ -331,6 +421,10 @@ async function main() {
   console.log(`搜索失败: ${failedSearch.length} 首`);
   console.log(`地址失败: ${failedUrl.length} 首`);
   console.log(`成功率: ${((successes.length + trials.length) / songs.length * 100).toFixed(1)}%`);
+  console.log('');
+  console.log('—— 本地下载统计 ——');
+  console.log(`音频: 成功 ${audioOk} 首 / 失败 ${audioFail} 首 / 总大小 ${fmtSize(totalAudioBytes)}`);
+  console.log(`封面: 成功 ${coverOk} 首 / 失败 ${coverFail} 首`);
 
   if (failedSearch.length > 0) {
     console.log('');
@@ -342,6 +436,11 @@ async function main() {
     console.log('—— 地址失败列表 ——');
     for (const f of failedUrl) console.log(`  ${f.title} - ${f.artist} (neteaseId=${f.neteaseId})`);
   }
+  if (audioFailures.length > 0) {
+    console.log('');
+    console.log('—— 音频下载失败列表(将回退远程 url) ——');
+    for (const f of audioFailures) console.log(`  ${f.title} [${f.songId}]: ${f.reason}`);
+  }
 
   // ============================================================================
   // 写入产出文件
@@ -351,6 +450,7 @@ async function main() {
   console.log('');
   console.log(`已写入: ${OUTPUT_PATH}`);
   console.log(`共 ${allResults.length} 条映射 (${successes.length} 完整 + ${trials.length} 试听)`);
+  console.log(`其中 ${audioOk} 首已下载本地音频,${audioOk > 0 ? '断网可播' : '仍依赖远程'}`);
 }
 
 /**
@@ -358,7 +458,7 @@ async function main() {
  *
  * 每首歌带 title 注释字段,方便人工抽查:
  *   // 歌名 - 歌手 (网易云: matchedTitle, id: 12345)
- *   'songId': { neteaseId: 12345, url: '...', isTrial: false },
+ *   'songId': { neteaseId: 12345, url: '...', isTrial: false, localFile: '/audio/songId.mp3' },
  */
 function writeOutputFile(results: FetchOutcome[]): void {
   const lines: string[] = [];
@@ -371,6 +471,8 @@ function writeOutputFile(results: FetchOutcome[]): void {
   lines.push(' * 说明:');
   lines.push(' *   - 完整歌曲(isTrial=false):可完整播放');
   lines.push(' *   - 试听片段(isTrial=true):约 30s-1min,标记后前端提示');
+  lines.push(' *   - localFile: 本地音频文件,优先于 url 播放(同源,无过期/跨域/混合内容问题)');
+  lines.push(' *   - coverUrl: 优先指向本地 /covers/{songId}.jpg,下载失败时为远程 URL');
   lines.push(' *   - 未收录的歌不在此表中,前端自动回退到模拟播放');
   lines.push(' */');
   lines.push('');
@@ -381,8 +483,10 @@ function writeOutputFile(results: FetchOutcome[]): void {
   lines.push('  url: string;');
   lines.push('  /** 是否为试听片段 */');
   lines.push('  isTrial: boolean;');
-  lines.push('  /** 专辑封面 URL(网易云 al.picUrl + ?param=200y200) */');
+  lines.push('  /** 专辑封面(优先本地 /covers/{songId}.jpg,失败时为远程 URL) */');
   lines.push('  coverUrl?: string;');
+  lines.push('  /** 本地音频文件 web 路径(优先于 url 播放,同源无过期) */');
+  lines.push('  localFile?: string;');
   lines.push('}');
   lines.push('');
   lines.push('export const SONG_PREVIEW_URLS: Record<string, SongPreview> = {');
@@ -393,8 +497,9 @@ function writeOutputFile(results: FetchOutcome[]): void {
       `  // ${r.title} - ${r.artist} (网易云: ${r.matchedTitle}, id: ${r.neteaseId})`,
     );
     const coverUrlStr = r.coverUrl ? `, coverUrl: '${r.coverUrl}'` : '';
+    const localFileStr = r.localFile ? `, localFile: '${r.localFile}'` : '';
     lines.push(
-      `  '${r.songId}': { neteaseId: ${r.neteaseId}, url: '${r.url}', isTrial: ${r.isTrial}${coverUrlStr} },`,
+      `  '${r.songId}': { neteaseId: ${r.neteaseId}, url: '${r.url}', isTrial: ${r.isTrial}${coverUrlStr}${localFileStr} },`,
     );
   }
 

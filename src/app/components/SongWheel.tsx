@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import type { Song } from '@algorithm/index';
-import { findNearestEmotionLabel } from '@algorithm/index';
-import { getEmotionDisplay } from '../config/emotionDisplay';
+import { SONG_PREVIEW_URLS } from '../services/songPreviewUrls';
 import styles from './SongWheel.module.css';
 
-/** 由歌曲 V-A 生成暖色域封面渐变(纯 CSS,无外部图床依赖)
- *  暖色域 hue 15-55(橙红到金黄),统一胶片暖调 */
-function coverOverlay(song: Song): string {
+/**
+ * 由歌曲 V-A 生成暖色域封面渐变(纯 CSS 兜底,无外部图床依赖)。
+ * 暖色域 hue 15-55(橙红到金黄),统一胶片暖调。
+ */
+function coverGradient(song: Song): string {
   const { v, a } = song.va;
   const hue = Math.round(15 + v * 40);
   const sat = 42 + a * 28;
@@ -22,22 +23,26 @@ function coverInitial(title: string): string {
 interface SongWheelProps {
   /** 推荐歌曲列表 */
   songs: Song[];
-  /** 照片预览 URL */
-  photoUrl: string;
-  /** 照片标题(显示在照片左下角 chip) */
-  photoTitle: string;
-  /** 当前播放歌曲 id */
+  /** 当前播放歌曲 id(决定哪张封面高亮) */
   currentSongId?: string;
   /** 是否正在播放 */
   isPlaying: boolean;
-  /** 选中某首歌(点击封面) */
+  /** 选中某首歌(点击/吸附触发) */
   onSelect: (song: Song, index: number) => void;
 }
 
+/**
+ * 横向封面胶卷选歌器(参考 result-page-preview-v2.html)。
+ *
+ * 设计:
+ *  - scroll-snap-type: x mandatory 居中吸附
+ *  - 二态切换:active(scale 1.06 + 焦糖描边 + 播放角标) / 非 active(scale 0.86 + 半透明)
+ *  - 封面图优先用 SONG_PREVIEW_URLS[songId].coverUrl(本地 /covers/{songId}.jpg)
+ *  - 加载失败回退到 V-A 渐变色 + 首字母
+ *  - 不新建状态:activeIndex 由 currentSongId 推导,滑动结束吸附后回调 onSelect
+ */
 export function SongWheel({
   songs,
-  photoUrl,
-  photoTitle,
   currentSongId,
   isPlaying,
   onSelect,
@@ -45,69 +50,63 @@ export function SongWheel({
   const viewportRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const draggingRef = useRef(false);
-  const startYRef = useRef(0);
+  const startXRef = useRef(0);
   const startScrollRef = useRef(0);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 记录封面图加载失败的 songId(回退到渐变色 + 首字母)
+  const [coverErrors, setCoverErrors] = useState<Set<string>>(new Set());
 
-  // 默认居中第 4 首(index 3,核心推荐第 4 首)
-  const defaultIndex = Math.min(3, Math.max(0, songs.length - 1));
-  const [activeIndex, setActiveIndex] = useState(defaultIndex);
-  const [transforms, setTransforms] = useState(
-    songs.map(() => ({ scale: 1, opacity: 1 })),
-  );
-
-  const update = () => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-    const vpRect = viewport.getBoundingClientRect();
-    const centerY = vpRect.top + vpRect.height / 2;
-
-    let closestIndex = 0;
-    let closestDist = Infinity;
-
-    const next = itemRefs.current.map((el, i) => {
-      if (!el) return { scale: 1, opacity: 1 };
-      const r = el.getBoundingClientRect();
-      const dist = Math.abs(r.top + r.height / 2 - centerY);
-      if (dist < closestDist) {
-        closestDist = dist;
-        closestIndex = i;
-      }
-      return {
-        scale: Math.max(0.62, 1.26 - dist / 175),
-        opacity: Math.max(0.25, 1 - dist / 190),
-      };
-    });
-
-    setTransforms(next);
-    setActiveIndex(closestIndex);
-  };
-
-  // 初始把默认推荐曲目滚到居中
+  // 初始居中当前播放曲目(若有),否则居中第 1 首
   useEffect(() => {
-    const viewport = viewportRef.current;
-    const target = itemRefs.current[defaultIndex];
-    if (viewport && target) {
-      viewport.scrollTop =
-        target.offsetTop - (viewport.clientHeight / 2 - target.offsetHeight / 2);
+    const initIndex = Math.max(
+      0,
+      songs.findIndex((s) => s.songId === currentSongId),
+    );
+    const target = itemRefs.current[initIndex < 0 ? 0 : initIndex];
+    if (target) {
+      target.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
     }
-    update();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // 滑动结束后(debounce 90ms)找到最居中的封面,触发 onSelect
+  const handleScroll = () => {
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      const viewport = viewportRef.current;
+      if (!viewport) return;
+      const mid = viewport.scrollLeft + viewport.clientWidth / 2;
+      let closestIndex = 0;
+      let closestDist = Infinity;
+      itemRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+        if (d < closestDist) {
+          closestDist = d;
+          closestIndex = i;
+        }
+      });
+      const song = songs[closestIndex];
+      if (song && song.songId !== currentSongId) {
+        onSelect(song, closestIndex);
+      }
+    }, 90);
+  };
+
+  // 鼠标拖拽(仅 mouse 指针)——触摸走原生 scroll-snap
   const handlePointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.pointerType !== 'mouse' || !viewportRef.current) return;
     draggingRef.current = true;
-    startYRef.current = e.clientY;
-    startScrollRef.current = viewportRef.current.scrollTop;
+    startXRef.current = e.clientX;
+    startScrollRef.current = viewportRef.current.scrollLeft;
     viewportRef.current.setPointerCapture(e.pointerId);
     viewportRef.current.style.cursor = 'grabbing';
   };
 
   const handlePointerMove = (e: PointerEvent<HTMLDivElement>) => {
     if (!draggingRef.current || !viewportRef.current) return;
-    const dy = e.clientY - startYRef.current;
-    viewportRef.current.scrollTop = startScrollRef.current - dy;
-    update();
+    const dx = e.clientX - startXRef.current;
+    viewportRef.current.scrollLeft = startScrollRef.current - dx;
   };
 
   const endDrag = () => {
@@ -115,86 +114,100 @@ export function SongWheel({
     if (viewportRef.current) viewportRef.current.style.cursor = 'grab';
   };
 
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    };
+  }, []);
+
   if (songs.length === 0) return null;
 
-  const active = songs[activeIndex] ?? songs[0]!;
-  const activeEmotionLabel = findNearestEmotionLabel(active.va);
-  const activeEmotionDisplay = getEmotionDisplay(activeEmotionLabel);
-
   return (
-    <div className={styles.card}>
-      <div className={styles.row}>
-        {/* 左:照片(拍立得化,奶油米边框 + 底部手写题字) */}
-        <div className={styles.photo}>
-          <img src={photoUrl} alt={photoTitle} className={styles.photoImg} />
-          <span className={styles.photoChip}>{photoTitle}</span>
-        </div>
-
-        {/* 右:垂直滚轮(暖光从照片侧渗入,氛围渗透替代原花括号连接) */}
-        <div
-          ref={viewportRef}
-          className={styles.viewport}
-          onScroll={() => requestAnimationFrame(update)}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={endDrag}
-          onPointerLeave={endDrag}
-          onPointerCancel={endDrag}
-        >
-          <div className={styles.track}>
-            {songs.map((song, i) => {
-              const isActive = i === activeIndex;
-              const isCurrent = currentSongId === song.songId;
-              return (
-                <div
-                  key={song.songId}
-                  ref={(el) => {
-                    itemRefs.current[i] = el;
+    <div
+      ref={viewportRef}
+      className={styles.filmStrip}
+      onScroll={handleScroll}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={endDrag}
+      onPointerLeave={endDrag}
+      onPointerCancel={endDrag}
+    >
+      {songs.map((song, i) => {
+        const isCurrent = currentSongId === song.songId;
+        const preview = SONG_PREVIEW_URLS[song.songId];
+        const coverUrl = preview?.coverUrl;
+        const coverFailed = coverErrors.has(song.songId);
+        // 封面图优先:有 coverUrl 且未加载失败 → 用图片;否则回退渐变色 + 首字母
+        const useCoverImg = !!coverUrl && !coverFailed;
+        return (
+          <div
+            key={song.songId}
+            ref={(el) => {
+              itemRefs.current[i] = el;
+            }}
+            className={`${styles.coverCard} ${isCurrent ? styles.active : ''}`}
+            onClick={() => {
+              // 点击时先滚动居中,再触发选歌
+              itemRefs.current[i]?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center',
+              });
+              onSelect(song, i);
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={`播放 ${song.title} - ${song.artist}`}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect(song, i);
+              }
+            }}
+          >
+            <div
+              className={styles.art}
+              style={
+                useCoverImg
+                  ? undefined
+                  : { backgroundImage: coverGradient(song) }
+              }
+              aria-hidden
+            >
+              {useCoverImg ? (
+                <img
+                  src={coverUrl}
+                  alt=""
+                  className={styles.artImg}
+                  onError={() => {
+                    // 加载失败:加入 set 触发重渲染,回退到渐变色 + 首字母
+                    setCoverErrors((prev) => {
+                      const next = new Set(prev);
+                      next.add(song.songId);
+                      return next;
+                    });
                   }}
-                  className={`${styles.cover} ${isActive ? styles.coverActive : ''}`}
-                  style={{
-                    transform: `scale(${transforms[i]?.scale ?? 1})`,
-                    opacity: transforms[i]?.opacity ?? 1,
-                  }}
-                  onClick={() => onSelect(song, i)}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`播放 ${song.title}`}
-                >
-                  <div
-                    className={styles.art}
-                    style={{
-                      backgroundImage: coverOverlay(song),
-                    }}
-                    aria-hidden
-                  >
-                    <span className={styles.artInitial}>{coverInitial(song.title)}</span>
-                  </div>
-                  {/* 当前正在播放:封面右上角波形动效 */}
-                  {isCurrent && isPlaying && (
-                    <span className={styles.playingDot} aria-hidden>
-                      <span className={styles.bar} />
-                      <span className={styles.bar} />
-                      <span className={styles.bar} />
-                    </span>
-                  )}
-                  {isCurrent && !isPlaying && (
-                    <span className={styles.pausedBadge} aria-hidden>❚❚</span>
-                  )}
-                </div>
-              );
-            })}
+                />
+              ) : (
+                <span className={styles.artInitial}>{coverInitial(song.title)}</span>
+              )}
+            </div>
+            {/* 播放角标:当前播放中显示波形,当前暂停显示 ❚❚ */}
+            {isCurrent && isPlaying && (
+              <span className={styles.playingDot} aria-hidden>
+                <span className={styles.bar} />
+                <span className={styles.bar} />
+                <span className={styles.bar} />
+              </span>
+            )}
+            {isCurrent && !isPlaying && (
+              <span className={styles.pausedBadge} aria-hidden>❚❚</span>
+            )}
           </div>
-        </div>
-      </div>
-
-      {/* 下方:当前居中曲目的标题 + 情绪 */}
-      <div className={styles.now}>
-        <div className={styles.nowTitle}>{active.title}</div>
-        <div className={styles.nowMood}>
-          {active.artist} · {activeEmotionDisplay.zh}
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }

@@ -20,6 +20,16 @@ import { LyricsPanel } from './LyricsPanel';
 const SIM_DURATION = 180; // 模拟歌曲时长(秒)
 const TICK_MS = 500;
 
+/**
+ * 音源层级(逐级降级):
+ *   local      → 本地文件(preview.localFile,同源,无过期/跨域/混合内容,不走代理)
+ *   remote     → 远程 url(dev 走 /api/audio-proxy 代理,build 直连)
+ *   simulated  → 模拟播放(<audio> 无 src,setInterval 虚拟进度)
+ *
+ * local 出错 → 自动降级 remote;remote 再出错 → 降级 simulated。
+ */
+type SourceTier = 'local' | 'remote' | 'simulated';
+
 /** 由歌曲 V-A 生成封面渐变色 */
 function coverGradient(song: Song): string {
   const { v, a } = song.va;
@@ -78,14 +88,20 @@ function ensureRetroStyle(): void {
 
 export interface MusicPlayerProps {
   onToggleLyrics?: (show: boolean) => void;
+  /**
+   * 内嵌模式:ResultPage 用。容器变成 relative + 透明背景 + 100% 宽,
+   * 让父级毛玻璃卡片透出来;不渲染收起按钮(始终展开)。
+   * 播放逻辑、事件监听、音源降级全部不变。
+   */
+  inline?: boolean;
 }
 
-export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
+export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps = {}) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const simTimeRef = useRef(0);
   const [collapsed, setCollapsed] = useState(false);
-  // 真实播放地址出错时降级到模拟模式
-  const [errorFallback, setErrorFallback] = useState(false);
+  // 音源层级:见 SourceTier 注释。切歌时按 local→remote→simulated 优先级重置
+  const [tier, setTier] = useState<SourceTier>('simulated');
   // 封面图加载失败时降级到渐变色
   const [coverError, setCoverError] = useState(false);
   // 歌词面板显隐
@@ -107,13 +123,18 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
 
   // 查映射表
   const preview = currentTrack ? SONG_PREVIEW_URLS[currentTrack.songId] : undefined;
-  // 是否真实播放:有映射地址且未出错降级
-  const isRealPlayback = !!preview && !errorFallback;
+  // 是否真实播放:tier 非 simulated
+  const isRealPlayback = tier !== 'simulated';
   const isTrial = preview?.isTrial ?? false;
 
-  // 开发环境通过 Vite proxy 代理音频请求,绕过 CORS/ORB 限制
+  // 音源选择(由 tier 决定):
+  //   local  → preview.localFile(同源,不走代理,无过期/跨域/混合内容)
+  //   remote → 走现有音频代理(dev)或直连(build)
+  //   simulated → 无 src(<audio> 不加载)
   const audioSrc = (() => {
     if (!preview) return '';
+    if (tier === 'local' && preview.localFile) return preview.localFile;
+    // remote
     const rawUrl = preview.url;
     if (import.meta.env.DEV) {
       return `/api/audio-proxy?url=${encodeURIComponent(rawUrl)}`;
@@ -126,9 +147,11 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
   // 注入 retro 样式(仅客户端)
   useEffect(() => { ensureRetroStyle(); }, []);
 
-  // 切歌时重置降级标记和模拟时间
+  // 切歌时重置 tier 和模拟时间:按 local→remote→simulated 优先级选初始层级
   useEffect(() => {
-    setErrorFallback(false);
+    if (preview?.localFile) setTier('local');
+    else if (preview) setTier('remote');
+    else setTier('simulated');
     setCoverError(false);
     simTimeRef.current = 0;
     // 模拟模式设虚拟时长,真实模式等 loadedmetadata 回填
@@ -136,13 +159,13 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTrack?.songId]);
 
-  // 真实播放:绑定 audio src + 原生事件(切歌时清理旧监听器,避免叠加/泄漏)
+  // 真实播放:绑定 audio src + 原生事件(切歌/降级时清理旧监听器,避免叠加/泄漏)
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !isRealPlayback || !preview) return;
 
-    // 设置新 src 并加载
-    audio.src = audioSrc || preview.url;
+    // 设置新 src 并加载(audioSrc 由 tier 决定:local 文件 / remote 代理)
+    audio.src = audioSrc;
     audio.load();
 
     const onLoadedMetadata = () => {
@@ -161,8 +184,8 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
       next();
     };
     const onError = () => {
-      // 地址过期/失效,降级到模拟播放
-      setErrorFallback(true);
+      // 音源失效,逐级降级:local→remote→simulated
+      setTier((t) => (t === 'local' ? 'remote' : 'simulated'));
       onTimeUpdate(simTimeRef.current, SIM_DURATION);
     };
 
@@ -172,7 +195,7 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
     audio.addEventListener('error', onError);
 
     return () => {
-      // 切歌时清理旧监听器,避免叠加导致进度错乱/内存泄漏
+      // 切歌/降级时清理旧监听器,避免叠加导致进度错乱/内存泄漏
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('timeupdate', onTimeUpdateHandler);
       audio.removeEventListener('ended', onEnded);
@@ -181,8 +204,9 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
       audio.removeAttribute('src');
       audio.load();
     };
+    // tier 在 deps 中:local 出错降级到 remote 时重新绑定新 src
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRealPlayback, currentTrack?.songId]);
+  }, [isRealPlayback, tier, currentTrack?.songId]);
 
   // 真实播放:isPlaying 变化时同步 audio.play/pause
   useEffect(() => {
@@ -390,20 +414,30 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
   // 主容器样式
   // ============================================================
 
-  const playerStyle: React.CSSProperties = {
-    position: 'fixed',
-    bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 4px)',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: 'calc(100% - 24px)',
-    maxWidth: 'calc(var(--app-max-width) - 24px)',
-    background: 'var(--warm-cream)',
-    borderRadius: 16,
-    boxShadow: '0 4px 20px rgba(58,49,40,0.14)',
-    zIndex: 99,
-    padding: collapsed ? '0 12px' : '10px 12px 8px',
-    transition: 'padding 0.25s ease',
-  };
+  const playerStyle: React.CSSProperties = inline
+    ? {
+        position: 'relative',
+        width: '100%',
+        background: 'transparent',
+        borderRadius: 20,
+        boxShadow: 'none',
+        padding: '12px 14px 10px',
+        // 内嵌模式不占用 fixed 层,让父级毛玻璃卡片控制层级
+      }
+    : {
+        position: 'fixed',
+        bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 4px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'calc(100% - 24px)',
+        maxWidth: 'calc(var(--app-max-width) - 24px)',
+        background: 'var(--warm-cream)',
+        borderRadius: 16,
+        boxShadow: '0 4px 20px rgba(58,49,40,0.14)',
+        zIndex: 99,
+        padding: collapsed ? '0 12px' : '10px 12px 8px',
+        transition: 'padding 0.25s ease',
+      };
 
   return (
     <div style={playerStyle}>
@@ -418,7 +452,8 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
         isPlaying={isPlaying}
       />
 
-      {collapsed ? (
+      {/* 内嵌模式始终展开,不渲染收起态横条 */}
+      {!inline && collapsed ? (
         /* ================================================================
            收起态: 44px 胶囊横条
            ================================================================ */
@@ -593,20 +628,22 @@ export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
                     {hint}
                   </span>
                 )}
-                <button
-                  type="button"
-                  onClick={() => setCollapsed(true)}
-                  style={{
-                    ...btnBase,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.58rem', color: 'var(--muted)',
-                    padding: '1px 4px',
-                    borderRadius: 'var(--radius-pill)',
-                    transition: 'color 0.2s ease',
-                  }}
-                >
-                  ▼ 收起
-                </button>
+                {!inline && (
+                  <button
+                    type="button"
+                    onClick={() => setCollapsed(true)}
+                    style={{
+                      ...btnBase,
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.58rem', color: 'var(--muted)',
+                      padding: '1px 4px',
+                      borderRadius: 'var(--radius-pill)',
+                      transition: 'color 0.2s ease',
+                    }}
+                  >
+                    ▼ 收起
+                  </button>
+                )}
               </div>
             </div>
 

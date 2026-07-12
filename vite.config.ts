@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-// import basicSsl from '@vitejs/plugin-basic-ssl';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import { fileURLToPath, URL } from 'node:url';
 
 // 注意：本文件用于 Vite 前端构建（dev/build/preview）。
@@ -10,9 +10,9 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   plugins: [
     react(),
-    // 自签名 HTTPS 已关闭:用 HTTP 即可本地开发。
-    // 现场需要真拍照时再启用 basicSsl()。
-    // basicSsl(),
+    // 自签名 HTTPS:demo 需在手机上现场拍照,getUserMedia 仅在 HTTPS/localhost 下可用,
+    // 手机走局域网 IP 访问必须有 HTTPS(自签名证书浏览器会警告,点"高级→继续访问")。
+    // basicSsl(),  // 临时注释:Trae 内置预览不支持自签名 HTTPS。手机拍照时恢复
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon.svg'],

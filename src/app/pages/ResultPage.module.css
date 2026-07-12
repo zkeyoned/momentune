@@ -1,55 +1,180 @@
+/* ============================================================
+   ResultPage — 结果页重排(毛玻璃 + 拍立得 + 横向封面胶卷)
+   参考设计: result-page-preview-v2.html
+   配色: 暖色胶片 + 毛玻璃质感
+   ============================================================ */
+
 .page {
-  /* 预留底部空间避开 fixed MusicPlayer(约 90px) + BottomNav(72px) + safe-area */
-  padding-bottom: calc(var(--nav-height) + 110px + var(--safe-bottom));
+  position: relative;
+  /* 背景暖色光晕:毛玻璃需要背后有内容才有质感(参考设计稿) */
+  background:
+    radial-gradient(circle at 20% 12%, rgba(232, 168, 124, 0.28), transparent 42%),
+    radial-gradient(circle at 85% 55%, rgba(138, 90, 60, 0.22), transparent 45%),
+    var(--bg);
+  /* ResultPage 有自己的内嵌播放器,不需要给全局悬浮播放器留空间
+     但仍需给 BottomNav 留空间 */
+  padding: 20px var(--space-md) calc(var(--nav-height) + var(--safe-bottom) + 20px);
+  min-height: 100%;
+  overflow: hidden;
 }
 
-/* —— 轮盘选歌区 —— */
-.wheelSection {
-  padding: var(--space-md) var(--space-sm);
-  background: var(--bg);
+/* —— 拍立得照片区(参考:深色边框 #33291E, 200px 宽, -1.2deg 旋转) —— */
+.photoSection {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 var(--space-sm);
 }
 
-.locationLine {
+.polaroid {
+  width: 200px;
+  max-width: 56vw;
+  background: #33291E;
+  border-radius: 12px;
+  padding: 9px 9px 26px;
+  box-shadow: 0 8px 24px rgba(40, 30, 20, 0.35);
+  transform: rotate(-1.2deg);
+  transition: transform 0.3s ease;
+}
+
+.polaroid:hover {
+  transform: rotate(-0.6deg) scale(1.01);
+}
+
+.polaroidImg {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+  background: var(--bg2);
+}
+
+.photoMeta {
   text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  margin-top: 8px;
   color: var(--muted);
-  margin: var(--space-sm) 0 0;
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-family: var(--font-mono);
 }
 
-/* —— 感想 + 保存 ——
-   textarea 用 Caveat 手写感字体,落实"胶片日记"设计承诺 */
+.photoDate {
+  /* 日期:等宽小字,参考设计稿格式 */
+}
+
+.photoLoc {
+  margin-left: 8px;
+  opacity: 0.85;
+}
+
+/* —— 情绪一句话(参考:斜体小字 + 焦糖色情绪标签) —— */
+.moodLine {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  margin: 12px 0 2px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.moodTag {
+  color: var(--accent);
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* —— 封面胶卷区(参考:横向滚动 + scroll-snap + 80x80 封面) —— */
+.wheelSection {
+  position: relative;
+  z-index: 1;
+  margin: 0 calc(var(--space-md) * -1);
+  /* 让胶卷出血到页面左右边缘 */
+}
+
+/* —— 内嵌毛玻璃播放器 —— */
+.playerSection {
+  position: relative;
+  z-index: 2;
+  margin: 10px 0 0;
+}
+
+/* —— 感想输入区 —— */
+.inputSection {
+  position: relative;
+  z-index: 2;
+  margin: 12px 0 0;
+}
+
+.inputLabel {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  opacity: 0.8;
+}
+
+/* —— 毛玻璃卡片(播放器 + 输入区共用,参考设计稿) —— */
+.glassCard {
+  background: rgba(250, 244, 230, 0.42);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid rgba(255, 250, 240, 0.55);
+  box-shadow:
+    0 8px 28px rgba(58, 49, 40, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  padding: 14px 16px 12px;
+}
+
+/* —— textarea(参考:透明背景融入卡片, 2 行, 斜体) —— */
 .textarea {
   width: 100%;
-  padding: var(--space-md);
-  font-family: var(--font-hand);
-  font-size: 1.2rem;
+  min-height: 46px;
+  max-height: 120px;
+  padding: 0;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-style: italic;
   line-height: 1.6;
   color: var(--ink);
-  background: var(--warm-cream);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
-  resize: vertical;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  resize: none;
   outline: none;
-  transition: border-color 0.2s ease;
   box-sizing: border-box;
-}
-
-.textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(232, 168, 124, 0.12);
 }
 
 .textarea::placeholder {
   color: var(--muted);
-  font-style: italic;
+  opacity: 0.75;
 }
 
+/* —— 底部按钮(同一行两端对齐,参考设计稿) —— */
 .actions {
+  position: relative;
+  z-index: 2;
   display: flex;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  padding: var(--space-md);
+  gap: 12px;
+  margin: 14px 0 0;
+}
+
+.actionBtn {
+  flex: 1;
+  height: 46px;
+  max-width: 48%;
+  padding: 0 1.2em;
+  font-size: 14.5px;
+  border-radius: 999px;
 }
 
 /* —— Loading state —— */
@@ -80,5 +205,13 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* —— 性能兜底:低端安卓机 backdrop-filter 降到 8px —— */
+@media (max-width: 380px) and (max-resolution: 2dppx) {
+  .glassCard {
+    backdrop-filter: blur(8px) saturate(1.1);
+    -webkit-backdrop-filter: blur(8px) saturate(1.1);
   }
 }

@@ -36,7 +36,8 @@ function AppLayout() {
         </Routes>
       </main>
       <BottomNav />
-      <MusicPlayer />
+      {/* ResultPage 有自己的内嵌播放器,全局悬浮条在该路由下隐藏避免双播放器 */}
+      {pathname !== '/result' && <MusicPlayer />}
     </div>
   );
 }

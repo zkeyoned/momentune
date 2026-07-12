@@ -64,7 +64,7 @@ npm run typecheck    # 类型检查
 npm test             # 运行算法单测（609 tests）
 npm run dev          # 启动开发服务器
 npm run build        # 构建生产包
-npm run fetch:urls   # 批量取网易云播放地址（构建期，需 cookie）
+npm run fetch:urls   # 下载演示音频/封面/歌词到本地（约300MB，需 NETEASE_COOKIE 环境变量）
 ```
 
 ## 赛事信息
