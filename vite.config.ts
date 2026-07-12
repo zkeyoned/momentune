@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import basicSsl from '@vitejs/plugin-basic-ssl';
+// import basicSsl from '@vitejs/plugin-basic-ssl';
 import { fileURLToPath, URL } from 'node:url';
 
 // 注意：本文件用于 Vite 前端构建（dev/build/preview）。
@@ -10,10 +10,9 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   plugins: [
     react(),
-    // 自签名 HTTPS:让 dev server 走 https://localhost:5173,
-    // 满足 getUserMedia 的安全上下文要求(现场需要真拍照时的保险)。
-    // 仅影响 dev/preview,build 不受影响。
-    basicSsl(),
+    // 自签名 HTTPS 已关闭:用 HTTP 即可本地开发。
+    // 现场需要真拍照时再启用 basicSsl()。
+    // basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icon.svg'],
