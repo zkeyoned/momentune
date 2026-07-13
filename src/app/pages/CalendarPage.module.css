@@ -24,8 +24,8 @@
   width: 140%;
   height: 180%;
   background:
-    radial-gradient(ellipse at 30% 30%, rgba(232, 168, 124, 0.16) 0%, transparent 55%),
-    radial-gradient(ellipse at 70% 70%, rgba(195, 141, 95, 0.1) 0%, transparent 55%);
+    radial-gradient(ellipse at 30% 30%, var(--glow-1) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 70%, var(--glow-2) 0%, transparent 55%);
   pointer-events: none;
   z-index: 0;
 }
@@ -192,7 +192,7 @@
 }
 
 .calHas:hover {
-  background: rgba(232, 168, 124, 0.08);
+  background: var(--accent-light);
 }
 
 .calHas:active {
@@ -205,7 +205,7 @@
   height: 4px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 3px rgba(168, 101, 66, 0.5);
+  box-shadow: 0 0 3px var(--accent);
 }
 
 /* 选中态:焦糖描边圈 */
@@ -228,7 +228,7 @@
 }
 
 .calToday:not(.calSelected) {
-  border: 1px solid rgba(168, 101, 66, 0.4);
+  border: 1px solid var(--accent);
   border-radius: 13px;
 }
 
@@ -270,7 +270,7 @@
 
 .featured:hover {
   box-shadow: var(--shadow-soft);
-  border-color: rgba(194, 122, 84, 0.32);
+  border-color: var(--accent);
 }
 
 .featured:active {
@@ -314,8 +314,8 @@
   font-family: var(--font-display);
   font-style: italic;
   font-size: 0.78rem;
-  color: #FBF6EC;
-  background: rgba(46, 38, 32, 0.6);
+  color: var(--accent-ink);
+  background: var(--ink);
   border-radius: var(--radius-pill);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -330,8 +330,8 @@
   font-family: var(--font-display);
   font-style: italic;
   font-size: 0.74rem;
-  color: #FBF6EC;
-  background: rgba(210, 138, 94, 0.92);
+  color: var(--accent-ink);
+  background: var(--accent);
   border-radius: var(--radius-pill);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -384,7 +384,7 @@
   gap: 7px;
   margin-top: 13px;
   padding-top: 12px;
-  border-top: 1px solid rgba(59, 52, 42, 0.08);
+  border-top: 1px solid var(--rule);
   background: transparent;
   border-left: 0;
   border-right: 0;
@@ -428,16 +428,16 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #5DD690;
-  box-shadow: 0 0 0 0 rgba(93, 214, 144, 0.6);
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent);
   animation: playingPulse 1.6s ease-in-out infinite;
   flex-shrink: 0;
 }
 
 @keyframes playingPulse {
-  0% { box-shadow: 0 0 0 0 rgba(93, 214, 144, 0.6); }
-  70% { box-shadow: 0 0 0 6px rgba(93, 214, 144, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(93, 214, 144, 0); }
+  0% { box-shadow: 0 0 0 0 var(--accent); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 /* 空状态占位 */

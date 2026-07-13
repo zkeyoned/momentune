@@ -1,10 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="450" viewBox="0 0 600 450">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF8C42"/>
-      <stop offset="50%" stop-color="#FFB347"/>
-      <stop offset="100%" stop-color="#FFD23F"/>
+    <linearGradient id="sunset" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#9B8AA0"/>
+      <stop offset="35%" stop-color="#B89BA5"/>
+      <stop offset="55%" stop-color="#C4A5B0"/>
+      <stop offset="56%" stop-color="#6B7B8C"/>
+      <stop offset="100%" stop-color="#4A5764"/>
     </linearGradient>
+    <radialGradient id="sun2" cx="50%" cy="50%" r="10%">
+      <stop offset="0%" stop-color="#E8D5C0" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#E8D5C0" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="600" height="450" fill="url(#g)"/>
+  <rect width="600" height="450" fill="url(#sunset)"/>
+  <ellipse cx="300" cy="248" rx="60" ry="60" fill="url(#sun2)"/>
+  <circle cx="300" cy="248" r="28" fill="#E8D5C0" opacity="0.5"/>
+  <rect x="0" y="248" width="600" height="2" fill="#9B8AA0" opacity="0.3"/>
+  <ellipse cx="300" cy="430" rx="200" ry="15" fill="#3A4452" opacity="0.3"/>
+  <path d="M0 260 Q150 250 300 255 Q450 260 600 250 L600 280 L0 280 Z" fill="#5A6570" opacity="0.25"/>
 </svg>

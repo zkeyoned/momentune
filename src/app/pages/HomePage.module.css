@@ -31,8 +31,8 @@
   width: 140%;
   height: 180%;
   background:
-    radial-gradient(ellipse at 30% 30%, rgba(232, 168, 124, 0.18) 0%, transparent 55%),
-    radial-gradient(ellipse at 70% 70%, rgba(195, 141, 95, 0.12) 0%, transparent 55%);
+    radial-gradient(ellipse at 30% 30%, var(--glow-1) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 70%, var(--glow-2) 0%, transparent 55%);
   pointer-events: none;
 }
 

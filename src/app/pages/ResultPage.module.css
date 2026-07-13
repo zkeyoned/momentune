@@ -6,16 +6,33 @@
 
 .page {
   position: relative;
-  /* 背景暖色光晕:毛玻璃需要背后有内容才有质感(参考设计稿) */
+  /* 动态氛围色背景:跟着照片色调走(任务E)
+     --ambient-1/2 由 ResultPage.tsx computeAmbientVars 注入,
+     缺失时回退到原来的暖色光晕 + --bg 兜底 */
   background:
-    radial-gradient(circle at 20% 12%, rgba(232, 168, 124, 0.28), transparent 42%),
-    radial-gradient(circle at 85% 55%, rgba(138, 90, 60, 0.22), transparent 45%),
+    radial-gradient(circle at 25% 15%, var(--ambient-1, var(--glow-1)), transparent 55%),
+    radial-gradient(circle at 80% 60%, var(--ambient-2, var(--glow-2)), transparent 50%),
     var(--bg);
+  /* 切换照片时颜色柔和过渡 */
+  transition: background 0.8s ease;
   /* ResultPage 有自己的内嵌播放器,不需要给全局悬浮播放器留空间
      但仍需给 BottomNav 留空间 */
   padding: 20px var(--space-md) calc(var(--nav-height) + var(--safe-bottom) + 20px);
   min-height: 100%;
   overflow: hidden;
+}
+
+/* 底部深色渐变压住页面下沿,提高明度对比(任务E) */
+.page::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: linear-gradient(to top, var(--ambient-deep, var(--track)), transparent);
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* —— 拍立得照片区(参考:深色边框 #33291E, 200px 宽, -1.2deg 旋转) —— */
@@ -31,10 +48,10 @@
 .polaroid {
   width: 200px;
   max-width: 56vw;
-  background: #33291E;
+  background: var(--polaroid);
   border-radius: 12px;
   padding: 9px 9px 26px;
-  box-shadow: 0 8px 24px rgba(40, 30, 20, 0.35);
+  box-shadow: var(--shadow-card);
   transform: rotate(-1.2deg);
   transition: transform 0.3s ease;
 }
@@ -122,14 +139,15 @@
   opacity: 0.8;
 }
 
-/* —— 毛玻璃卡片(播放器 + 输入区共用,参考设计稿) —— */
+/* —— 毛玻璃卡片(播放器 + 输入区共用,参考设计稿)
+     任务E:更亮更白(rgba 0.55),和背后氛围色拉开层次,让玻璃"浮"起来 —— */
 .glassCard {
-  background: rgba(250, 244, 230, 0.42);
+  background: var(--surface);
   backdrop-filter: blur(16px) saturate(1.15);
   -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  border: 1px solid rgba(255, 250, 240, 0.55);
+  border: 1px solid var(--surface-border);
   box-shadow:
-    0 8px 28px rgba(58, 49, 40, 0.16),
+    var(--shadow-card),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
   border-radius: 20px;
   padding: 14px 16px 12px;

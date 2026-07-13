@@ -40,7 +40,7 @@
     box-shadow 0.28s ease;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  box-shadow: 0 3px 10px rgba(58, 49, 40, 0.2);
+  box-shadow: var(--shadow-card);
 }
 
 /* active 态:放大 + 不透明 + 焦糖色描边(参考:box-shadow 0 0 0 2.5px var(--accent)) */
@@ -48,7 +48,7 @@
   transform: scale(1.06);
   opacity: 1;
   box-shadow:
-    0 6px 18px rgba(58, 49, 40, 0.3),
+    var(--shadow-card),
     0 0 0 2.5px var(--accent);
 }
 
@@ -118,7 +118,7 @@
   right: 4px;
   top: 4px;
   font-size: 0.55rem;
-  color: #fff;
+  color: var(--accent-ink);
   background: rgba(0, 0, 0, 0.7);
   padding: 2px 4px;
   border-radius: var(--radius-pill);

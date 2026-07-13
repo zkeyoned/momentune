@@ -18,7 +18,7 @@
   border: 1px solid var(--rule);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(232, 168, 124, 0.1);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--accent-light);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -56,7 +56,7 @@
   border-radius: 50%;
   background: var(--accent);
   opacity: 0.75;
-  box-shadow: 0 0 8px rgba(232, 168, 124, 0.55);
+  box-shadow: 0 0 8px var(--accent-light);
 }
 
 .corner[data-pos='tl'] { top: 11px; left: 11px; }
@@ -109,7 +109,7 @@
   color: #fff;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: rgba(232, 168, 124, 0.88);
+  background: var(--accent);
   padding: 2px 8px;
   border-radius: var(--radius-pill);
 }
@@ -150,7 +150,7 @@
   border: none;
   border-radius: var(--radius-lg);
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(232, 168, 124, 0.35);
+  box-shadow: 0 6px 20px var(--accent-light);
   transition: transform var(--dur-tap) var(--ease-tap),
     box-shadow var(--dur-hov) ease;
   -webkit-tap-highlight-color: transparent;
@@ -158,7 +158,7 @@
 }
 
 .primaryAlbum:hover {
-  box-shadow: 0 8px 28px rgba(232, 168, 124, 0.5);
+  box-shadow: 0 8px 28px var(--accent-light);
 }
 
 .primaryAlbum:active {
@@ -235,11 +235,11 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: rgba(22, 27, 34, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   border: 1px solid var(--rule);
   border-radius: 50%;
   cursor: pointer;
-  color: var(--ink);
+  color: #fff;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: border-color var(--dur-hov) ease, color var(--dur-hov) ease,
@@ -250,7 +250,7 @@
 .miniBtn:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(232, 168, 124, 0.1);
+  background: var(--accent-light);
 }
 
 .miniBtn:active {
@@ -272,7 +272,7 @@
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  border: 2.5px solid rgba(232, 168, 124, 0.85);
+  border: 2.5px solid var(--accent);
   background: var(--bg2);
   padding: 5px;
   cursor: pointer;
@@ -281,12 +281,12 @@
   justify-content: center;
   transition: transform var(--dur-tap) var(--ease-tap),
     box-shadow var(--dur-hov) ease;
-  box-shadow: 0 0 0 2px var(--bg), 0 6px 20px rgba(232, 168, 124, 0.32);
+  box-shadow: 0 0 0 2px var(--bg), 0 6px 20px var(--accent-light);
   -webkit-tap-highlight-color: transparent;
 }
 
 .shutter:hover {
-  box-shadow: 0 0 0 2px var(--bg), 0 8px 28px rgba(232, 168, 124, 0.45);
+  box-shadow: 0 0 0 2px var(--bg), 0 8px 28px var(--accent-light);
 }
 
 .shutter:active {

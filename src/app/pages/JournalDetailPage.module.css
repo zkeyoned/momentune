@@ -37,7 +37,7 @@
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
   color: #fff;
-  background: rgba(232, 168, 124, 0.85);
+  background: var(--accent-light);
   border-radius: var(--radius-pill);
   backdrop-filter: blur(4px);
 }
@@ -89,5 +89,5 @@
 }
 
 .deleteBtn:hover {
-  background: rgba(195, 141, 95, 0.08);
+  background: var(--accent-light);
 }

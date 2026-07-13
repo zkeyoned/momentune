@@ -19,8 +19,8 @@
   width: 140%;
   height: 180%;
   background:
-    radial-gradient(ellipse at 30% 30%, rgba(232, 168, 124, 0.15) 0%, transparent 55%),
-    radial-gradient(ellipse at 70% 70%, rgba(195, 141, 95, 0.1) 0%, transparent 55%);
+    radial-gradient(ellipse at 30% 30%, var(--glow-1) 0%, transparent 55%),
+    radial-gradient(ellipse at 70% 70%, var(--glow-2) 0%, transparent 55%);
   pointer-events: none;
 }
 
@@ -100,4 +100,96 @@
   width: 100%;
   margin-top: var(--space-md);
   font-size: 0.85rem;
+}
+
+/* —— 外观主题选择器 —— */
+.themeList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.themeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--ink);
+  transition: border-color var(--dur-hov) ease,
+    background var(--dur-hov) ease, transform var(--dur-tap) var(--ease-tap);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.themeRow:hover {
+  border-color: var(--accent);
+}
+
+.themeRow:active {
+  transform: scale(var(--tap-scale));
+}
+
+.themeRowActive {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* 自定义 radio 圈 */
+.themeRadio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--muted);
+  flex-shrink: 0;
+  transition: border-color var(--dur-hov) ease;
+}
+
+.themeRowActive .themeRadio {
+  border-color: var(--accent);
+}
+
+.themeRadioDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity var(--dur-hov) ease, transform var(--dur-hov) ease;
+}
+
+.themeRowActive .themeRadioDot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.themeText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.themeLabel {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.themeDesc {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
 }

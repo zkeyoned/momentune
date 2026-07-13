@@ -66,7 +66,7 @@ function ensureRetroStyle(): void {
       width: 12px; height: 12px;
       background: var(--accent); border-radius: 50%;
       cursor: pointer; opacity: 0.85;
-      box-shadow: 0 1px 4px rgba(168,101,66,0.35);
+      box-shadow: 0 1px 4px var(--accent);
       transition: transform 0.15s ease, opacity 0.15s ease;
     }
     .mp-range::-webkit-slider-thumb:hover,
@@ -76,7 +76,7 @@ function ensureRetroStyle(): void {
       width: 12px; height: 12px;
       background: var(--accent); border-radius: 50%;
       cursor: pointer; border: none; opacity: 0.85;
-      box-shadow: 0 1px 4px rgba(168,101,66,0.35);
+      box-shadow: 0 1px 4px var(--accent);
       transition: transform 0.15s ease, opacity 0.15s ease;
     }
     .mp-range::-moz-range-thumb:hover,
@@ -290,8 +290,8 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
         style={{
           width: size, height: size,
           borderRadius: '50%',
-          border: `${borderW}px solid #3A3128`,
-          background: 'repeating-conic-gradient(#3A3128 0% 1.8%, transparent 1.8% 3.6%)',
+          border: `${borderW}px solid var(--ink)`,
+          background: 'repeating-conic-gradient(var(--ink) 0% 1.8%, transparent 1.8% 3.6%)',
           flexShrink: 0,
           position: 'relative',
           display: 'flex',
@@ -354,7 +354,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
             transform: 'translate(-50%, -50%)',
             width: holeSize, height: holeSize,
             borderRadius: '50%',
-            background: '#1A1510',
+            background: 'var(--ink)',
             zIndex: 2,
           }}
         />
@@ -433,7 +433,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
         maxWidth: 'calc(var(--app-max-width) - 24px)',
         background: 'var(--warm-cream)',
         borderRadius: 16,
-        boxShadow: '0 4px 20px rgba(58,49,40,0.14)',
+        boxShadow: 'var(--shadow-card)',
         zIndex: 99,
         padding: collapsed ? '0 12px' : '10px 12px 8px',
         transition: 'padding 0.25s ease',
@@ -520,7 +520,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
                   fontSize: '0.6rem',
                   padding: '1px 6px',
                   borderRadius: 'var(--radius-pill)',
-                  background: 'rgba(168,101,66,0.12)',
+                  background: 'var(--accent-light)',
                   color: 'var(--accent)',
                 }}>
                   {emotionDisplay.zh}
@@ -559,8 +559,8 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
                   width: 52, height: 52,
                   borderRadius: '50%',
                   background: 'var(--accent)',
-                  color: '#F4ECDD',
-                  boxShadow: '0 3px 12px rgba(168,101,66,0.35)',
+                  color: 'var(--accent-ink)',
+                  boxShadow: 'var(--shadow-amber)',
                   transition: 'transform 0.12s ease, box-shadow 0.2s ease',
                 }}
                 onPointerDown={(e) => { (e.currentTarget as HTMLElement).style.transform = 'scale(0.92)'; }}
@@ -609,7 +609,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
                   fontSize: '0.68rem',
                   fontFamily: 'var(--font-sans)',
                   color: showLyrics ? 'var(--accent)' : 'var(--muted)',
-                  background: showLyrics ? 'rgba(168,101,66,0.1)' : 'transparent',
+                  background: showLyrics ? 'var(--accent-light)' : 'transparent',
                   transition: 'color 0.2s ease, background 0.2s ease',
                 }}
               >

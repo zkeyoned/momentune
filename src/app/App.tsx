@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
 import { MusicPlayer } from './components/MusicPlayer';
+import { useThemeStore } from './stores/themeStore';
 import { HomePage } from './pages/HomePage';
 import { ResultPage } from './pages/ResultPage';
 import { TimelinePage } from './pages/TimelinePage';
@@ -11,14 +12,14 @@ import { SettingsPage } from './pages/SettingsPage';
 
 function AppLayout() {
   const { pathname } = useLocation();
+  const refreshTheme = useThemeStore((s) => s.refresh);
 
-  // 所有页面两侧统一黑色(营造沉浸式取景框感),app-shell 内部保持暖色胶片主题
+  // 主题初始化:auto 模式下每 10 分钟检查一次时间,跨过 7:00/19:00 时自动切换
   useEffect(() => {
-    document.body.style.backgroundColor = '#0a0a0a';
-    return () => {
-      document.body.style.backgroundColor = '';
-    };
-  }, [pathname]);
+    refreshTheme();
+    const timer = setInterval(refreshTheme, 10 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [refreshTheme]);
 
   return (
     <div className="app-shell">

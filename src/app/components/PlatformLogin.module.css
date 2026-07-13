@@ -65,7 +65,7 @@
 /* 已连接:暖琥珀描边 + 微弱暖底 */
 .connected {
   border-color: var(--accent);
-  background: rgba(232, 168, 124, 0.06);
+  background: var(--accent-light);
 }
 
 .icon {

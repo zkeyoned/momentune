@@ -1,10 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="450" viewBox="0 0 600 450">
   <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F4A261"/>
-      <stop offset="50%" stop-color="#E9C46A"/>
-      <stop offset="100%" stop-color="#A8DADC"/>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#C8D2DC"/>
+      <stop offset="60%" stop-color="#D4DDE4"/>
+      <stop offset="100%" stop-color="#E0E6EA"/>
     </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="55%" r="8%">
+      <stop offset="0%" stop-color="#EDE4D3" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#EDE4D3" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="600" height="450" fill="url(#g)"/>
+  <rect width="600" height="450" fill="url(#sky)"/>
+  <circle cx="300" cy="200" r="80" fill="url(#sun)"/>
+  <circle cx="300" cy="200" r="22" fill="#EDE4D3" opacity="0.6"/>
+  <path d="M0 320 L120 240 L200 280 L300 200 L400 260 L500 220 L600 300 L600 450 L0 450 Z" fill="#6B7B8C" opacity="0.7"/>
+  <path d="M0 370 L80 310 L180 340 L280 290 L380 330 L480 300 L600 360 L600 450 L0 450 Z" fill="#4A5764" opacity="0.85"/>
 </svg>

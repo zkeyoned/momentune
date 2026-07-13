@@ -1,14 +1,58 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import type { PhotoFeatures } from '@algorithm/index';
 import { useAnalysisStore } from '../stores/analysisStore';
 import { useUserStore } from '../stores/userStore';
 import { useJournalStore } from '../stores/journalStore';
 import { usePlayerStore } from '../stores/playerStore';
+import { useThemeStore } from '../stores/themeStore';
 import { buildEmotionDisplayLabel } from '../services/mockApi';
 import { getEmotionDisplay } from '../config/emotionDisplay';
 import { SongWheel } from '../components/SongWheel';
 import { MusicPlayer } from '../components/MusicPlayer';
 import styles from './ResultPage.module.css';
+
+/**
+ * 根据照片色相和亮度计算氛围色 CSS 变量,注入页面根容器。
+ * - --ambient-1/2: 氛围色(径向渐变背景用),亮度跟随当前主题
+ * - --ambient-deep: 深色锚点(底部渐变用)
+ * - 覆盖 --accent/--accent2 为照片色调,让播放按钮/进度条/情绪标签跟随照片
+ * - 银盐(日间):氛围色明亮,accent 覆盖为深色(暗字亮底)
+ * - 暗房(夜间):氛围色压暗,accent 覆盖为亮色(亮字暗底,保持对比度)
+ * - 低亮度照片(luminance < 0.4)时再降 lightness,夜景更沉
+ * - features 缺失或 hue 异常时返回空对象,CSS 回退到 --bg + --glow
+ */
+function computeAmbientVars(features: PhotoFeatures | undefined, isDarkTheme: boolean): CSSProperties {
+  if (!features?.hue || typeof features.hue.hue !== 'number') return {};
+  if (!features?.luminance || typeof features.luminance.value !== 'number') return {};
+
+  const H = features.hue.hue;
+  const isDarkPhoto = features.luminance.value < 0.4;
+
+  if (isDarkTheme) {
+    // 暗房主题:氛围色压暗,accent 用亮色保证暗底上的对比度
+    const l1 = isDarkPhoto ? 24 : 34;
+    const l2 = isDarkPhoto ? 18 : 26;
+    return {
+      '--ambient-1': `hsl(${H}, 35%, ${l1}%)`,
+      '--ambient-2': `hsl(${(H + 25) % 360}, 40%, ${l2}%)`,
+      '--ambient-deep': `hsl(${H}, 45%, 10%)`,
+      '--accent': `hsl(${H}, 55%, 62%)`,
+      '--accent2': `hsl(${H}, 50%, 52%)`,
+    } as CSSProperties;
+  }
+
+  // 银盐主题:氛围色明亮,accent 覆盖为深色
+  const l1 = isDarkPhoto ? 73 : 88;
+  const l2 = isDarkPhoto ? 63 : 78;
+  return {
+    '--ambient-1': `hsl(${H}, 30%, ${l1}%)`,
+    '--ambient-2': `hsl(${(H + 25) % 360}, 35%, ${l2}%)`,
+    '--ambient-deep': `hsl(${H}, 40%, 22%)`,
+    '--accent': `hsl(${H}, 40%, 22%)`,
+    '--accent2': `hsl(${H}, 45%, 16%)`,
+  } as CSSProperties;
+}
 
 /** 格式化拍摄日期:2026 · 07 · 13 形式(参考设计稿) */
 function fmtShootDate(): string {
@@ -33,6 +77,7 @@ export function ResultPage() {
     s.currentIndex >= 0 ? s.queue[s.currentIndex]?.songId : undefined,
   );
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const resolvedTheme = useThemeStore((s) => s.resolved);
   const [text, setText] = useState('');
   const [saved, setSaved] = useState(false);
 
@@ -115,7 +160,7 @@ export function ResultPage() {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} style={computeAmbientVars(pending.features, resolvedTheme === 'dark')}>
       {/* —— 拍立得照片(居中放大 + 轻微旋转 + 拍摄日期) —— */}
       <section className={styles.photoSection}>
         <div className={styles.polaroid}>

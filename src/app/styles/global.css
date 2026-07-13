@@ -1,53 +1,66 @@
 /* ============================================================
    Momentune — Global Styles
-   设计语言: 暖色胶片日记 (2026 设计稿还原)
-   - 米色底 + 焦糖棕主色 (Caramel)
-   - 配色来自 Momentune.html 设计稿:
-       主色 = #C27A54 (warm caramel, 相机/品牌色)
-       深色 = #A9613E (burnt orange, hover/强调)
-       底色 = #E7D9BF (warm beige) / #F4ECDD (cream)
-       卡片 = #FBF6EC (off-white)
-       文字 = #3B342A (dark brown)
-   - 字体: Newsreader (衬线, italic 标签) + Noto Serif SC (中文宋体)
-   - 暖阴影 rgba(120,86,50,0.09), 大圆角 20-24px
-   - 移动端优先, 375 视口, 竖屏布局
+   双主题: 银盐(日间) / 暗房(夜间)
+   - 银盐: 冷灰底 + 钢蓝主色 (干净、克制、银盐胶片感)
+   - 暗房: 深褐底 + 胶片橙主色 (温暖、沉浸、暗房红灯感)
+   - 切换: html[data-theme="dark"] 覆盖 :root
+   - body 背景: 两团 glow 径向渐变叠在 --bg 上
    ============================================================ */
 
-/* 字体自托管:通过 @fontsource npm 包加载 woff2(Vite 构建时打包到 dist/assets)
-   不再依赖 Google Fonts CDN,断网也可正常显示衬线字体。
-   @font-face 声明在各 @fontsource 包的 CSS 中,font-family 名字与下方
-   --font-serif / --font-display / --font-sans / --font-mono 变量完全一致。 */
-
 :root {
-  /* —— 色彩 token (旧纸胶片 · 老旧复古调) ——
-     变量名保留旧名以避免大面积重命名,
-     语义为泛黄褪色的旧日记本/老照片色调。 */
-  --bg: #C9B894;            /* 主背景: 泛黄旧纸,像褪色相纸 */
-  --bg2: #D9CAA8;           /* 次背景: 旧奶油,日历/结果页底 */
-  --ink: #2E2620;           /* 主文字: 深褐墨,像陈年墨水 */
-  --muted: #8A7960;         /* 次要文字: 褪色棕灰,像字迹淡化 */
-  --rule: rgba(46, 38, 32, 0.14); /* 边框: 旧纸纹路 */
-  --accent: #A86542;        /* 深焦糖主色: 复古相机/品牌/选中 */
-  --accent2: #8B5236;       /* 深褐: hover/强调/链接 */
-  --accent-light: #D4B896;  /* 浅褐: 进度条/play按钮底 */
-  --warm-cream: #E8DCC0;    /* 卡片底: 旧白纸,泛黄 */
-  --film-grain: #D4C4A0;    /* 纹理层: 旧米黄 pill 底 */
-  --pill-bg: #D4C4A0;       /* 标签 pill 底色 */
-  --dark-surface: linear-gradient(135deg, #2E2620, #1F1A14); /* 深色卡片(播放器/歌曲卡) */
-  --shadow-soft: 0 10px 26px rgba(90, 64, 38, 0.12);
-  --shadow-card: 0 8px 22px rgba(90, 64, 38, 0.1);
-  --shadow-amber: 0 8px 20px rgba(168, 101, 66, 0.28);
+  /* —— 银盐 · 日间 (默认) —— */
+  --bg: #E9EBE7;            /* 主背景: 冷灰白 */
+  --bg2: #DCDEDA;           /* 次背景: 稍深灰 */
+  --ink: #23272B;           /* 主文字: 炭黑 */
+  --muted: #6E7880;         /* 次要文字: 蓝灰 */
+  --rule: rgba(35, 39, 43, 0.12); /* 边框 */
+  --accent: #2E5E80;        /* 钢蓝主色 */
+  --accent2: #1F4561;       /* 深钢蓝: hover/强调 */
+  --accent-light: rgba(46, 94, 128, 0.15); /* 浅钢蓝 */
+  --accent-ink: #F4F6F4;    /* accent 上的文字色 */
+
+  /* 毛玻璃卡片 */
+  --surface: rgba(255, 255, 255, 0.62);
+  --surface-border: rgba(255, 255, 255, 0.8);
+
+  /* 进度条轨道 / pill 底 */
+  --track: rgba(35, 39, 43, 0.14);
+
+  /* 导航栏 */
+  --nav-bg: rgba(233, 235, 231, 0.85);
+
+  /* 拍立得 */
+  --polaroid: #FDFDFC;      /* 日间白框 */
+  --polaroid-cap: #9AA2A8;  /* 拍立得日期字 */
+
+  /* 背景氛围光晕 */
+  --glow-1: rgba(90, 130, 170, 0.16);
+  --glow-2: rgba(160, 170, 165, 0.20);
+
+  /* 噪点 */
+  --noise-opacity: 0.035;
+
+  /* 深色卡片(播放器/歌曲卡) */
+  --dark-surface: linear-gradient(135deg, #23272B, #1A1E22);
+
+  /* —— 旧 token 映射(保持兼容,避免大面积改组件) —— */
+  --warm-cream: var(--surface);       /* 卡片底 → 毛玻璃 surface */
+  --film-grain: var(--track);         /* 纹理层 → track */
+  --pill-bg: var(--track);            /* pill 底 → track */
+
+  /* —— 阴影 —— */
+  --shadow-soft: 0 10px 26px rgba(35, 39, 43, 0.10);
+  --shadow-card: 0 8px 22px rgba(35, 39, 43, 0.08);
+  --shadow-amber: 0 8px 20px rgba(46, 94, 128, 0.20);
+
+  /* —— 圆角 —— */
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 22px;
   --radius-xl: 24px;
   --radius-pill: 100px;
 
-  /* —— 字体 token ——
-     Newsreader: 衬线,有 opsz,italic 用于英文标签/日期
-     Noto Serif SC: 中文宋体,正文/标题
-     Noto Sans SC: 中文黑体,仅用于极小字(导航标签)
-     JetBrains Mono: 仅限元数据 */
+  /* —— 字体 token —— */
   --font-serif: 'Noto Serif SC', 'Newsreader', Georgia, serif;
   --font-display: 'Newsreader', 'Noto Serif SC', Georgia, serif;
   --font-sans: 'Noto Sans SC', -apple-system, sans-serif;
@@ -68,12 +81,59 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 
-  /* —— 触感 token (统一交互反馈) —— */
+  /* —— 触感 token —— */
   --dur-tap: 0.12s;
   --dur-hov: 0.2s;
   --ease-tap: cubic-bezier(0.4, 0, 0.2, 1);
   --tap-scale: 0.97;
   --tap-scale-strong: 0.9;
+}
+
+/* —— 暗房 · 夜间 —— */
+html[data-theme="dark"] {
+  --bg: #1B1613;            /* 主背景: 深褐黑 */
+  --bg2: #251F1A;           /* 次背景: 稍亮褐 */
+  --ink: #EDE4D3;           /* 主文字: 暖白 */
+  --muted: #9A8D7C;         /* 次要文字: 灰褐 */
+  --rule: rgba(237, 228, 211, 0.10); /* 边框 */
+  --accent: #E8734A;        /* 胶片橙主色 */
+  --accent2: #D4623A;       /* 深橙: hover/强调 */
+  --accent-light: rgba(232, 115, 74, 0.15); /* 浅橙 */
+  --accent-ink: #1B1613;    /* accent 上的文字色 */
+
+  /* 毛玻璃卡片 */
+  --surface: rgba(38, 32, 26, 0.72);
+  --surface-border: rgba(255, 240, 220, 0.10);
+
+  /* 进度条轨道 / pill 底 */
+  --track: rgba(237, 228, 211, 0.16);
+
+  /* 导航栏 */
+  --nav-bg: rgba(27, 22, 19, 0.85);
+
+  /* 拍立得 */
+  --polaroid: #0F0C0A;      /* 夜间黑框 */
+  --polaroid-cap: #6B5F50;  /* 拍立得日期字 */
+
+  /* 背景氛围光晕 */
+  --glow-1: rgba(120, 90, 200, 0.14);
+  --glow-2: rgba(232, 115, 74, 0.10);
+
+  /* 噪点 */
+  --noise-opacity: 0.05;
+
+  /* 深色卡片 */
+  --dark-surface: linear-gradient(135deg, #1B1613, #0F0C0A);
+
+  /* —— 旧 token 映射 —— */
+  --warm-cream: var(--surface);
+  --film-grain: var(--track);
+  --pill-bg: var(--track);
+
+  /* —— 阴影: 夜间更深 —— */
+  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.30);
+  --shadow-card: 0 8px 22px rgba(0, 0, 0, 0.25);
+  --shadow-amber: 0 8px 20px rgba(232, 115, 74, 0.20);
 }
 
 /* —— 全局 focus-visible —— */
@@ -88,20 +148,26 @@
 
 html,
 body {
-  background: var(--bg);
+  /* 全局背景:两团 glow 径向渐变叠在 --bg 上 */
+  background:
+    radial-gradient(circle at 20% 12%, var(--glow-1), transparent 55%),
+    radial-gradient(circle at 80% 60%, var(--glow-2), transparent 50%),
+    var(--bg);
   color: var(--ink);
   font-family: var(--font-serif);
   font-weight: 300;
   font-size: 16px;
   line-height: 1.7;
+  /* 主题切换时柔和过渡 */
+  transition: background 0.6s ease, color 0.6s ease;
 }
 
-/* —— 噪点纹理 (旧纸颗粒感,模拟老化相纸) —— */
+/* —— 噪点纹理 (银盐颗粒感) —— */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  opacity: 0.055;
+  opacity: var(--noise-opacity);
   pointer-events: none;
   z-index: 9999;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -118,7 +184,7 @@ body::before {
   max-width: var(--app-max-width);
   margin: 0 auto;
   height: 100%;
-  background: var(--bg);
+  background: transparent;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -230,7 +296,7 @@ p {
 
 .btn-primary {
   background: var(--accent);
-  color: var(--warm-cream);
+  color: var(--accent-ink);
   font-weight: 600;
   box-shadow: var(--shadow-amber);
 }
@@ -240,7 +306,7 @@ p {
 }
 
 .btn-ghost {
-  background: var(--warm-cream);
+  background: var(--surface);
   color: var(--ink);
   border-color: var(--rule);
   box-shadow: var(--shadow-card);
@@ -262,8 +328,8 @@ p {
 
 /* —— Card —— */
 .card {
-  background: var(--warm-cream);
-  border: 1px solid var(--rule);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
   border-radius: var(--radius-lg);
   padding: var(--space-md);
   box-shadow: var(--shadow-card);
@@ -299,7 +365,7 @@ p {
   font-family: var(--font-display);
   border-radius: var(--radius-pill);
   background: var(--pill-bg);
-  color: #7C7259;
+  color: var(--muted);
   letter-spacing: 0.02em;
 }
 
@@ -344,7 +410,7 @@ p {
   background: linear-gradient(
     90deg,
     var(--bg2) 0%,
-    var(--warm-cream) 50%,
+    var(--surface) 50%,
     var(--bg2) 100%
   );
   background-size: 200% 100%;
@@ -357,7 +423,7 @@ p {
   100% { background-position: -200% 0; }
 }
 
-/* —— 动画 (设计稿用) —— */
+/* —— 动画 —— */
 @keyframes mtRise {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -380,7 +446,7 @@ p {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(59, 52, 42, 0.15);
+  background: var(--track);
   border-radius: var(--radius-pill);
 }
 
