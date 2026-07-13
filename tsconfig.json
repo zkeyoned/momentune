@@ -37,6 +37,7 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "api/**/*.ts",
     "data/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]

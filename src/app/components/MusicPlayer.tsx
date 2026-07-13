@@ -22,13 +22,15 @@ const TICK_MS = 500;
 
 /**
  * 音源层级(逐级降级):
- *   local      → 本地文件(preview.localFile,同源,无过期/跨域/混合内容,不走代理)
- *   remote     → 远程 url(dev 走 /api/audio-proxy 代理,build 直连)
+ *   local      → 本地全量文件(preview.localFile,同源,无过期/跨域/混合内容,不走代理)
+ *   demo       → 仓库内演示音频(preview.demoFile,15首精选128kbps,部署后线上可播)
+ *   remote     → 远程 url(dev 走 /api/audio-proxy 代理,build 直连,网易云直链易过期)
  *   simulated  → 模拟播放(<audio> 无 src,setInterval 虚拟进度)
  *
- * local 出错 → 自动降级 remote;remote 再出错 → 降级 simulated。
+ * local 出错 → 降级 demo;demo 出错 → 降级 remote;remote 再出错 → 降级 simulated。
  */
-type SourceTier = 'local' | 'remote' | 'simulated';
+
+type SourceTier = 'local' | 'demo' | 'remote' | 'simulated';
 
 /** 由歌曲 V-A 生成封面渐变色 */
 function coverGradient(song: Song): string {
@@ -129,11 +131,13 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
 
   // 音源选择(由 tier 决定):
   //   local  → preview.localFile(同源,不走代理,无过期/跨域/混合内容)
+  //   demo   → preview.demoFile(仓库内15首精选,同源,部署后线上可播)
   //   remote → 走现有音频代理(dev)或直连(build)
   //   simulated → 无 src(<audio> 不加载)
   const audioSrc = (() => {
     if (!preview) return '';
     if (tier === 'local' && preview.localFile) return preview.localFile;
+    if (tier === 'demo' && preview.demoFile) return preview.demoFile;
     // remote
     const rawUrl = preview.url;
     if (import.meta.env.DEV) {
@@ -147,9 +151,10 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
   // 注入 retro 样式(仅客户端)
   useEffect(() => { ensureRetroStyle(); }, []);
 
-  // 切歌时重置 tier 和模拟时间:按 local→remote→simulated 优先级选初始层级
+  // 切歌时重置 tier 和模拟时间:按 local→demo→remote→simulated 优先级选初始层级
   useEffect(() => {
     if (preview?.localFile) setTier('local');
+    else if (preview?.demoFile) setTier('demo');
     else if (preview) setTier('remote');
     else setTier('simulated');
     setCoverError(false);
@@ -184,8 +189,13 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
       next();
     };
     const onError = () => {
-      // 音源失效,逐级降级:local→remote→simulated
-      setTier((t) => (t === 'local' ? 'remote' : 'simulated'));
+      // 音源失效,逐级降级:local→demo→remote→simulated
+      // demo 层级仅当 preview.demoFile 存在时才降级,否则跳到 remote
+      setTier((t) => {
+        if (t === 'local') return preview?.demoFile ? 'demo' : 'remote';
+        if (t === 'demo') return 'remote';
+        return 'simulated';
+      });
       onTimeUpdate(simTimeRef.current, SIM_DURATION);
     };
 

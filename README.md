@@ -64,8 +64,30 @@ npm run typecheck    # 类型检查
 npm test             # 运行算法单测（609 tests）
 npm run dev          # 启动开发服务器
 npm run build        # 构建生产包
-npm run fetch:urls   # 下载演示音频/封面/歌词到本地（约300MB，需 NETEASE_COOKIE 环境变量）
+npm run fetch:urls   # 下载完整83首音频/封面/歌词到本地（约300MB，需 NETEASE_COOKIE 环境变量）
 ```
+
+### 演示音频
+
+仓库内含 **15 首精选演示音频**（`public/demo-audio/`，128kbps 压缩，约 59MB），覆盖 V-A 情绪各象限，5 张示例照片的默认推荐歌曲均包含在内。部署到 Vercel 后线上版本可播放这 15 首。
+
+完整 83 首音频（`public/audio/`）在 `.gitignore` 中，需本地运行 `npm run fetch:urls` 生成（约 300MB）。音源优先级：本地全量 → 仓库演示音频 → 远程直链（代理）→ 模拟播放。
+
+### 照片情绪分析（Qwen-VL API key 配置）
+
+照片分析使用阿里云百炼 Qwen-VL 模型。API key 在**服务端**读取（`api/vision.ts`），不会被打进前端 bundle，部署到公网后 F12 看不到 key。
+
+**本地开发：**
+1. 复制 `.env.example` 为 `.env`，填入你的百炼 API key（变量名 `QWEN_API_KEY`，注意不带 `VITE_` 前缀）
+2. `npm run dev` 启动后，Vite dev server 会自动加载 `api/vision.ts` 处理 `/api/vision` 请求（通过 `vite.config.ts` 的 `configureServer` 插件 + `ssrLoadModule`）
+3. 若未配置 key，前端会自动降级到 Canvas 像素统计（`photoHeuristic.ts`），不报错
+
+**生产部署（Vercel）：**
+- Vercel 自动识别 `api/` 目录部署为 Serverless Function
+- 在 Vercel 项目设置 → Environment Variables 添加 `QWEN_API_KEY`
+- 前端 POST `/api/vision` → Vercel Function 调百炼 → 返回 PhotoFeatures JSON
+
+> 注：从旧版本升级时，需手动把本地 `.env` 里的 `VITE_QWEN_API_KEY` 改名为 `QWEN_API_KEY`（去掉 `VITE_` 前缀），否则 key 会被打进前端 bundle，失去服务端保护。
 
 ## 赛事信息
 
