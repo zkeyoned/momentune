@@ -10,12 +10,13 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    include: ['src/**/*.test.ts', 'src/**/__tests__/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/__tests__/**/*.ts'],
+    exclude: ['src/**/__tests__/testHelpers.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/algorithm/**/*.ts'],
-      exclude: ['src/algorithm/**/*.test.ts', 'src/algorithm/__tests__/**', 'src/algorithm/demo.ts', 'src/algorithm/index.ts'],
+      exclude: ['src/algorithm/**/*.test.ts', 'src/algorithm/demo.ts', 'src/algorithm/index.ts'],
     },
   },
 });

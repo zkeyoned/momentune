@@ -57,7 +57,7 @@ describe('createDefaultGenreWeights', () => {
     const w = createDefaultGenreWeights(0.4);
     expect(w.pop).toBe(0.4);
     expect(w.rock).toBe(0.4);
-    expect(Object.keys(w).length).toBe(60); // 59 主类 + other
+    expect(Object.keys(w).length).toBe(69); // 68 主类 + other
   });
 
   it('默认值 = 0.3', () => {

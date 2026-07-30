@@ -45,7 +45,7 @@ export interface JournalEntry {
   location?: string;
 }
 
-/** 音乐平台账号(mock) */
+/** 音乐平台账号 */
 export interface PlatformAccount {
   id: PlatformPreference;
   name: string;
@@ -53,12 +53,16 @@ export interface PlatformAccount {
   label: string;
   /** 是否已登录 */
   loggedIn: boolean;
-  /** 账号昵称(mock) */
+  /** 账号昵称 */
   nickname?: string;
   /** 主题色 */
   color: string;
   /** 是否开放接入(未开放的平台置灰,不可点击) */
   available?: boolean;
+  /** 网易云登录 cookie(MUSIC_U=xxx 格式,明文存 localStorage) */
+  cookie?: string;
+  /** 网易云用户 ID */
+  neteaseUid?: number;
 }
 
 /** 推荐 + 照片分析的复合结果(页面消费) */

@@ -4,6 +4,8 @@ import type { Song } from '@algorithm/index';
 import { findNearestEmotionLabel } from '@algorithm/index';
 import { getEmotionDisplay } from '../config/emotionDisplay';
 import { SONG_PREVIEW_URLS } from '../services/songPreviewUrls';
+import type { SongPreview } from '../services/songPreviewUrls';
+import { getPreview, ensurePreview, getCoverUrl, getNeteaseCookie, getNeteaseIdBySongId } from '../services/runtimePreviews';
 import { LyricsPanel } from './LyricsPanel';
 
 /**
@@ -108,6 +110,10 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
   const [coverError, setCoverError] = useState(false);
   // 歌词面板显隐
   const [showLyrics, setShowLyrics] = useState(false);
+  // 运行时获取的 preview(导入歌曲异步获取播放地址后存这里)
+  const [runtimePreview, setRuntimePreview] = useState<SongPreview | undefined>(undefined);
+  // VIP/无版权歌曲:运行时获取返回了 preview 但 url 为空,提示用户已切换模拟播放
+  const [vipNotice, setVipNotice] = useState(false);
 
   const queue = usePlayerStore((s) => s.queue);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
@@ -123,8 +129,10 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
   const currentTrack: Song | null =
     currentIndex >= 0 && currentIndex < queue.length ? (queue[currentIndex] ?? null) : null;
 
-  // 查映射表
-  const preview = currentTrack ? SONG_PREVIEW_URLS[currentTrack.songId] : undefined;
+  // 查映射表(静态表优先,运行时缓存兜底,最后用 state 中的 runtimePreview)
+  const preview = currentTrack
+    ? (SONG_PREVIEW_URLS[currentTrack.songId] ?? getPreview(currentTrack.songId) ?? runtimePreview)
+    : undefined;
   // 是否真实播放:tier 非 simulated
   const isRealPlayback = tier !== 'simulated';
   const isTrial = preview?.isTrial ?? false;
@@ -146,21 +154,53 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
     return rawUrl;
   })();
 
-  const coverUrl = preview?.coverUrl;
+  const coverUrl = preview?.coverUrl ?? (currentTrack ? getCoverUrl(currentTrack.songId) : undefined);
 
   // 注入 retro 样式(仅客户端)
   useEffect(() => { ensureRetroStyle(); }, []);
 
   // 切歌时重置 tier 和模拟时间:按 local→demo→remote→simulated 优先级选初始层级
   useEffect(() => {
-    if (preview?.localFile) setTier('local');
-    else if (preview?.demoFile) setTier('demo');
-    else if (preview) setTier('remote');
-    else setTier('simulated');
+    // 先检查静态表和运行时缓存
+    const staticPreview = currentTrack ? SONG_PREVIEW_URLS[currentTrack.songId] : undefined;
+    const cachedPreview = currentTrack ? getPreview(currentTrack.songId) : undefined;
+    const existingPreview = staticPreview ?? cachedPreview;
+
+    if (existingPreview?.localFile) setTier('local');
+    else if (existingPreview?.demoFile) setTier('demo');
+    else if (existingPreview) setTier('remote');
+    else {
+      // 静态表和缓存都没有,检查是否是导入歌曲(有 neteaseId 映射)
+      const neteaseId = currentTrack ? getNeteaseIdBySongId(currentTrack.songId) : undefined;
+      const cookie = getNeteaseCookie();
+      if (neteaseId && cookie) {
+        // 先用模拟播放,异步获取播放地址后切换到 remote
+        setTier('simulated');
+        ensurePreview(currentTrack!.songId, neteaseId, cookie)
+          .then((p) => {
+            if (p && p.url) {
+              setRuntimePreview(p);
+              setTier('remote');
+            } else {
+              // 接口返回但 url 为空(典型:VIP/无版权歌曲无法获取播放地址)
+              // 保持模拟播放,提示用户
+              setVipNotice(true);
+            }
+          })
+          .catch(() => {
+            // 获取失败,保持模拟播放
+          });
+      } else {
+        setTier('simulated');
+      }
+    }
+
     setCoverError(false);
+    setRuntimePreview(undefined);
+    setVipNotice(false);
     simTimeRef.current = 0;
     // 模拟模式设虚拟时长,真实模式等 loadedmetadata 回填
-    onTimeUpdate(0, preview ? 0 : SIM_DURATION);
+    onTimeUpdate(0, existingPreview ? 0 : SIM_DURATION);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTrack?.songId]);
 
@@ -272,9 +312,10 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
   };
 
   // 提示文案:完整歌曲不显示 / 试听显示「♪ 试听片段」/ 模拟兜底显示演示模式
+  // VIP 歌曲无法获取播放地址时,在模拟兜底文案基础上更明确说明原因
   let hint: string | null = null;
   if (!isRealPlayback) {
-    hint = '♪ 演示模式 · 模拟播放';
+    hint = vipNotice ? '♪ VIP 歌曲无法播放 · 已切换模拟' : '♪ 演示模式 · 模拟播放';
   } else if (isTrial) {
     hint = '♪ 试听片段';
   }

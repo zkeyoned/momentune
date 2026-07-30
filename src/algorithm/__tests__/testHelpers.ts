@@ -354,6 +354,8 @@ export function createDefaultUserPreference(overrides: Partial<UserPreference> =
       reggaeton: 0.3, dembow: 0.3, trance: 0.3, hardwave: 0.3,
       anime: 0.3, vocaloid: 0.3, bachata: 0.3,
       emo: 0.3, poppunk: 0.3, postpunk: 0.3,
+      melodicrap: 0.3, guofengrap: 0.3, emorap: 0.3, pluggnb: 0.3,
+      memphis: 0.3, rage: 0.3, newwave: 0.3, jerseyclub: 0.3, postrock: 0.3,
       other: 0.3,
     },
     languageWeights: {

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import type { Song } from '@algorithm/index';
 import { SONG_PREVIEW_URLS } from '../services/songPreviewUrls';
+import { getPreview, getCoverUrl } from '../services/runtimePreviews';
 import styles from './SongWheel.module.css';
 
 /**
@@ -136,8 +137,8 @@ export function SongWheel({
     >
       {songs.map((song, i) => {
         const isCurrent = currentSongId === song.songId;
-        const preview = SONG_PREVIEW_URLS[song.songId];
-        const coverUrl = preview?.coverUrl;
+        const preview = SONG_PREVIEW_URLS[song.songId] ?? getPreview(song.songId);
+        const coverUrl = preview?.coverUrl ?? getCoverUrl(song.songId);
         const coverFailed = coverErrors.has(song.songId);
         // 封面图优先:有 coverUrl 且未加载失败 → 用图片;否则回退渐变色 + 首字母
         const useCoverImg = !!coverUrl && !coverFailed;

@@ -1,0 +1,10 @@
+- [x] GENRE_TAGS 数组包含 69 个标签（原 60 + 新增 9），且 newwave 在 rap 组末尾、jerseyclub 在 electronic 组、postrock 在 rock_indie 组
+- [x] GENRE_DISPLAY_META 中 9 个新标签的 label/group/desc/hot 与 spec 表格一致
+- [x] GENRE_DISPLAY_META 中 11 个校准标签的 hot 值已更新（phonk=3, driftphonk=3, hyperpop=3, hardwave=2, poppunk=2, emo=3, drill=2, citypop=3, bedroompop=3, ukgarage=4, xiqiang=5）
+- [x] GENRE_KEYWORD_MAPPING 中 emorap 在 rap 之前、pluggnb 在 rap 之前、memphis 在 phonk 之前、jerseyclub 在 electronic 之前
+- [x] GENRE_KEYWORD_MAPPING 中 "emo rap" 归到 emorap 而非 emo（关键混淆风险点）
+- [x] GENRE_AFFINITY 矩阵为 69×69，所有新标签行/列完整
+- [x] GENRE_AFFINITY 对称性：melodicrap→rap = rap→melodicrap = 0.9，memphis→phonk = phonk→memphis = 0.9（全矩阵 69×69 对称性测试通过）
+- [x] `npm run typecheck` 通过（exit 0）
+- [x] `npm test` 全通过（614 tests passed，0 failed）
+- [x] `src/algorithm/__tests__/genreTags.test.ts` 未被修改（硬约束）

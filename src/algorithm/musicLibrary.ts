@@ -1389,7 +1389,9 @@ export function importUserPlaylist(entries: readonly ImportedSongEntry[]): Song[
         source: 'netease_tag',
       };
     } else {
+      // 用户红心歌单:用户主动喜欢,置信度提升到 0.75(不触发惩罚)
       va = keywordEstimateVA(entry.title, entry.artist);
+      va.confidence = 0.75;
     }
 
     return {
@@ -1401,7 +1403,8 @@ export function importUserPlaylist(entries: readonly ImportedSongEntry[]): Song[
       genres,
       sceneTags: ['general'] as SongSceneTag[],
       language,
-      hotRecency: 'never' as HotRecency,
+      // 用户红心歌单:给 this_month 新鲜度(0.85 boost),不是 never
+      hotRecency: 'this_month' as HotRecency,
       decade: new Date().getFullYear(),
     };
   });

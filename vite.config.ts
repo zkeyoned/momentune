@@ -84,6 +84,101 @@ function visionApiDevPlugin(apiKey: string): Plugin {
   };
 }
 
+// ---------------------------------------------------------------------------
+// 本地 dev middleware:把 /api/netease/* 转发到 api/netease/*.ts 的 handler
+// ---------------------------------------------------------------------------
+// 与 visionApiDevPlugin 类似,但支持多路由(根据 URL 路径加载对应模块)。
+// 生产环境:Vercel 自动识别 api/ 目录部署为 Serverless Function,本段不生效。
+
+function neteaseApiDevPlugin(): Plugin {
+  // 路由 → 模块路径映射
+  const routes: Record<string, string> = {
+    '/api/netease/qr-create': '/api/netease/qr-create.ts',
+    '/api/netease/qr-check': '/api/netease/qr-check.ts',
+    '/api/netease/likelist': '/api/netease/likelist.ts',
+    '/api/netease/song-detail-batch': '/api/netease/song-detail-batch.ts',
+    '/api/netease/song-url': '/api/netease/song-url.ts',
+  };
+
+  return {
+    name: 'momentune-netease-api-dev',
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(async (req, res, next) => {
+        const url = req.url ?? '';
+        // 提取 pathname(去掉 query string)
+        const pathname = url.split('?')[0]!;
+
+        // 匹配路由
+        const modulePath = routes[pathname];
+        if (!modulePath) {
+          next();
+          return;
+        }
+
+        // 收集 body
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) {
+          if (typeof chunk === 'string' || chunk instanceof Buffer) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+        }
+        const bodyStr = Buffer.concat(chunks).toString('utf-8');
+
+        // 解析 query
+        const query: Record<string, string> = {};
+        const urlObj = new URL(url, 'http://localhost');
+        urlObj.searchParams.forEach((v, k) => { query[k] = v; });
+
+        // 解析 body
+        let body: Record<string, unknown> = {};
+        if (bodyStr) {
+          try {
+            body = JSON.parse(bodyStr);
+          } catch {
+            // 非 JSON body,空对象兜底
+          }
+        }
+
+        // 构造类 Vercel req/res
+        const vercelReq = {
+          method: req.method,
+          body,
+          query,
+        };
+        const vercelRes = {
+          status: (code: number) => ({
+            json: (data: unknown) => {
+              res.statusCode = code;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(data));
+            },
+            end: (data?: string) => res.end(data),
+          }),
+          setHeader: (name: string, value: string) => res.setHeader(name, value),
+          end: (data?: string) => res.end(data),
+        };
+
+        try {
+          const mod = await server.ssrLoadModule(modulePath);
+          const handler = mod.default;
+          if (typeof handler !== 'function') {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: `Module ${modulePath} has no default export` }));
+            return;
+          }
+          await handler(vercelReq, vercelRes);
+        } catch (e) {
+          const message = e instanceof Error ? e.message : 'Unknown server error';
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: message }));
+        }
+      });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   // loadEnv 第三个参数 '' 表示加载所有 env(含非 VITE_ 前缀的,如 QWEN_API_KEY)
   const env = loadEnv(mode, process.cwd(), '');
@@ -93,6 +188,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       visionApiDevPlugin(qwenApiKey),
+      neteaseApiDevPlugin(),
       // 自签名 HTTPS:demo 需在手机上现场拍照,getUserMedia 仅在 HTTPS/localhost 下可用,
       // 手机走局域网 IP 访问必须有 HTTPS(自签名证书浏览器会警告,点"高级→继续访问")。
       // basicSsl(),  // 临时注释:Trae 内置预览不支持自签名 HTTPS。手机拍照时恢复

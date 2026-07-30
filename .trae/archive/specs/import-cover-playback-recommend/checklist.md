@@ -1,0 +1,10 @@
+- [ ] `api/netease/song-detail-batch.ts` 返回值包含 `picUrl` 字段
+- [ ] `src/app/services/neteaseApi.ts` 的 `fetchSongDetails` 提取并返回 `picUrl`
+- [ ] `src/app/services/runtimePreviews.ts` 的 `ensurePreview` 返回的 `SongPreview` 包含 `coverUrl`
+- [ ] `src/app/services/mockApi.ts` 的 `analyzePhoto` 将红心歌前 20 首作为 `referenceSongs` 传入 `recommend()`
+- [ ] `src/algorithm/match.ts` 已移除 `user_` 前缀的 1.25x 乘性加成
+- [ ] `src/algorithm/match.ts` 已移除 `user_` 前缀的候选池距离豁免
+- [ ] `src/algorithm/musicLibrary.ts` 的 `hotRecency='this_month'` 和 `confidence=0.75` 数据修正保留未动
+- [ ] `npm run typecheck` 通过
+- [ ] `npm test` 609 个测试全通过
+- [ ] 模拟验证：接通 `referenceSongs` 后推荐结果包含相似新歌，而非全是红心歌

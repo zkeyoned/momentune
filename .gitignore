@@ -22,3 +22,20 @@ public/lyrics/
 TRAE-任务书.md
 Momentune.html
 result-page-preview-v2.html
+.vercel
+
+# 汽水歌单抓取产物（运行时生成，不入库）
+data/soda_songs.json
+scripts/build-soda-library/progress.json
+go.work
+go.work.sum
+
+# Go 编译二进制（误提交防护）
+/build-music-library
+scripts/build-music-library/build-music-library
+
+# 爬虫进度文件（运行时产物）
+scripts/build-music-library/progress_*.json
+
+# 备份文件
+data/*.bak.json

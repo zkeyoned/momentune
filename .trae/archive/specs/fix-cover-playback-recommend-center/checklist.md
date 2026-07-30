@@ -1,0 +1,13 @@
+- [x] `api/netease/song-detail-batch.ts` 返回的 `coverUrl` 强制 https 协议（`http://` → `https://`）
+- [x] `src/app/components/MusicPlayer.tsx` 封面取值有 `getCoverUrl(songId)` 兜底（与 SongWheel 一致）
+- [x] `src/app/components/MusicPlayer.tsx` 在音频 url 为空时显示"VIP 歌曲无法播放"提示（非静默降级）
+- [x] `api/audio-proxy.ts` Vercel serverless function 已创建，流式转发网易云音频
+- [x] `api/audio-proxy.ts` 设置正确的 `Content-Type`、`Referer`、CORS 头
+- [x] `src/algorithm/preference.ts` 的 `calcReferenceCenter` 已 export（原本已是 export）
+- [x] `src/algorithm/index.ts` 已 re-export `calcReferenceCenter`（通过 `export *`）
+- [x] `src/app/services/mockApi.ts` 的 `analyzePhoto` 在 `importedSongs` 非空时调用 `calcReferenceCenter` 重建 `pref.center`
+- [x] 偏好中心融合策略：`onboardingCenter × 0.4 + redHeartCenter × 0.6`
+- [x] `referenceSongs` 仍传入 `recommend()`（保持 `calcScoreRefSim` 影响）
+- [x] `npm run typecheck` 通过
+- [x] `npm test` 全部通过（609 tests passed）
+- [x] 模拟验证：导入红心歌后推荐结果 V-A 质心偏向红心歌（而非仅 onboarding anchor）

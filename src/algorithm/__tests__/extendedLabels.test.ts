@@ -217,16 +217,16 @@ describe('71 情绪标签 V-A 坐标', () => {
 // 2. 60 音乐风格 GENRE_AFFINITY 矩阵完整性 + 对称性
 // ============================================================================
 
-describe('60 音乐风格 GENRE_AFFINITY 矩阵', () => {
-  it('GENRE_TAGS = 60 个(59 主类 + other)', () => {
-    expect(GENRE_TAGS.length).toBe(60);
+describe('69 音乐风格 GENRE_AFFINITY 矩阵', () => {
+  it('GENRE_TAGS = 69 个(68 主类 + other)', () => {
+    expect(GENRE_TAGS.length).toBe(69);
   });
 
-  it('GENRE_AFFINITY 覆盖全部 60 风格', () => {
+  it('GENRE_AFFINITY 覆盖全部 69 风格', () => {
     for (const g of GENRE_TAGS) {
       expect(GENRE_AFFINITY[g]).toBeDefined();
     }
-    expect(Object.keys(GENRE_AFFINITY).length).toBe(60);
+    expect(Object.keys(GENRE_AFFINITY).length).toBe(69);
   });
 
   it('对角线 = 1.0', () => {

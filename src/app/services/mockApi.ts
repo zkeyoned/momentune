@@ -17,6 +17,7 @@ import {
   HOT_CHART_2026,
   LANGUAGE_TAGS,
   initUserPreference,
+  mergeUserImports,
   photoToVA,
   recommend,
   resolveEmotionLabels,
@@ -31,6 +32,7 @@ import type {
 } from '@algorithm/index';
 import type { AnalysisResult, GenreGroupUI, LanguageOption } from '../types';
 import { buildDisplayLabel } from '../config/emotionDisplay';
+import { useUserStore } from '../stores/userStore';
 
 // ============================================================================
 // 1. 示例照片预设(模拟视觉模型输出)
@@ -136,8 +138,25 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
 // 2. 音乐库(直接复用算法内置 HOT_CHART_2026)
 // ============================================================================
 
+/**
+ * 获取音乐库(合并热歌库 + 用户导入歌曲)
+ *
+ * 用户导入的歌曲(网易云红心歌单)存在 userStore.importedSongs,
+ * 通过 mergeUserImports 按歌曲 ID 去重合并到 HOT_CHART_2026。
+ */
 export function getMockLibrary(): Song[] {
-  return HOT_CHART_2026 as Song[];
+  const userSongs = useUserStore.getState().importedSongs ?? [];
+  // 数据迁移:修正旧导入歌的属性(hotRecency + confidence)
+  const migratedUserSongs = userSongs.map((song) => {
+    if (!song.songId.startsWith('user_')) return song;
+    return {
+      ...song,
+      hotRecency: 'this_month' as const,
+      va: { ...song.va, confidence: Math.max(song.va.confidence, 0.75) },
+    };
+  });
+  const library = mergeUserImports(HOT_CHART_2026 as Song[], migratedUserSongs);
+  return library;
 }
 
 // ============================================================================
@@ -183,12 +202,21 @@ export function analyzePhoto(
   // 步骤 1:照片 → V-A
   const photoVA = photoToVA(photo);
 
+  // 用户导入的红心歌作为参考歌曲(前 20 首),用于相似度计算(score_ref_sim)
+  // 注意:偏好中心已由 PlatformQRModal 通过 applyMultiSourcePreference 更新到 userPref,
+  // 这里不再重复计算红心质心,避免覆盖三维度画像
+  const userStore = useUserStore.getState();
+  const referenceSongs = userStore.importedSongsBySource.liked.slice(0, 20);
+
+  // 直接使用传入的 userPref(已含多维度偏好中心)
+  const effectivePref = pref;
+
   // 步骤 2:推荐(跳过 GPS 融合,mock 阶段不模拟定位)
   const recommendation = recommend({
     photoEmotion: photoVA,
     photoScene: photo.scene.type,
-    userPref: pref,
-    referenceSongs: [],
+    userPref: effectivePref,
+    referenceSongs,
     songLibrary: library,
   });
 

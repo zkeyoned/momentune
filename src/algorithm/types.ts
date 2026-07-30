@@ -426,12 +426,19 @@ export const HOT_RECENCY = [
 ] as const;
 export type HotRecency = (typeof HOT_RECENCY)[number];
 
-/** 音乐风格标签(60 标签,按 10 组分类,参考 QQ音乐/网易云/汽水音乐 2026 界面) */
+/** 音乐风格标签(69 标签,按 10 组分类,参考 QQ音乐/网易云/汽水音乐 2026 界面) */
 export const GENRE_TAGS = [
   // ── 说唱 ──
   'rap', // 说唱
   'trap', // 陷阱说唱
   'drill', // Drill
+  'melodicrap', // 旋律说唱
+  'guofengrap', // 国风说唱
+  'emorap', // 情绪说唱
+  'pluggnb', // Pluggnb
+  'memphis', // 孟菲斯说唱
+  'rage', // Rage
+  'newwave', // 新浪潮
   // ── 电子 ──
   'electronic', // 电子
   'house', // 浩室
@@ -446,6 +453,7 @@ export const GENRE_TAGS = [
   'vaporwave', // Vaporwave
   'phonk', // Phonk
   'driftphonk', // Drift Phonk
+  'jerseyclub', // Jersey Club
   // ── R&B/灵魂 ──
   'rnb', // R&B
   'soul', // 灵魂乐
@@ -473,6 +481,7 @@ export const GENRE_TAGS = [
   'postpunk', // 后朋克
   'shoegaze', // 盯鞋
   'dreampop', // 梦泡
+  'postrock', // 后摇
   // ── 轻音乐/氛围/古典 ──
   'ambient', // 氛围
   'lofi', // Lo-Fi
@@ -528,26 +537,36 @@ export const GENRE_GROUPS = [
   { id: 'folk_country', label: '民谣/乡村' },
 ] as const;
 
-/** 风格标签 → 展示元数据映射(60 条目) */
+/** 风格标签 → 展示元数据映射(69 条目) */
 export const GENRE_DISPLAY_META: Record<GenreTag, GenreDisplayMeta> = {
   // ── 说唱 ──
   rap: { label: '说唱', group: 'rap', desc: 'Hip-Hop/中文说唱', hot: 5 },
   trap: { label: 'Trap', group: 'rap', desc: '808鼓机+hi-hat三连音', hot: 4 },
-  drill: { label: 'Drill', group: 'rap', desc: '暗黑滑音街头说唱', hot: 4 },
+  drill: { label: 'Drill', group: 'rap', desc: '暗黑滑音街头说唱', hot: 2 },
+  // 说唱组新增
+  melodicrap: { label: '旋律说唱', group: 'rap', desc: 'Drake/Post Malone系旋律化说唱', hot: 5 },
+  guofengrap: { label: '国风说唱', group: 'rap', desc: '说唱beat×民乐/戏腔', hot: 5 },
+  emorap: { label: '情绪说唱', group: 'rap', desc: 'Lil Peep/Juice WRLD系抑郁旋律', hot: 4 },
+  pluggnb: { label: 'Pluggnb', group: 'rap', desc: 'plugg×R&B融合，G-Funk合成器', hot: 5 },
+  memphis: { label: '孟菲斯说唱', group: 'rap', desc: '808+牛铃+恐怖采样，phonk源头', hot: 4 },
+  rage: { label: 'Rage', group: 'rap', desc: 'Opium系暗黑失真陷阱', hot: 4 },
+  newwave: { label: '新浪潮', group: 'rap', desc: '新说唱2025主推概念', hot: 4 },
   // ── 电子 ──
   electronic: { label: '电子', group: 'electronic', desc: '合成器/电子音乐', hot: 4 },
   house: { label: '浩室', group: 'electronic', desc: '4/4拍律动舞曲', hot: 3 },
   techno: { label: 'Techno', group: 'electronic', desc: '工业底特律电子', hot: 3 },
   trance: { label: 'Trance', group: 'electronic', desc: '旋律升华出神舞曲', hot: 3 },
   drumandbass: { label: 'Drum & Bass', group: 'electronic', desc: '170BPM碎拍', hot: 3 },
-  ukgarage: { label: 'UK Garage', group: 'electronic', desc: '2-step英式车库', hot: 3 },
+  ukgarage: { label: 'UK Garage', group: 'electronic', desc: '2-step英式车库', hot: 4 },
   edm: { label: 'EDM舞曲', group: 'electronic', desc: '大场电子舞曲', hot: 4 },
   synthwave: { label: 'Synthwave', group: 'electronic', desc: '80s霓虹复古电子', hot: 4 },
-  hardwave: { label: 'Hardwave', group: 'electronic', desc: '电影感赛博电子', hot: 4 },
+  hardwave: { label: 'Hardwave', group: 'electronic', desc: '电影感赛博电子', hot: 2 },
   futurebass: { label: 'Future Bass', group: 'electronic', desc: '和声切分电子', hot: 3 },
   vaporwave: { label: 'Vaporwave', group: 'electronic', desc: '蒸汽波降速采样', hot: 3 },
-  phonk: { label: 'Phonk', group: 'electronic', desc: '失真808+牛铃漂移', hot: 5 },
-  driftphonk: { label: 'Drift Phonk', group: 'electronic', desc: '高BPM漂移电音', hot: 5 },
+  phonk: { label: 'Phonk', group: 'electronic', desc: '失真808+牛铃漂移', hot: 3 },
+  driftphonk: { label: 'Drift Phonk', group: 'electronic', desc: '高BPM漂移电音', hot: 3 },
+  // 电子组新增
+  jerseyclub: { label: 'Jersey Club', group: 'electronic', desc: '128bpm breakbeat+切碎采样', hot: 4 },
   // ── R&B/灵魂 ──
   rnb: { label: 'R&B', group: 'rnb', desc: '节奏布鲁斯', hot: 4 },
   soul: { label: '灵魂乐', group: 'rnb', desc: 'Soul/Neo-Soul', hot: 3 },
@@ -557,24 +576,26 @@ export const GENRE_DISPLAY_META: Record<GenreTag, GenreDisplayMeta> = {
   pop: { label: '流行', group: 'pop', desc: '华语/欧美流行', hot: 5 },
   kpop: { label: 'K-Pop', group: 'pop', desc: '韩流偶像', hot: 5 },
   jpop: { label: 'J-Pop', group: 'pop', desc: '日系流行', hot: 4 },
-  hyperpop: { label: 'Hyperpop', group: 'pop', desc: '失真人声+glitch', hot: 4 },
-  bedroompop: { label: '卧室流行', group: 'pop', desc: 'DIY卧室质感', hot: 4 },
-  citypop: { label: 'City Pop', group: 'pop', desc: '80s日式复古', hot: 4 },
+  hyperpop: { label: 'Hyperpop', group: 'pop', desc: '失真人声+glitch', hot: 3 },
+  bedroompop: { label: '卧室流行', group: 'pop', desc: 'DIY卧室质感', hot: 3 },
+  citypop: { label: 'City Pop', group: 'pop', desc: '80s日式复古', hot: 3 },
   // ── 国风 ──
   guofeng: { label: '国风', group: 'guofeng', desc: '中国风流行', hot: 5 },
   gufeng: { label: '古风', group: 'guofeng', desc: '五声音阶真古法', hot: 4 },
-  xiqiang: { label: '戏腔', group: 'guofeng', desc: '戏曲发声融入流行', hot: 4 },
+  xiqiang: { label: '戏腔', group: 'guofeng', desc: '戏曲发声融入流行', hot: 5 },
   guofengrock: { label: '国风摇滚', group: 'guofeng', desc: '民乐+摇滚融合', hot: 3 },
   // ── 摇滚/独立 ──
   rock: { label: '摇滚', group: 'rock_indie', desc: '经典摇滚', hot: 3 },
   indie: { label: '独立', group: 'rock_indie', desc: '独立/另类', hot: 4 },
   metal: { label: '金属', group: 'rock_indie', desc: '重金属/激流', hot: 2 },
   punk: { label: '朋克', group: 'rock_indie', desc: 'Punk摇滚', hot: 2 },
-  poppunk: { label: '流行朋克', group: 'rock_indie', desc: 'MCR/AVC复兴', hot: 4 },
-  emo: { label: 'Emo', group: 'rock_indie', desc: 'Midwest Emo复兴', hot: 4 },
+  poppunk: { label: '流行朋克', group: 'rock_indie', desc: 'MCR/AVC复兴', hot: 2 },
+  emo: { label: 'Emo', group: 'rock_indie', desc: 'Midwest Emo复兴', hot: 3 },
   postpunk: { label: '后朋克', group: 'rock_indie', desc: '冷峻bassline', hot: 3 },
   shoegaze: { label: '盯鞋', group: 'rock_indie', desc: '音墙混响迷幻', hot: 3 },
   dreampop: { label: '梦泡', group: 'rock_indie', desc: '飘渺人声+混响', hot: 3 },
+  // 摇滚/独立组新增
+  postrock: { label: '后摇', group: 'rock_indie', desc: '器乐层叠叙事，荒原/公路感', hot: 3 },
   // ── 轻音乐/氛围/古典 ──
   ambient: { label: '氛围', group: 'ambient_classical', desc: '环境音乐', hot: 3 },
   lofi: { label: 'Lo-Fi', group: 'ambient_classical', desc: '低保真放松', hot: 4 },
@@ -759,6 +780,21 @@ export interface Song {
   /** 发布年代(用于相似度计算) */
   decade?: number; // 如 2020 表示 2020s
 }
+
+// ============================================================================
+// 4.1 用户导入歌曲来源（多维度画像用）
+// ============================================================================
+
+/** 用户导入歌曲的来源维度 */
+export const IMPORTED_SONG_SOURCES = [
+  'liked', // 红心歌单（主动标记喜欢）
+  'playlist', // 自建歌单（分场景偏好）
+  'recent', // 最近听过（真实听歌行为）
+] as const;
+export type ImportedSongSource = (typeof IMPORTED_SONG_SOURCES)[number];
+
+/** 按来源分组的导入歌曲集合 */
+export type ImportedSongsBySource = Record<ImportedSongSource, Song[]>;
 
 // ============================================================================
 // 5. 用户偏好

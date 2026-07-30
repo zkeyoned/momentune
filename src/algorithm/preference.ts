@@ -29,21 +29,22 @@ import {
   HOURLY_MIN_SAMPLES,
 } from './config/thresholds.js';
 import type { Song } from './types.js';
-import {
-  type EmotionLabel,
-  type GenreTag,
-  type GenreWeightVector,
-  type InteractionEvent,
-  type InteractionSignal,
-  type LanguageTag,
-  type LanguageWeightVector,
-  type MoodPreference,
-  type OnboardingAnswers,
-  type UserPreference,
-  type VACoordinate,
-  GENRE_TAGS,
-  LANGUAGE_TAGS,
+import type {
+  EmotionLabel,
+  GenreTag,
+  GenreWeightVector,
+  ImportedSongSource,
+  ImportedSongsBySource,
+  InteractionEvent,
+  InteractionSignal,
+  LanguageTag,
+  LanguageWeightVector,
+  MoodPreference,
+  OnboardingAnswers,
+  UserPreference,
+  VACoordinate,
 } from './types.js';
+import { GENRE_TAGS, IMPORTED_SONG_SOURCES, LANGUAGE_TAGS } from './types.js';
 import { calcVASimilarity, clamp, clamp01 } from './utils.js';
 
 // ============================================================================
@@ -434,4 +435,176 @@ export function getPrefCenterEmotionLabel(pref: UserPreference): EmotionLabel {
 /** 偏好中心 V-A 相似度(外部匹配用) */
 export function calcPrefCenterSimilarity(pref: UserPreference, songVA: VACoordinate): number {
   return calcVASimilarity(pref.center, songVA);
+}
+
+// ============================================================================
+// 9. 多维度导入画像（红心 + 自建歌单 + 最近听过）
+// ============================================================================
+
+/** 三来源权重：红心最重，歌单次之，最近听过最低 */
+const MULTI_SOURCE_WEIGHTS: Record<ImportedSongSource, number> = {
+  liked: 1.0,
+  playlist: 0.7,
+  recent: 0.5,
+};
+
+/** 流派权重加成幅度（按来源） */
+const MULTI_SOURCE_GENRE_BOOST: Record<ImportedSongSource, number> = {
+  liked: 0.3,
+  playlist: 0.2,
+  recent: 0.15,
+};
+
+/** 语种权重加成幅度（按来源） */
+const MULTI_SOURCE_LANGUAGE_BOOST: Record<ImportedSongSource, number> = {
+  liked: 0.3,
+  playlist: 0.2,
+  recent: 0.15,
+};
+
+/**
+ * 多维度导入数据 → 加权偏好中心（V-A 质心）
+ *
+ * 权重: 红心 1.0 + 歌单 0.7 + 最近听过 0.5
+ * 只取 va.confidence > 0.3 的歌参与计算
+ * 无有效数据时返回 null
+ *
+ * @param sources 按来源分组的导入歌曲
+ * @returns 加权 V-A 质心，或 null（无有效数据）
+ */
+export function calcMultiSourcePreferenceCenter(
+  sources: ImportedSongsBySource,
+): VACoordinate | null {
+  let vSum = 0;
+  let aSum = 0;
+  let weightSum = 0;
+
+  for (const source of IMPORTED_SONG_SOURCES) {
+    const songs = sources[source];
+    const sourceWeight = MULTI_SOURCE_WEIGHTS[source];
+    for (const song of songs) {
+      if (song.va.confidence > 0.3) {
+        vSum += song.va.v * sourceWeight;
+        aSum += song.va.a * sourceWeight;
+        weightSum += sourceWeight;
+      }
+    }
+  }
+
+  if (weightSum === 0) return null;
+  return { v: vSum / weightSum, a: aSum / weightSum };
+}
+
+/**
+ * 多维度导入数据 → 流派权重向量（叠加到 baseWeights）
+ *
+ * 统计三来源的流派分布频次，按来源权重加成后叠加到 baseWeights
+ * 钳制 [0.1, 3.0]
+ *
+ * @param sources 按来源分组的导入歌曲
+ * @param baseWeights 基础权重（通常来自 onboarding 问卷）
+ */
+export function calcMultiSourceGenreWeights(
+  sources: ImportedSongsBySource,
+  baseWeights: GenreWeightVector,
+): GenreWeightVector {
+  const next = { ...baseWeights };
+  const boostSum: Partial<Record<GenreTag, number>> = {};
+
+  for (const source of IMPORTED_SONG_SOURCES) {
+    const songs = sources[source];
+    const boost = MULTI_SOURCE_GENRE_BOOST[source];
+    const genreCount: Partial<Record<GenreTag, number>> = {};
+    let total = 0;
+    for (const song of songs) {
+      for (const g of song.genres) {
+        genreCount[g] = (genreCount[g] ?? 0) + 1;
+        total++;
+      }
+    }
+    if (total === 0) continue;
+    // 归一化后乘以来源加成幅度
+    for (const [g, count] of Object.entries(genreCount) as Array<[GenreTag, number]>) {
+      const normalized = count / total;
+      boostSum[g] = (boostSum[g] ?? 0) + normalized * boost;
+    }
+  }
+
+  // 叠加到 baseWeights
+  for (const [g, boost] of Object.entries(boostSum) as Array<[GenreTag, number]>) {
+    const oldVal = next[g] ?? 1.0;
+    next[g] = clamp(oldVal + boost, PREF_WEIGHT_CLAMP.min, PREF_WEIGHT_CLAMP.max);
+  }
+
+  return next;
+}
+
+/**
+ * 多维度导入数据 → 语种权重向量（叠加到 baseWeights）
+ *
+ * 同 calcMultiSourceGenreWeights，按语种频次加权
+ *
+ * @param sources 按来源分组的导入歌曲
+ * @param baseWeights 基础权重
+ */
+export function calcMultiSourceLanguageWeights(
+  sources: ImportedSongsBySource,
+  baseWeights: LanguageWeightVector,
+): LanguageWeightVector {
+  const next = { ...baseWeights };
+  const boostSum: Partial<Record<LanguageTag, number>> = {};
+
+  for (const source of IMPORTED_SONG_SOURCES) {
+    const songs = sources[source];
+    const boost = MULTI_SOURCE_LANGUAGE_BOOST[source];
+    const langCount: Partial<Record<LanguageTag, number>> = {};
+    let total = 0;
+    for (const song of songs) {
+      langCount[song.language] = (langCount[song.language] ?? 0) + 1;
+      total++;
+    }
+    if (total === 0) continue;
+    for (const [l, count] of Object.entries(langCount) as Array<[LanguageTag, number]>) {
+      const normalized = count / total;
+      boostSum[l] = (boostSum[l] ?? 0) + normalized * boost;
+    }
+  }
+
+  for (const [l, boost] of Object.entries(boostSum) as Array<[LanguageTag, number]>) {
+    const oldVal = next[l] ?? 0.5;
+    next[l] = clamp(oldVal + boost, PREF_WEIGHT_CLAMP.min, PREF_WEIGHT_CLAMP.max);
+  }
+
+  return next;
+}
+
+/**
+ * 多维度导入数据 → 更新用户偏好模型
+ *
+ * 综合：
+ * - 偏好中心（用多源质心替换，若存在）
+ * - 流派权重（叠加到现有）
+ * - 语种权重（叠加到现有）
+ *
+ * @param pref 当前偏好模型
+ * @param sources 按来源分组的导入歌曲
+ * @returns 更新后的偏好模型
+ */
+export function applyMultiSourcePreference(
+  pref: UserPreference,
+  sources: ImportedSongsBySource,
+): UserPreference {
+  const center = calcMultiSourcePreferenceCenter(sources);
+  const genreWeights = calcMultiSourceGenreWeights(sources, pref.genreWeights);
+  const languageWeights = calcMultiSourceLanguageWeights(sources, pref.languageWeights);
+
+  return {
+    ...pref,
+    ...(center ? { center } : {}),
+    genreWeights,
+    languageWeights,
+    // 有导入数据后不再是冷启动
+    isColdStart: false,
+    updatedAt: Date.now(),
+  };
 }

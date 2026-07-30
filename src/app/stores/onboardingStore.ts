@@ -12,6 +12,7 @@
  */
 
 import { create } from 'zustand';
+import { useUserStore } from './userStore';
 import type {
   GenreTag,
   LanguageTag,
@@ -95,10 +96,12 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
 
   buildAnswers: () => {
     const s = get();
+    // 若用户已导入红心歌,作为参考歌曲传入(前 20 首)
+    const importedSongs = useUserStore.getState().importedSongs.slice(0, 20);
     return {
       ageRange: s.ageRange ?? undefined,
       platform: s.platform ?? 'netease',
-      referenceSongs: [],
+      referenceSongs: importedSongs,
       mood: s.mood ?? 'neutral',
       genres: s.genresSkipped ? [] : s.genres,
       languages: s.languages,
