@@ -24,8 +24,13 @@ Momentune.html
 result-page-preview-v2.html
 .vercel
 
-# 汽水歌单抓取产物（运行时生成，不入库）
+# 音乐库构建产物（脚本可重建，不入库）
 data/soda_songs.json
+data/unified_library.json
+data/unified_tags.json
+data/unified_library_stats.json
+data/netease_songs.json
+data/qq_songs.json
 scripts/build-soda-library/progress.json
 go.work
 go.work.sum
