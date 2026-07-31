@@ -357,6 +357,8 @@ export interface PhotoFeatures {
   };
   /** 整体置信度(各特征置信度加权均值) */
   overallConfidence: number;
+  /** AI 产出的音乐匹配意图(五维,AI 降级时缺失) */
+  musicIntent?: MusicIntent;
 }
 
 // ============================================================================
@@ -415,6 +417,20 @@ export const MUSIC_LAYERS = [
   'fallback', // 兜底层:免版权
 ] as const;
 export type MusicLayer = (typeof MUSIC_LAYERS)[number];
+
+/** AI 产出的音乐匹配意图(五维) */
+export interface MusicIntent {
+  /** 情绪基调标签(自由文本,如 ["慵懒","释然","夏夜"]) */
+  moodTags: string[];
+  /** 能量级别:low=低能量平静 / mid=中能量 / high=高能量 */
+  energyLevel: 'low' | 'mid' | 'high';
+  /** 风格倾向(自由文本,如 ["chill electronic","city pop","lofi"]) */
+  genreHints: string[];
+  /** 语种倾向:mandarin=华语 / english=英文 / any=不限 */
+  languageHint: 'mandarin' | 'english' | 'any';
+  /** 一句话氛围描述(如 "夏夜海边微醺的放松感"),可空字符串 */
+  vibeDescription: string;
+}
 
 /** 热歌新鲜度等级(基于上榜时间) */
 export const HOT_RECENCY = [
@@ -765,6 +781,8 @@ export interface Song {
   layer: MusicLayer;
   /** V-A 坐标(带置信度) */
   va: VAWithConfidence;
+  /** 情绪标签(由 V-A 坐标最近邻映射,null 表示未匹配) */
+  emotionLabel?: EmotionLabel | null;
   /** 风格标签(可多个) */
   genres: GenreTag[];
   /** 场景标签(可多个) */
@@ -878,6 +896,12 @@ export interface UserPreference {
 export interface MatchScoreBreakdown {
   /** V-A 空间距离得分(0-1,越大越好) */
   scoreVA: number;
+  /** 五维匹配得分(0-1,越大越好) */
+  scoreMood: number;      // moodTags 模糊匹配 song.emotionLabel + neteaseTags
+  scoreEnergy: number;    // energyLevel 匹配 song.va.a 区间
+  scoreGenre: number;     // genreHints 模糊匹配 song.genres
+  scoreLanguage: number; // languageHint 精确匹配 song.language
+  scoreVibe: number;      // vibeDescription 匹配 song.sceneTags
   /** 场景标签匹配得分 */
   scoreScene: number;
   /** 用户偏好匹配得分 */

@@ -66,25 +66,25 @@
   "vaStats": {
     "vRange": [
       0.1937,
-      0.825
+      0.8105
     ],
     "aRange": [
       0.13,
       0.9305
     ],
-    "avgV": 0.5356,
-    "avgA": 0.5622,
-    "avgConfidence": 0.6342,
+    "avgV": 0.5355,
+    "avgA": 0.5628,
+    "avgConfidence": 0.7057,
     "quadrants": {
-      "高V高A": 84454,
-      "高V低A": 36184,
-      "低V高A": 51111,
-      "低V低A": 2527
+      "高V高A": 85023,
+      "高V低A": 35722,
+      "低V高A": 51694,
+      "低V低A": 1837
     },
     "confidenceBuckets": {
-      "≥0.85": 3586,
-      "0.70-0.85": 32843,
-      "0.50-0.70": 137847,
+      "≥0.85": 5680,
+      "0.70-0.85": 159874,
+      "0.50-0.70": 8722,
       "<0.50": 0
     },
     "sourceDistribution": {
@@ -97,10 +97,10 @@
     "fallback": 151864
   },
   "languageDistribution": {
-    "other": 59941,
-    "mandarin": 53060,
-    "english": 43416,
-    "japanese": 8941,
+    "english": 87429,
+    "mandarin": 52631,
+    "other": 15433,
+    "japanese": 9865,
     "instrumental": 3921,
     "korean": 3108,
     "cantonese": 1889

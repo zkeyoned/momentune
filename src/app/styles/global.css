@@ -1,47 +1,47 @@
 /* ============================================================
    Momentune — Global Styles
-   双主题: 银盐(日间) / 暗房(夜间)
-   - 银盐: 冷灰底 + 钢蓝主色 (干净、克制、银盐胶片感)
-   - 暗房: 深褐底 + 胶片橙主色 (温暖、沉浸、暗房红灯感)
+   双主题: 素白(日间) / 墨夜(夜间)
+   - 素白: 近白底 + 墨绿主色 (干净、简约、克制)
+   - 墨夜: 深绿黑底 + 提亮墨绿主色 (沉静、沉浸)
    - 切换: html[data-theme="dark"] 覆盖 :root
    - body 背景: 两团 glow 径向渐变叠在 --bg 上
    ============================================================ */
 
 :root {
-  /* —— 银盐 · 日间 (默认) —— */
-  --bg: #E9EBE7;            /* 主背景: 冷灰白 */
-  --bg2: #DCDEDA;           /* 次背景: 稍深灰 */
-  --ink: #23272B;           /* 主文字: 炭黑 */
-  --muted: #6E7880;         /* 次要文字: 蓝灰 */
-  --rule: rgba(35, 39, 43, 0.12); /* 边框 */
-  --accent: #2E5E80;        /* 钢蓝主色 */
-  --accent2: #1F4561;       /* 深钢蓝: hover/强调 */
-  --accent-light: rgba(46, 94, 128, 0.15); /* 浅钢蓝 */
-  --accent-ink: #F4F6F4;    /* accent 上的文字色 */
+  /* —— 素白 · 日间 (默认) —— */
+  --bg: #F8FAF7;            /* 主背景: 近白带极淡绿调 */
+  --bg2: #EEF2EE;           /* 次背景: 稍深白绿 */
+  --ink: #1A201C;           /* 主文字: 深墨黑带绿调 */
+  --muted: #5C6B62;         /* 次要文字: 绿灰 */
+  --rule: rgba(26, 32, 28, 0.10); /* 边框 */
+  --accent: #1F5C42;        /* 墨绿主色 (深,非荧光) */
+  --accent2: #143A2C;       /* 深墨绿: hover/强调 */
+  --accent-light: rgba(31, 92, 66, 0.14); /* 浅墨绿 */
+  --accent-ink: #F4F8F4;    /* accent 上的文字色 */
 
   /* 毛玻璃卡片 */
-  --surface: rgba(255, 255, 255, 0.62);
-  --surface-border: rgba(255, 255, 255, 0.8);
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-border: rgba(255, 255, 255, 0.85);
 
   /* 进度条轨道 / pill 底 */
-  --track: rgba(35, 39, 43, 0.14);
+  --track: rgba(26, 32, 28, 0.12);
 
   /* 导航栏 */
-  --nav-bg: rgba(233, 235, 231, 0.85);
+  --nav-bg: rgba(248, 250, 247, 0.88);
 
   /* 拍立得 */
-  --polaroid: #FDFDFC;      /* 日间白框 */
-  --polaroid-cap: #9AA2A8;  /* 拍立得日期字 */
+  --polaroid: #FFFFFF;      /* 日间纯白框 */
+  --polaroid-cap: #8A9590;  /* 拍立得日期字 */
 
   /* 背景氛围光晕 */
-  --glow-1: rgba(90, 130, 170, 0.16);
-  --glow-2: rgba(160, 170, 165, 0.20);
+  --glow-1: rgba(31, 92, 66, 0.10);
+  --glow-2: rgba(120, 160, 140, 0.12);
 
   /* 噪点 */
   --noise-opacity: 0.035;
 
   /* 深色卡片(播放器/歌曲卡) */
-  --dark-surface: linear-gradient(135deg, #23272B, #1A1E22);
+  --dark-surface: linear-gradient(135deg, #1A201C, #0F1411);
 
   /* —— 旧 token 映射(保持兼容,避免大面积改组件) —— */
   --warm-cream: var(--surface);       /* 卡片底 → 毛玻璃 surface */
@@ -49,15 +49,15 @@
   --pill-bg: var(--track);            /* pill 底 → track */
 
   /* —— 阴影 —— */
-  --shadow-soft: 0 10px 26px rgba(35, 39, 43, 0.10);
-  --shadow-card: 0 8px 22px rgba(35, 39, 43, 0.08);
-  --shadow-amber: 0 8px 20px rgba(46, 94, 128, 0.20);
+  --shadow-soft: 0 10px 26px rgba(26, 32, 28, 0.10);
+  --shadow-card: 0 8px 22px rgba(26, 32, 28, 0.08);
+  --shadow-amber: 0 8px 20px rgba(31, 92, 66, 0.22);
 
   /* —— 圆角 —— */
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-xl: 24px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-xl: 30px;
   --radius-pill: 100px;
 
   /* —— 字体 token —— */
@@ -89,41 +89,41 @@
   --tap-scale-strong: 0.9;
 }
 
-/* —— 暗房 · 夜间 —— */
+/* —— 墨夜 · 夜间 —— */
 html[data-theme="dark"] {
-  --bg: #1B1613;            /* 主背景: 深褐黑 */
-  --bg2: #251F1A;           /* 次背景: 稍亮褐 */
-  --ink: #EDE4D3;           /* 主文字: 暖白 */
-  --muted: #9A8D7C;         /* 次要文字: 灰褐 */
-  --rule: rgba(237, 228, 211, 0.10); /* 边框 */
-  --accent: #E8734A;        /* 胶片橙主色 */
-  --accent2: #D4623A;       /* 深橙: hover/强调 */
-  --accent-light: rgba(232, 115, 74, 0.15); /* 浅橙 */
-  --accent-ink: #1B1613;    /* accent 上的文字色 */
+  --bg: #0F1411;            /* 主背景: 深绿黑 */
+  --bg2: #161D18;           /* 次背景: 稍亮绿黑 */
+  --ink: #E4EBE6;           /* 主文字: 暖白带绿调 */
+  --muted: #8A958E;         /* 次要文字: 绿灰 */
+  --rule: rgba(228, 235, 230, 0.08); /* 边框 */
+  --accent: #5BB585;        /* 提亮墨绿主色 (黑底可读) */
+  --accent2: #3D8B62;       /* 深一档: hover/强调 */
+  --accent-light: rgba(91, 181, 133, 0.16); /* 浅墨绿 */
+  --accent-ink: #0F1411;    /* accent 上的文字色 */
 
   /* 毛玻璃卡片 */
-  --surface: rgba(38, 32, 26, 0.72);
-  --surface-border: rgba(255, 240, 220, 0.10);
+  --surface: rgba(22, 29, 24, 0.75);
+  --surface-border: rgba(120, 160, 140, 0.12);
 
   /* 进度条轨道 / pill 底 */
-  --track: rgba(237, 228, 211, 0.16);
+  --track: rgba(228, 235, 230, 0.14);
 
   /* 导航栏 */
-  --nav-bg: rgba(27, 22, 19, 0.85);
+  --nav-bg: rgba(15, 20, 17, 0.88);
 
   /* 拍立得 */
-  --polaroid: #0F0C0A;      /* 夜间黑框 */
-  --polaroid-cap: #6B5F50;  /* 拍立得日期字 */
+  --polaroid: #1A201C;      /* 夜间深绿框 */
+  --polaroid-cap: #5C6B62;  /* 拍立得日期字 */
 
   /* 背景氛围光晕 */
-  --glow-1: rgba(120, 90, 200, 0.14);
-  --glow-2: rgba(232, 115, 74, 0.10);
+  --glow-1: rgba(91, 181, 133, 0.14);
+  --glow-2: rgba(60, 100, 80, 0.10);
 
   /* 噪点 */
   --noise-opacity: 0.05;
 
   /* 深色卡片 */
-  --dark-surface: linear-gradient(135deg, #1B1613, #0F0C0A);
+  --dark-surface: linear-gradient(135deg, #161D18, #0F1411);
 
   /* —— 旧 token 映射 —— */
   --warm-cream: var(--surface);
@@ -131,9 +131,9 @@ html[data-theme="dark"] {
   --pill-bg: var(--track);
 
   /* —— 阴影: 夜间更深 —— */
-  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.30);
-  --shadow-card: 0 8px 22px rgba(0, 0, 0, 0.25);
-  --shadow-amber: 0 8px 20px rgba(232, 115, 74, 0.20);
+  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.32);
+  --shadow-card: 0 8px 22px rgba(0, 0, 0, 0.26);
+  --shadow-amber: 0 8px 20px rgba(91, 181, 133, 0.22);
 }
 
 /* —— 全局 focus-visible —— */
@@ -162,7 +162,7 @@ body {
   transition: background 0.6s ease, color 0.6s ease;
 }
 
-/* —— 噪点纹理 (银盐颗粒感) —— */
+/* —— 噪点纹理 (颗粒感) —— */
 body::before {
   content: '';
   position: fixed;
@@ -194,7 +194,7 @@ body::before {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-sm));
 }
 
 /* —— Typography —— */

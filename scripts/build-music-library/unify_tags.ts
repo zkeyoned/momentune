@@ -520,7 +520,7 @@ function main(): void {
     console.log(`     rawTags(${s.rawTags.length}):        [${s.rawTags.join(', ')}]`);
     console.log(`     primaryGenres(${s.primaryGenres.length}):  [${s.primaryGenres.join(', ')}]`);
     console.log(`     subGenres(${s.subGenres.length}):         [${s.subGenres.join(', ')}]`);
-    console.log(`     emotionTags:       [${s.emotionTags.join(', ')}]`);
+    console.log(`     emotionTags(${s.emotionTags.length}):       [${s.emotionTags.join(', ')}]`);
     console.log(`     sceneTags:         [${s.sceneTags.join(', ')}]`);
     console.log(`     eraTags:           [${s.eraTags.join(', ')}]`);
     console.log(`     languageTags:      [${s.languageTags.join(', ')}]`);

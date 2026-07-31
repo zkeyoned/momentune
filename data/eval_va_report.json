@@ -1,0 +1,147 @@
+{
+  "baseline": {
+    "matchedCount": 141,
+    "totalCount": 141,
+    "vMae": 0.0813,
+    "aMae": 0.1002,
+    "quadrantAccuracy": 0.4752,
+    "quadrantHits": {
+      "高V高A": 22,
+      "高V低A": 2,
+      "低V高A": 5,
+      "低V低A": 38
+    },
+    "unmatched": [],
+    "recordedAt": "2026-07-30T19:03:51.077Z"
+  },
+  "iterations": [
+    {
+      "label": "after-step2-denoise",
+      "matchedCount": 141,
+      "totalCount": 141,
+      "vMae": 0.0864,
+      "aMae": 0.1186,
+      "quadrantAccuracy": 0.3191,
+      "quadrantHits": {
+        "高V高A": 24,
+        "高V低A": 3,
+        "低V高A": 6,
+        "低V低A": 12
+      },
+      "unmatched": [],
+      "recordedAt": "2026-07-30T19:10:10.584Z"
+    },
+    {
+      "label": "after-step2-denoise-v2",
+      "matchedCount": 141,
+      "totalCount": 141,
+      "vMae": 0.0844,
+      "aMae": 0.1072,
+      "quadrantAccuracy": 0.4397,
+      "quadrantHits": {
+        "高V高A": 24,
+        "高V低A": 2,
+        "低V高A": 8,
+        "低V低A": 28
+      },
+      "unmatched": [],
+      "recordedAt": "2026-07-30T19:27:31.100Z"
+    },
+    {
+      "label": "after-step3-fusion",
+      "matchedCount": 141,
+      "totalCount": 141,
+      "vMae": 0.1715,
+      "aMae": 0.1256,
+      "quadrantAccuracy": 0.5106,
+      "quadrantHits": {
+        "高V高A": 20,
+        "高V低A": 2,
+        "低V高A": 2,
+        "低V低A": 48
+      },
+      "unmatched": [],
+      "recordedAt": "2026-07-30T19:34:47.974Z"
+    },
+    {
+      "label": "after-step3-langfix",
+      "matchedCount": 141,
+      "totalCount": 141,
+      "vMae": 0.0813,
+      "aMae": 0.1002,
+      "quadrantAccuracy": 0.4752,
+      "quadrantHits": {
+        "高V高A": 22,
+        "高V低A": 2,
+        "低V高A": 5,
+        "低V低A": 38
+      },
+      "unmatched": [],
+      "recordedAt": "2026-07-30T19:39:18.813Z"
+    },
+    {
+      "label": "after-v2-expD-origFormula-denoisedTags",
+      "matchedCount": 141,
+      "totalCount": 141,
+      "vMae": 0.0872,
+      "aMae": 0.1176,
+      "quadrantAccuracy": 0.3475,
+      "quadrantHits": {
+        "高V高A": 27,
+        "高V低A": 3,
+        "低V高A": 7,
+        "低V低A": 12
+      },
+      "unmatched": [],
+      "recordedAt": "2026-07-30T20:27:23.328Z"
+    },
+    {
+      "label": "after-v2-rollback",
+      "matchedCount": 141,
+      "totalCount": 141,
+      "vMae": 0.0813,
+      "aMae": 0.1002,
+      "quadrantAccuracy": 0.4752,
+      "quadrantHits": {
+        "高V高A": 22,
+        "高V低A": 2,
+        "低V高A": 5,
+        "低V低A": 38
+      },
+      "unmatched": [],
+      "recordedAt": "2026-07-30T20:31:36.019Z"
+    },
+    {
+      "label": "after-v2-task3-keyword",
+      "matchedCount": 141,
+      "totalCount": 141,
+      "vMae": 0.0802,
+      "aMae": 0.1006,
+      "quadrantAccuracy": 0.4681,
+      "quadrantHits": {
+        "高V高A": 21,
+        "高V低A": 2,
+        "低V高A": 5,
+        "低V低A": 38
+      },
+      "unmatched": [],
+      "recordedAt": "2026-07-30T20:32:07.392Z"
+    },
+    {
+      "label": "after-v2-task5-confidence",
+      "matchedCount": 141,
+      "totalCount": 141,
+      "vMae": 0.0802,
+      "aMae": 0.1006,
+      "quadrantAccuracy": 0.4681,
+      "quadrantHits": {
+        "高V高A": 21,
+        "高V低A": 2,
+        "低V高A": 5,
+        "低V低A": 38
+      },
+      "unmatched": [],
+      "recordedAt": "2026-07-30T20:35:28.315Z"
+    }
+  ]
+}

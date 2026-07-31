@@ -39,3 +39,6 @@ scripts/build-music-library/progress_*.json
 
 # 备份文件
 data/*.bak.json
+
+# TRAE spec 过程文档(本地保留,不入库)
+.trae/specs/

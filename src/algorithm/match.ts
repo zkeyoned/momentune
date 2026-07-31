@@ -23,19 +23,19 @@
 import { calcSceneScore, getSceneEmotionPrior, type ExtendedSceneType } from './config/sceneMatrix.js';
 import { calcGenreMatch, calcGenreSimilarity } from './config/genreTags.js';
 import {
-  MATCH_WEIGHTS,
   HOT_BOOST_MAX,
   HOT_RECENCY_DECAY_DAYS,
   VA_CONFIDENCE_PENALTY_THRESHOLD,
   CONFIDENCE_PENALTY,
   EXTEND_SCORE_SIM_WEIGHT,
   EXTEND_SCORE_PHOTO_WEIGHT,
-  COLD_START_PREF_WEIGHT,
-  COLD_START_HOT_WEIGHT_BOOST,
   BAYESIAN_SMOOTHING_M,
   CANDIDATE_POOL_VA_DISTANCE,
   CANDIDATE_POOL_VA_DISTANCE_LOOSE,
   CANDIDATE_POOL_MIN_SIZE,
+  MATCH_WEIGHTS_FIVE_DIM,
+  MATCH_WEIGHTS_VA_DEGRADED,
+  VA_CONFIDENCE_DEGRADE_THRESHOLD,
 } from './config/thresholds.js';
 import { calcVADistance, calcVASimilarity, cosineSimilarity, clamp01, daysSince, normalizeTempo, normalizeLoudness } from './utils.js';
 import type {
@@ -43,10 +43,12 @@ import type {
   GenreTag,
   LanguageTag,
   MatchScoreBreakdown,
+  MusicIntent,
   PlatformPreference,
   Song,
   UserPreference,
   VACoordinate,
+  VAWithConfidence,
   SpotifyAudioFeatures,
   SongSceneTag,
 } from './types.js';
@@ -309,6 +311,8 @@ export interface MatchContext {
   referenceSongs: readonly Song[];
   /** 是否冷启动(冷启动时 score_pref 降权,score_hot 加权) */
   isColdStart: boolean;
+  /** AI 产出的音乐匹配意图(五维,AI 降级时缺失 → 退化为纯 V-A 模式) */
+  musicIntent?: MusicIntent;
 }
 
 /**
@@ -322,7 +326,7 @@ export interface MatchContext {
  * final = base × hot_boost × confidence_penalty
  */
 export function calcMatchScore(song: Song, ctx: MatchContext): MatchScoreBreakdown {
-  // 6 维评分
+  // 6 维评分(原有补充信号)
   const scoreVA = calcScoreVA(ctx.photoVA, song.va);
   const scoreScene = calcScoreScene(ctx.photoScene, song.sceneTags);
   const scorePref = calcScorePref(song, ctx.userPref);
@@ -330,26 +334,58 @@ export function calcMatchScore(song: Song, ctx: MatchContext): MatchScoreBreakdo
   const scoreRefSim = calcScoreRefSim(song, ctx.referenceSongs);
   const scoreHot = calcScoreHot(song);
 
-  // 权重(冷启动时调整:score_pref 降权,score_hot 加权,总和仍为 1.0)
-  const weights = ctx.isColdStart
-    ? {
-        scoreVA: MATCH_WEIGHTS.scoreVA,
-        scoreScene: MATCH_WEIGHTS.scoreScene,
-        scorePref: COLD_START_PREF_WEIGHT, // 冷启动降权(0.08)
-        scoreSceneFit: MATCH_WEIGHTS.scoreSceneFit,
-        scoreRefSim: MATCH_WEIGHTS.scoreRefSim,
-        scoreHot: MATCH_WEIGHTS.scoreHot + COLD_START_HOT_WEIGHT_BOOST, // 冷启动加权(+0.07)
-      }
-    : MATCH_WEIGHTS;
+  // 五维评分(AI MusicIntent → Song)
+  // musicIntent 缺失时各维度输入回退到中性默认值,五维 score 仍可计算
+  // 但 resolveDynamicWeights 会返回纯 V-A 权重(五维权重为 0),自然不参与加权
+  const musicIntent = ctx.musicIntent;
+  const scoreMood = calcScoreMood(musicIntent?.moodTags ?? [], song);
+  const scoreEnergy = calcScoreEnergy(musicIntent?.energyLevel ?? 'mid', song.va);
+  const scoreGenre = calcScoreGenre(musicIntent?.genreHints ?? [], song.genres);
+  const scoreLanguage = calcScoreLanguage(musicIntent?.languageHint ?? 'any', song.language);
+  const scoreVibe = calcScoreVibe(musicIntent?.vibeDescription ?? '', song.sceneTags);
 
-  // 加性 base_score
-  const baseScore =
-    weights.scoreVA * scoreVA +
-    weights.scoreScene * scoreScene +
-    weights.scorePref * scorePref +
-    weights.scoreSceneFit * scoreSceneFit +
-    weights.scoreRefSim * scoreRefSim +
-    weights.scoreHot * scoreHot;
+  // 动态权重:6 维(mood/energy/genre/language/vibe/va),总和=1.0
+  // 根据 song.va.confidence 和 musicIntent 信号可用度动态调整
+  const w = resolveDynamicWeights(song.va.confidence, musicIntent);
+
+  // userPrefs.center 通道:在 va 维度融合用户偏好中心(如融合红心歌后的质心)
+  // 背景:Task 6 把 suppScore 降到 0.10 后,userPref.center 仅通过 suppScore 内的
+  //   scorePref.vaProximity(占 0.25)间接影响 finalScore,影响系数被三层稀释至
+  //   0.10×0.06×0.25 ≈ 0.0015,无法体现"融合红心歌后推荐应偏向红心歌质心"。
+  // 方案:在 mainScore 的 va 维度引入 CENTER_SHARE 比例的 vaProximityFromCenter,
+  //   让 userPref.center 直接参与主分。vaScoreBlended 仍是 [0,1] 加权和,mainScore
+  //   总权重不变(仍=1.0)。CENTER_SHARE=0.08 使影响系数提升至 0.90×0.08≈0.072,
+  //   足以让扩展曲 expScore 排序体现 center 差异,从而移动推荐质心。
+  // 兼容性:match.test.ts 的 buildCtx 中 photoVA === userPref.center,故
+  //   vaProximityFromCenter === scoreVA,center 通道对该测试无影响。
+  const CENTER_SHARE = 0.08;
+  const vaProximityFromCenter = calcVASimilarity(ctx.userPref.center, song.va);
+  const vaScoreBlended = (1 - CENTER_SHARE) * scoreVA + CENTER_SHARE * vaProximityFromCenter;
+
+  // 主分公式:五维 + V-A 加权(权重 0.90)
+  const mainScore =
+    w.mood * scoreMood +
+    w.energy * scoreEnergy +
+    w.genre * scoreGenre +
+    w.language * scoreLanguage +
+    w.vibe * scoreVibe +
+    w.va * vaScoreBlended;
+
+  // 补充信号(权重 0.10):场景/偏好/场景适配/参考歌相似度/热歌度
+  // 这些原有维度仍提供有价值的信号,作为五维主分的微调
+  // 权重分配说明:
+  //  - scorePref 提到 0.06:让 userPref.center 的差异额外在补充信号中体现
+  //  - scoreRefSim 提到 0.02:referenceSongs(红心歌)变化时增强对应区域歌曲得分
+  //  - scoreHot = 0:热歌度已通过乘性 hotBoost(上限 +20%)体现,补充信号中不再重复加权
+  const suppScore =
+    0.01 * scoreScene +
+    0.06 * scorePref +
+    0.01 * scoreSceneFit +
+    0.02 * scoreRefSim +
+    0.00 * scoreHot;
+
+  // 加性 base_score(主分 0.90 + 补充 0.10)
+  const baseScore = 0.90 * mainScore + 0.10 * suppScore;
 
   // 乘性 hot_boost(推荐策略)
   const hotBoost = calcHotBoostMultiplier(song);
@@ -362,6 +398,11 @@ export function calcMatchScore(song: Song, ctx: MatchContext): MatchScoreBreakdo
 
   return {
     scoreVA,
+    scoreMood,
+    scoreEnergy,
+    scoreGenre,
+    scoreLanguage,
+    scoreVibe,
     scoreScene,
     scorePref,
     scoreSceneFit,
@@ -455,4 +496,319 @@ export function filterCandidatePool(
   // 放宽过滤
   const loose = songs.filter((s) => calcVADistance(photoVA, s.va) <= looseDistance);
   return { candidates: loose.length > 0 ? loose : strict, usedLoose: true };
+}
+
+// ============================================================================
+// 11. 五维匹配打分函数(AI MusicIntent → Song)
+// ============================================================================
+
+/**
+ * 情绪基调匹配:moodTags 模糊匹配 song.emotionLabel + song.neteaseTags
+ *
+ * 匹配规则:大小写不敏感的双向 includes(moodTag includes 于某目标标签,或目标标签 includes 于 moodTag)
+ *
+ * @param moodTags AI 产出的情绪基调标签(自由文本,如 ["慵懒","释然"])
+ * @param song 候选歌曲
+ * @returns 0-1,越大越匹配;空输入返回 0.5(中性);命中至少 1 个保底 0.3
+ */
+export function calcScoreMood(moodTags: string[], song: Song): number {
+  // 1. moodTags 为空 → 返回 0.5(中性,不偏不倚)
+  if (!moodTags || moodTags.length === 0) return 0.5;
+
+  // 2. 把 song.emotionLabel 和 song.neteaseTags 合并为目标标签集合
+  const targetTags: string[] = [];
+  if (song.emotionLabel) targetTags.push(song.emotionLabel);
+  if (song.neteaseTags && song.neteaseTags.length > 0) {
+    for (const t of song.neteaseTags) targetTags.push(t);
+  }
+
+  // 3. 对每个 moodTag,做大小写不敏感的 includes 匹配
+  let hitCount = 0;
+  for (const moodTag of moodTags) {
+    const tag = (moodTag ?? '').toLowerCase().trim();
+    if (!tag) continue;
+    const matched = targetTags.some((target) => {
+      const t = (target ?? '').toLowerCase().trim();
+      if (!t) return false;
+      return t.includes(tag) || tag.includes(t);
+    });
+    if (matched) hitCount++;
+  }
+
+  // 4. 命中数 / moodTags.length 作为得分
+  if (hitCount === 0) return 0;
+  // 5. 至少命中 1 个 → 最低保底 0.3
+  const rawScore = hitCount / moodTags.length;
+  return Math.max(0.3, rawScore);
+}
+
+/**
+ * 能量级别匹配:energyLevel 映射到 song.va.a 区间
+ *
+ * 映射规则:
+ *  - a < 0.35 → low
+ *  - 0.35 ≤ a < 0.65 → mid
+ *  - a ≥ 0.65 → high
+ *
+ * 完全匹配 → 1.0;相邻档位(low vs mid, mid vs high) → 0.5;完全相反(low vs high) → 0.0
+ *
+ * @param energyLevel AI 产出的能量级别
+ * @param songVA 歌曲 V-A 坐标(带置信度)
+ * @returns 0-1
+ */
+export function calcScoreEnergy(
+  energyLevel: MusicIntent['energyLevel'],
+  songVA: VAWithConfidence,
+): number {
+  // 1. 把 songVA.a 映射到 low/mid/high
+  let songEnergy: 'low' | 'mid' | 'high';
+  if (songVA.a < 0.35) songEnergy = 'low';
+  else if (songVA.a < 0.65) songEnergy = 'mid';
+  else songEnergy = 'high';
+
+  // 2. 完全匹配 → 1.0
+  if (energyLevel === songEnergy) return 1.0;
+
+  // 3. 完全相反(low vs high) → 0.0
+  if (
+    (energyLevel === 'low' && songEnergy === 'high') ||
+    (energyLevel === 'high' && songEnergy === 'low')
+  ) {
+    return 0.0;
+  }
+
+  // 4. 相邻档位(low vs mid, mid vs high) → 0.5
+  return 0.5;
+}
+
+/**
+ * 风格倾向匹配:genreHints 模糊匹配 song.genres
+ *
+ * 匹配规则:大小写不敏感的双向 includes
+ *
+ * @param genreHints AI 产出的风格倾向(自由文本,如 ["chill electronic","city pop"])
+ * @param songGenres 歌曲风格标签数组
+ * @returns 0-1;空输入返回 0.5(中性);命中至少 1 个保底 0.4
+ */
+export function calcScoreGenre(
+  genreHints: string[],
+  songGenres: GenreTag[],
+): number {
+  // 1. genreHints 为空 → 返回 0.5(中性)
+  if (!genreHints || genreHints.length === 0) return 0.5;
+
+  // 2. songGenres 为空 → 返回 0.5
+  if (!songGenres || songGenres.length === 0) return 0.5;
+
+  // 3. 把 songGenres 转为字符串数组(GenreTag 是字符串 union)
+  const targetGenres: string[] = songGenres.map((g) => String(g));
+
+  // 4. 对每个 genreHint,做大小写不敏感的 includes 匹配
+  let hitCount = 0;
+  for (const hint of genreHints) {
+    const h = (hint ?? '').toLowerCase().trim();
+    if (!h) continue;
+    const matched = targetGenres.some((target) => {
+      const t = (target ?? '').toLowerCase().trim();
+      if (!t) return false;
+      return t.includes(h) || h.includes(t);
+    });
+    if (matched) hitCount++;
+  }
+
+  // 5. 命中数 / genreHints.length 作为得分
+  if (hitCount === 0) return 0;
+  // 6. 至少命中 1 个 → 最低保底 0.4
+  const rawScore = hitCount / genreHints.length;
+  return Math.max(0.4, rawScore);
+}
+
+/** 语种归一化:把多种写法(zh/mandarin/chinese/cn/en/english)统一为 mandarin/english/原值 */
+function normalizeLanguage(s: string): string {
+  const t = (s ?? '').toLowerCase().trim();
+  if (t === 'zh' || t === 'mandarin' || t === 'chinese' || t === 'cn') return 'mandarin';
+  if (t === 'en' || t === 'english') return 'english';
+  return t;
+}
+
+/**
+ * 语种匹配:languageHint 精确匹配 song.language
+ *
+ * 归一化后精确匹配;mandarin 兼容 zh/mandarin/chinese/cn,english 兼容 en/english
+ *
+ * @param languageHint AI 产出的语种倾向(mandarin/english/any)
+ * @param songLanguage 歌曲语种(可能是多种写法)
+ * @returns 0-1;any 或空字符串返回 0.5(中性);匹配 1.0;不匹配 0.0
+ */
+export function calcScoreLanguage(
+  languageHint: MusicIntent['languageHint'],
+  songLanguage: string,
+): number {
+  // 1. languageHint === 'any' → 返回 0.5(不限制)
+  if (languageHint === 'any') return 0.5;
+
+  // 2. songLanguage 为空 → 返回 0.5
+  if (!songLanguage || songLanguage.trim().length === 0) return 0.5;
+
+  // 3. 归一化后完全匹配 → 1.0
+  const normSong = normalizeLanguage(songLanguage);
+  const normHint = normalizeLanguage(languageHint);
+  if (normSong === normHint) return 1.0;
+
+  // 4. 不匹配 → 0.0
+  return 0.0;
+}
+
+/**
+ * 氛围匹配:vibeDescription 关键词匹配 song.sceneTags
+ *
+ * 切词策略:英文按空格切词,中文按 2 字滑窗(单字片段保留为单字 token)
+ * 匹配规则:token 与 sceneTag 双向 includes
+ *
+ * @param vibeDescription AI 产出的一句话氛围描述(如 "夏夜海边微醺的放松感")
+ * @param songSceneTags 歌曲场景标签数组(可空)
+ * @returns 0-1;空输入返回 0.5(中性);命中至少 1 个保底 0.3
+ */
+export function calcScoreVibe(
+  vibeDescription: string,
+  songSceneTags?: string[],
+): number {
+  // 1. vibeDescription 为空 → 返回 0.5(中性)
+  if (!vibeDescription || vibeDescription.trim().length === 0) return 0.5;
+
+  // 2. songSceneTags 为空或 undefined → 返回 0.5
+  if (!songSceneTags || songSceneTags.length === 0) return 0.5;
+
+  // 3. 把 vibeDescription 切词(英文按空格切词,中文按 2 字滑窗)
+  const text = vibeDescription.trim();
+  const tokens: string[] = [];
+
+  // 英文按空格切词(只保留含字母的 token)
+  const englishTokens = text.split(/\s+/).filter((t) => /[a-zA-Z]/.test(t));
+  for (const tok of englishTokens) {
+    // 去掉 token 中的标点
+    const cleaned = tok.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    if (cleaned) tokens.push(cleaned);
+  }
+
+  // 中文按 2 字滑窗(提取连续中文字符片段)
+  const chineseSegments = text.match(/[\u4e00-\u9fa5]+/g) || [];
+  for (const seg of chineseSegments) {
+    if (seg.length === 1) {
+      tokens.push(seg);
+    } else {
+      for (let i = 0; i < seg.length - 1; i++) {
+        tokens.push(seg.substring(i, i + 2));
+      }
+    }
+  }
+
+  if (tokens.length === 0) return 0.5;
+
+  // 4. 对每个词,检查是否 includes 于某 sceneTag(双向)
+  let hitCount = 0;
+  for (const token of tokens) {
+    const t = token.toLowerCase().trim();
+    if (!t) continue;
+    const matched = songSceneTags.some((scene) => {
+      const s = (scene ?? '').toLowerCase().trim();
+      if (!s) return false;
+      return s.includes(t) || t.includes(s);
+    });
+    if (matched) hitCount++;
+  }
+
+  // 5. 命中词数 / 切词总数 作为得分
+  if (hitCount === 0) return 0;
+  // 6. 至少命中 1 个 → 最低保底 0.3
+  const rawScore = hitCount / tokens.length;
+  return Math.max(0.3, rawScore);
+}
+
+// ============================================================================
+// 动态权重计算(Task 5)
+// ============================================================================
+
+/** 六维权重键 */
+type WeightKey = 'mood' | 'energy' | 'genre' | 'language' | 'vibe' | 'va';
+
+/**
+ * 把某维度的部分权重按比例分摊给其他 5 维(原地修改)
+ *
+ * 算法:假设当前权重 {a:0.2, b:0.3, c:0.5},要让 c 归零(即 newValue=0):
+ * - a 和 b 的当前总和 = 0.5
+ * - a 占 a+b 的比例 = 0.4 → 新 a = 0.2 + 0.5 × 0.4 = 0.4
+ * - b 占 a+b 的比例 = 0.6 → 新 b = 0.3 + 0.5 × 0.6 = 0.6
+ * - 新 c = 0
+ *
+ * @param weights 当前权重(会被原地修改)
+ * @param key 待调整的维度
+ * @param newValue 该维度的新值(原值与 newValue 的差额分摊给其他维度)
+ */
+function redistributeWeight(
+  weights: Record<WeightKey, number>,
+  key: WeightKey,
+  newValue: number,
+): void {
+  const oldWeight = weights[key];
+  const diff = oldWeight - newValue;
+  if (diff <= 0) return;
+
+  weights[key] = newValue;
+
+  const otherKeys = (Object.keys(weights) as WeightKey[]).filter((k) => k !== key);
+  const sumOthers = otherKeys.reduce((sum, k) => sum + weights[k], 0);
+  if (sumOthers <= 0) return; // 其他维度全为 0,无法按比例分摊,保留差额
+
+  for (const k of otherKeys) {
+    weights[k] += diff * (weights[k] / sumOthers);
+  }
+}
+
+/**
+ * 根据歌曲 V-A 置信度和 musicIntent 信号可用度，动态计算 6 维权重。
+ * - V-A confidence < 0.7 → va 降权到 0.10，多出权重分给 mood/genre/energy
+ * - musicIntent.genreHints 为空 → genre 权重归零，剩余按比例分摊
+ * - musicIntent.moodTags 为空 → mood 权重减半，剩余按比例分摊
+ * - 返回权重总和始终 = 1.0
+ */
+export function resolveDynamicWeights(
+  songVAConfidence: number,
+  musicIntent: MusicIntent | undefined,
+): { mood: number; energy: number; genre: number; language: number; vibe: number; va: number } {
+  // 1. musicIntent undefined → 退化为纯 V-A 模式:va=1.0,其他全 0
+  if (!musicIntent) {
+    return { mood: 0, energy: 0, genre: 0, language: 0, vibe: 0, va: 1.0 };
+  }
+
+  // 2. 起始用 MATCH_WEIGHTS_FIVE_DIM(V-A 高置信度基准)
+  // 3. 若 songVAConfidence < 0.7 → 切换到 MATCH_WEIGHTS_VA_DEGRADED
+  const weights: Record<WeightKey, number> =
+    songVAConfidence < VA_CONFIDENCE_DEGRADE_THRESHOLD
+      ? { ...MATCH_WEIGHTS_VA_DEGRADED }
+      : { ...MATCH_WEIGHTS_FIVE_DIM };
+
+  // 4. musicIntent.genreHints 为空 → genre 权重置 0,把 genre 权重按比例分给其他 5 维
+  if (!musicIntent.genreHints || musicIntent.genreHints.length === 0) {
+    redistributeWeight(weights, 'genre', 0);
+  }
+
+  // 5. musicIntent.moodTags 为空 → mood 权重减半,多出权重按比例分给其他 5 维
+  if (!musicIntent.moodTags || musicIntent.moodTags.length === 0) {
+    redistributeWeight(weights, 'mood', weights.mood / 2);
+  }
+
+  // 6. 最终归一化保证总和=1.0(浮点误差容忍 ±0.001)
+  const sum = (Object.keys(weights) as WeightKey[]).reduce((s, k) => s + weights[k], 0);
+  if (sum === 0) {
+    return { mood: 0, energy: 0, genre: 0, language: 0, vibe: 0, va: 0 };
+  }
+  return {
+    mood: weights.mood / sum,
+    energy: weights.energy / sum,
+    genre: weights.genre / sum,
+    language: weights.language / sum,
+    vibe: weights.vibe / sum,
+    va: weights.va / sum,
+  };
 }

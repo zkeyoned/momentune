@@ -14,10 +14,8 @@ import {
   GENRE_DISPLAY_META,
   GENRE_GROUPS,
   GENRE_TAGS,
-  HOT_CHART_2026,
   LANGUAGE_TAGS,
   initUserPreference,
-  mergeUserImports,
   photoToVA,
   recommend,
   resolveEmotionLabels,
@@ -139,15 +137,20 @@ export const SAMPLE_PHOTOS: SamplePhoto[] = [
 // ============================================================================
 
 /**
- * 获取音乐库(合并热歌库 + 用户导入歌曲)
+ * 获取音乐库
  *
- * 用户导入的歌曲(网易云红心歌单)存在 userStore.importedSongs,
- * 通过 mergeUserImports 按歌曲 ID 去重合并到 HOT_CHART_2026。
+ * 只用用户导入的歌曲,不掺内置热歌库。
+ * 原因:
+ *   - 内置热歌库的 localFile/demoFile 是 demo 阶段产物,未来要全部删除
+ *   - remote 直链几小时就过期,混用会导致播放失败
+ *   - 用户期望"导入什么听什么",不应出现没导入过的歌
+ *
+ * 未导入时返回空数组(推荐自然返回空,UI 显示"未导入歌曲"提示)。
  */
 export function getMockLibrary(): Song[] {
   const userSongs = useUserStore.getState().importedSongs ?? [];
   // 数据迁移:修正旧导入歌的属性(hotRecency + confidence)
-  const migratedUserSongs = userSongs.map((song) => {
+  return userSongs.map((song) => {
     if (!song.songId.startsWith('user_')) return song;
     return {
       ...song,
@@ -155,8 +158,6 @@ export function getMockLibrary(): Song[] {
       va: { ...song.va, confidence: Math.max(song.va.confidence, 0.75) },
     };
   });
-  const library = mergeUserImports(HOT_CHART_2026 as Song[], migratedUserSongs);
-  return library;
 }
 
 // ============================================================================
@@ -212,19 +213,31 @@ export function analyzePhoto(
   const effectivePref = pref;
 
   // 步骤 2:推荐(跳过 GPS 融合,mock 阶段不模拟定位)
+  // 透传 AI 产出的 musicIntent(五维),让 calcMatchScore 走五维+VA 综合匹配;
+  // musicIntent 缺失(Qwen 降级/mock 照片)时算法自动退化为纯 V-A 模式
   const recommendation = recommend({
     photoEmotion: photoVA,
     photoScene: photo.scene.type,
     userPref: effectivePref,
     referenceSongs,
     songLibrary: library,
+    musicIntent: photo.musicIntent,
   });
 
   // 步骤 3:解析情绪标签
   const emotionResult = resolveEmotionLabels(photoVA);
 
+  // 步骤 4:用户导入歌曲优先排前
+  // 不改算法选曲,只对最终推荐结果内部重排,把 songId 以 user_ 开头的歌提到各自数组前面
+  // 这样 SongWheel 第一眼看到的就是用户扫码导入的歌,MusicPlayer 默认播第一首即导入歌
+  const reorderedRecommendation = {
+    ...recommendation,
+    coreTracks: prioritizeImportedTracks(recommendation.coreTracks),
+    extendedTracks: prioritizeImportedTracks(recommendation.extendedTracks),
+  };
+
   return {
-    recommendation,
+    recommendation: reorderedRecommendation,
     photoVA: { v: photoVA.v, a: photoVA.a },
     primaryLabel: emotionResult.primary,
     secondaryLabel: emotionResult.secondary,
@@ -232,6 +245,20 @@ export function analyzePhoto(
     source,
     previewUrl: previewUrl ?? '',
   };
+}
+
+/**
+ * 把已入选的导入歌曲排到数组前面,保持其他歌曲相对顺序
+ *
+ * 导入歌曲识别:songId 以 'user_' 开头(见 musicLibrary.ts makeSongId)
+ * 若数组里没有导入歌曲,原样返回(避免无谓拷贝)
+ */
+function prioritizeImportedTracks<T extends { song: { songId: string } }>(tracks: readonly T[]): T[] {
+  if (tracks.length <= 1) return [...tracks];
+  const imported = tracks.filter((t) => t.song.songId.startsWith('user_'));
+  if (imported.length === 0) return [...tracks];
+  const others = tracks.filter((t) => !t.song.songId.startsWith('user_'));
+  return [...imported, ...others];
 }
 
 /** 异步包装(模拟网络延迟,用于 UI loading 态) */

@@ -59,9 +59,11 @@ export interface PlatformAccount {
   color: string;
   /** 是否开放接入(未开放的平台置灰,不可点击) */
   available?: boolean;
-  /** 网易云登录 cookie(MUSIC_U=xxx 格式,明文存 localStorage) */
+  /** 当前平台登录 cookie(明文存 localStorage) */
   cookie?: string;
-  /** 网易云用户 ID */
+  /** 当前平台用户 ID(QQ 是 musicid 字符串,汽水是 track_id 字符串,网易云是 number) */
+  platformUid?: string | number;
+  /** @deprecated 旧字段,等价于 platformUid(网易云场景下为 number)。保留向后兼容,内部代码请用 platformUid */
   neteaseUid?: number;
 }
 

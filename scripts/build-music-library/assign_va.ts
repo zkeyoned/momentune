@@ -16,6 +16,8 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { findNearestEmotionLabel } from '../../src/algorithm/utils.js';
+import type { EmotionLabel } from '../../src/algorithm/types.js';
 
 // ============================================================================
 // 类型定义（与 src/algorithm/types.ts 一致）
@@ -57,6 +59,7 @@ interface Song {
   artist: string;
   layer: MusicLayer;
   va: VAWithConfidence;
+  emotionLabel: EmotionLabel | null;
   genres: GenreTag[];
   sceneTags: SongSceneTag[];
   language: LanguageTag;
@@ -218,14 +221,16 @@ interface KeywordRule {
 }
 
 const KEYWORD_RULES: ReadonlyArray<KeywordRule> = [
-  // 积极:爱/甜/晴/光/梦/笑
-  { keywords: ['爱', '甜', '晴', '光', '梦', '笑', '喜', '欢', '暖', '幸'], vDelta: 0.15, aDelta: 0 },
-  // 消极:泪/孤/夜/痛/离/寒/伤/雨
-  { keywords: ['泪', '孤', '夜', '痛', '离', '寒', '伤', '雨', '悲', '哀', '愁', '凉'], vDelta: -0.15, aDelta: 0 },
-  // 高能:燃/战/狂/炸
-  { keywords: ['燃', '战', '狂', '炸', '冲', '飞', '烈'], vDelta: 0, aDelta: 0.20 },
-  // 低能:静/慢/轻/柔
-  { keywords: ['静', '慢', '轻', '柔', '淡', '眠', '安'], vDelta: 0, aDelta: -0.15 },
+  // 中文双字词（不再用单字匹配，避免误匹配）
+  { keywords: ['热爱', '心动', '欢喜', '温暖', '幸福', '快乐', '开心', '阳光', '晴天', '美梦', '笑语'], vDelta: 0.15, aDelta: 0 },
+  { keywords: ['孤独', '寂寞', '伤感', '失恋', '怀旧', '悲凉', '凄凉', '离别', '痛心', '伤心', '哀愁', '雨夜', '黑夜', '深夜', '寒冷'], vDelta: -0.15, aDelta: 0 },
+  { keywords: ['燃烧', '战斗', '狂热', '冲锋', '飞翔', '烈火', '燃情'], vDelta: 0, aDelta: 0.20 },
+  { keywords: ['安静', '缓慢', '轻柔', '柔和', '淡然', '安眠', '宁静', '静谧'], vDelta: 0, aDelta: -0.15 },
+  // 英文情绪词（\b 词边界匹配）
+  { keywords: ['love', 'loved', 'loving', 'happy', 'joy', 'sweet', 'sunshine', 'dream', 'smile', 'free', 'fly'], vDelta: 0.15, aDelta: 0 },
+  { keywords: ['alone', 'lonely', 'cry', 'crying', 'broken', 'lost', 'gone', 'leave', 'leaving', 'sad', 'dark', 'rain', 'tears', 'goodbye', 'miss'], vDelta: -0.15, aDelta: 0 },
+  { keywords: ['fire', 'fight', 'wild', 'crazy', 'run', 'burn', 'rage', 'storm'], vDelta: 0, aDelta: 0.20 },
+  { keywords: ['quiet', 'slow', 'soft', 'gentle', 'calm', 'peace', 'sleep', 'rest'], vDelta: 0, aDelta: -0.15 },
 ];
 
 const HEURISTIC_DEFAULT_V = 0.5;
@@ -235,15 +240,19 @@ function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
 }
 
-function keywordEstimateVA(title: string, artist: string): { v: number; a: number; matched: boolean } {
-  const text = `${title} ${artist}`;
+function keywordEstimateVA(title: string, _artist: string): { v: number; a: number; matched: boolean } {
+  const text = title; // 只匹配标题，不匹配歌手名
   let v = HEURISTIC_DEFAULT_V;
   let a = HEURISTIC_DEFAULT_A;
   let matched = false;
 
   for (const rule of KEYWORD_RULES) {
     for (const kw of rule.keywords) {
-      if (text.includes(kw)) {
+      const isEnglish = /^[a-z]+$/i.test(kw);
+      const hit = isEnglish
+        ? new RegExp(`\\b${kw}\\b`, 'i').test(text)
+        : text.includes(kw);
+      if (hit) {
         v += rule.vDelta;
         a += rule.aDelta;
         matched = true;
@@ -343,20 +352,50 @@ function computeVA(song: UnifiedSong): VAWithConfidence {
     source = keywordResult.matched ? 'metadata_keyword' : 'fallback_default';
   }
 
-  // 置信度：按信号数量递增
-  let signalCount = 0;
-  if (hasGenreSignal) signalCount++;
-  if (hasEmotionSignal) signalCount++;
-  if (hasKeywordSignal) signalCount++;
+  // 置信度：信号方向一致性驱动
+  // 1. 计算各层信号方向（V 维度）：+1=积极，-1=消极，0=中性/无信号
+  // 2. 多层方向一致 → 高置信度
+  // 3. 信号矛盾 → 降低置信度
+  // 4. 单一关键词信号 → 封顶 0.5
+  const genreDirection = genreV > 0.55 ? 1 : genreV < 0.45 ? -1 : 0; // 流派基调方向
+  const emotionDirection = emotionDeltaV > 0.05 ? 1 : emotionDeltaV < -0.05 ? -1 : 0; // 情绪偏移方向
+  const keywordDirection = keywordResult.matched
+    ? (keywordResult.v > HEURISTIC_DEFAULT_V ? 1 : keywordResult.v < HEURISTIC_DEFAULT_V ? -1 : 0)
+    : 0; // 关键词方向（命中时看 v 偏离默认值的方向）
 
   let confidence: number;
-  if (signalCount >= 3) confidence = 0.85;
-  else if (signalCount === 2) confidence = 0.75;
-  else if (signalCount === 1) confidence = 0.60;
-  else confidence = 0.40;
 
-  // 多情绪标签印证：+0.05
-  if (matchedEmotionCount >= 2) confidence = Math.min(0.90, confidence + 0.05);
+  if (!hasGenreSignal && !hasEmotionSignal && hasKeywordSignal) {
+    // 单一关键词信号：封顶 0.5
+    confidence = 0.5;
+  } else if (hasGenreSignal && hasEmotionSignal) {
+    // 流派 + 情绪：检查方向一致性
+    if (genreDirection !== 0 && emotionDirection !== 0 && genreDirection === emotionDirection) {
+      confidence = 0.90; // 方向一致
+    } else if (genreDirection !== 0 && emotionDirection !== 0 && genreDirection !== emotionDirection) {
+      confidence = 0.60; // 方向矛盾
+    } else {
+      confidence = 0.75; // 至少一方中性
+    }
+    // 关键词同向再加 0.05
+    if (hasKeywordSignal && keywordDirection !== 0 && keywordDirection === genreDirection && keywordDirection === emotionDirection) {
+      confidence = Math.min(0.95, confidence + 0.05);
+    }
+    // 多情绪标签印证 +0.05
+    if (matchedEmotionCount >= 2) confidence = Math.min(0.95, confidence + 0.05);
+  } else if (hasGenreSignal || hasEmotionSignal) {
+    // 仅流派或仅情绪 + 关键词
+    const mainDirection = hasGenreSignal ? genreDirection : emotionDirection;
+    if (mainDirection !== 0 && hasKeywordSignal && keywordDirection !== 0) {
+      if (mainDirection === keywordDirection) confidence = 0.80;
+      else confidence = 0.55;
+    } else {
+      confidence = 0.70;
+    }
+  } else {
+    // 无流派无情绪（已上面处理单一关键词，这里是完全无信号）
+    confidence = 0.40;
+  }
 
   return {
     v: clamp01(finalV),
@@ -413,18 +452,20 @@ function inferLanguage(song: UnifiedSong): LanguageTag {
   if (/粤语|广东|港/.test(text)) return 'cantonese';
 
   // 韩文
-  if (/[가-힣]/.test(text)) return 'korean';
+  if (/[\uac00-\ud7af]/.test(text)) return 'korean';
 
   // 日文（含平假名/片假名）
-  if (/[ひ-ん]|[ァ-ヶー]/.test(text)) return 'japanese';
+  if (/[\u3040-\u30ff]/.test(text)) return 'japanese';
 
   // 中文字符比例
   const chineseChars = text.match(/[\u4e00-\u9fff]/g);
   const chineseRatio = chineseChars ? chineseChars.length / text.length : 0;
   if (chineseRatio > 0.3) return 'mandarin';
 
-  // 纯英文
-  if (/^[a-zA-Z0-9\s\-.',!?&]+$/.test(text)) return 'english';
+  // 拉丁字母占比 > 70% → english（放宽，不再要求整串 ASCII）
+  const latinChars = text.match(/[a-zA-Z]/g);
+  const latinRatio = latinChars ? latinChars.length / text.length : 0;
+  if (latinRatio > 0.7) return 'english';
 
   return 'other';
 }
@@ -497,6 +538,7 @@ function main(): void {
       artist: usong.artist,
       layer,
       va,
+      emotionLabel: findNearestEmotionLabel(va),
       genres,
       sceneTags: usong.sceneTags,
       language,

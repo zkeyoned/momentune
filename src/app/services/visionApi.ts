@@ -14,7 +14,8 @@
  *  - 服务端未配置 key 时返回确定性 mock 特征(让 demo 流程顺畅)
  */
 
-import type { PhotoFeatures } from '@algorithm/index';
+import type { PhotoFeatures, MusicIntent } from '@algorithm/index';
+import { musicIntentStore } from './musicIntentStore';
 
 // ---------------------------------------------------------------------------
 // 常量
@@ -87,7 +88,7 @@ function getMockFeatures(): PhotoFeatures {
 /**
  * 用 Qwen-VL 分析照片,返回 PhotoFeatures。
  *
- * 流程:压缩图片 → POST /api/vision → 解析响应
+ * 流程:压缩图片 → 查 musicIntentStore 外存(命中则直接返回)→ POST /api/vision → 解析响应 → 写入外存
  *
  * 失败情况(均抛错,由调用方降级到 Canvas):
  *  - 网络错误 / 超时(10s)
@@ -97,14 +98,30 @@ function getMockFeatures(): PhotoFeatures {
  * 特殊情况(不抛错,返回 mock 特征):
  *  - 服务端返回 500 且错误信息含 "not configured"(未配 API key)
  *
+ * 外存命中(不调 AI):
+ *  - 同一张图片(经 dHash 计算命中)直接返回 mock 视觉特征 + 缓存的 musicIntent
+ *    视觉特征(hue/scene 等)不影响匹配主流程(匹配主流程靠 musicIntent),mock 值足够用于展示
+ *
  * @param imageDataUrl 图片 data URL(原始尺寸,内部会压缩到长边 1024)
  */
 export async function analyzePhotoWithQwen(
   imageDataUrl: string,
 ): Promise<PhotoFeatures> {
-  // 压缩图片,省带宽提速
+  // 1. 压缩图片,省带宽提速
   const compressed = await compressImage(imageDataUrl);
 
+  // 2. 计算图片 hash,查 musicIntentStore 外存
+  //    hashImage 失败/非浏览器环境返回空字符串,此时跳过外存逻辑走原流程
+  const imageHash = await musicIntentStore.hashImage(compressed);
+  if (imageHash) {
+    const cached: MusicIntent | null = musicIntentStore.get(imageHash);
+    if (cached) {
+      // 外存命中:直接返回 mock 视觉特征 + 缓存的 musicIntent(不调 AI)
+      return { ...getMockFeatures(), musicIntent: cached };
+    }
+  }
+
+  // 3. 外存未命中:走原有 Qwen-VL 流程
   // 10 秒超时,超时走降级
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -140,6 +157,13 @@ export async function analyzePhotoWithQwen(
     throw new Error(`Qwen-VL HTTP ${resp.status}: ${errText.slice(0, 120)}`);
   }
 
-  // 成功:返回 PhotoFeatures JSON
-  return await resp.json();
+  // 4. 成功:解析响应
+  const features: PhotoFeatures = await resp.json();
+
+  // 5. 若返回含 musicIntent,写入外存(避免缓存空值/降级场景)
+  if (imageHash && features.musicIntent) {
+    musicIntentStore.save(imageHash, features.musicIntent);
+  }
+
+  return features;
 }

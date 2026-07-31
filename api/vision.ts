@@ -9,7 +9,7 @@
  * 生产环境:Vercel 自动识别 api/ 目录部署为 Serverless Function。
  */
 
-import type { PhotoFeatures } from '@algorithm/index';
+import type { MusicIntent, PhotoFeatures } from '@algorithm/index';
 import type {
   BrightnessLevel,
   Composition,
@@ -71,6 +71,10 @@ const FACE_EMOTIONS: readonly FaceEmotion[] = [
   'bored', 'determined', 'shy', 'grateful', 'content', 'confused',
 ] as const;
 
+// MusicIntent 合法值
+const ENERGY_LEVELS: readonly MusicIntent['energyLevel'][] = ['low', 'mid', 'high'] as const;
+const LANGUAGE_HINTS: readonly MusicIntent['languageHint'][] = ['mandarin', 'english', 'any'] as const;
+
 const DEFAULTS = {
   tone: 'neutral' as Tone,
   brightness: 'mid' as BrightnessLevel,
@@ -80,6 +84,15 @@ const DEFAULTS = {
   weather: 'sunny' as Weather,
   faceEmotion: 'none' as FaceEmotion,
   composition: 'subject' as Composition,
+};
+
+// musicIntent 默认值(AI 降级或字段缺失时使用)
+const DEFAULT_MUSIC_INTENT: MusicIntent = {
+  moodTags: [],
+  energyLevel: 'mid',
+  genreHints: [],
+  languageHint: 'any',
+  vibeDescription: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -100,7 +113,14 @@ function buildPrompt(): string {
     '  "weather": { "value": <天气枚举之一>, "confidence": <0-1> },',
     '  "people": { "count": <非负整数>, "dominantEmotion": <表情枚举之一>, "confidence": <0-1> },',
     '  "composition": { "type": <构图枚举之一>, "confidence": <0-1> },',
-    '  "overallConfidence": <0-1>',
+    '  "overallConfidence": <0-1>,',
+    '  "musicIntent": {',
+    '    "moodTags": <字符串数组,1-5 个情绪基调标签>,',
+    '    "energyLevel": <low|mid|high>,',
+    '    "genreHints": <字符串数组,0-3 个音乐风格倾向>,',
+    '    "languageHint": <mandarin|english|any>,',
+    '    "vibeDescription": <一句话氛围描述,不超过 30 字>',
+    '  }',
     '}',
     '',
     '枚举合法值(只能从中选,不准自创):',
@@ -112,6 +132,15 @@ function buildPrompt(): string {
     `- saturation.level: ${SATURATION_LEVELS.join(' | ')}`,
     `- composition.type: ${COMPOSITION_TYPES.join(' | ')}`,
     `- people.dominantEmotion: ${FACE_EMOTIONS.join(' | ')}`,
+    `- musicIntent.energyLevel: ${ENERGY_LEVELS.join(' | ')}`,
+    `- musicIntent.languageHint: ${LANGUAGE_HINTS.join(' | ')}`,
+    '',
+    '除了上述视觉特征外,请输出 musicIntent 子对象,描述这张照片应该匹配什么样的音乐:',
+    '- moodTags: 数组,情绪基调标签(自由文本,1-5 个,如 ["慵懒","释然","夏夜"])',
+    '- energyLevel: 字符串,能量级别,必须是 "low" | "mid" | "high" 之一',
+    '- genreHints: 数组,音乐风格倾向(自由文本,0-3 个,如 ["chill electronic","city pop"])',
+    '- languageHint: 字符串,语种倾向,必须是 "mandarin" | "english" | "any" 之一',
+    '- vibeDescription: 字符串,一句话氛围描述(如 "夏夜海边微醺的放松感"),不超过 30 字',
     '',
     '判断要点:',
     '- 看照片实际内容判断场景/时段/人物/构图,不要只看颜色',
@@ -119,6 +148,7 @@ function buildPrompt(): string {
     '- 室内场景优先判 indoor,城市街景判 city,纯天空判 sky',
     '- confidence 反映你对这个判断的把握,0.5 以下表示很不确定',
     '- overallConfidence 是整体分析置信度,通常取各字段平均',
+    '- musicIntent 基于照片整体氛围推断音乐匹配意图,moodTags 与 genreHints 可为空数组',
   ].join('\n');
 }
 
@@ -147,6 +177,47 @@ function validateEnum<T extends string>(
   return typeof v === 'string' && (allowed as readonly string[]).includes(v)
     ? (v as T)
     : fallback;
+}
+
+/** 将任意值规范为 string[],非数组或非字符串元素一律丢弃 */
+function toStringArray(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.filter((item): item is string => typeof item === 'string');
+}
+
+/**
+ * 解析 musicIntent 子对象。
+ * - 完全缺失/非对象 → 返回 DEFAULT_MUSIC_INTENT(不抛错,AI 降级路径允许缺失)
+ * - 各字段异常 → 该字段降级为默认值,不抛错
+ */
+function normalizeMusicIntent(raw: unknown): MusicIntent {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ...DEFAULT_MUSIC_INTENT, moodTags: [], genreHints: [] };
+  }
+  const obj = raw as Record<string, unknown>;
+
+  const moodTags = toStringArray(obj.moodTags);
+  const energyLevel = validateEnum(
+    obj.energyLevel,
+    ENERGY_LEVELS,
+    DEFAULT_MUSIC_INTENT.energyLevel,
+  );
+  const genreHints = toStringArray(obj.genreHints);
+  const languageHint = validateEnum(
+    obj.languageHint,
+    LANGUAGE_HINTS,
+    DEFAULT_MUSIC_INTENT.languageHint,
+  );
+  const vibeDescription =
+    typeof obj.vibeDescription === 'string' ? obj.vibeDescription : '';
+
+  return {
+    moodTags,
+    energyLevel,
+    genreHints,
+    languageHint,
+    vibeDescription,
+  };
 }
 
 function normalizeFeatures(raw: Record<string, unknown>): PhotoFeatures {
@@ -201,6 +272,7 @@ function normalizeFeatures(raw: Record<string, unknown>): PhotoFeatures {
       confidence: clamp(composition.confidence, 0, 1, 0.5),
     },
     overallConfidence: clamp(raw.overallConfidence, 0, 1, 0.5),
+    musicIntent: normalizeMusicIntent(raw.musicIntent),
   };
 }
 

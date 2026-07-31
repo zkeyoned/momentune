@@ -2,6 +2,8 @@ import { defineConfig, loadEnv, type Plugin, type ViteDevServer } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { fileURLToPath, URL } from 'node:url';
 
 // 注意：本文件用于 Vite 前端构建（dev/build/preview）。
@@ -179,6 +181,211 @@ function neteaseApiDevPlugin(): Plugin {
   };
 }
 
+// ---------------------------------------------------------------------------
+// 本地 dev middleware:音频代理(替代 Vite server.proxy)
+// ---------------------------------------------------------------------------
+// Vite 内置 server.proxy 对带查询参数的流式音频代理支持不佳,
+// 会报 "Must provide a proper URL as target"。
+// 改用自定义 middleware,直接 fetch + pipe,与生产环境 audio-proxy.ts 行为一致。
+// 生产环境:Vercel 用 api/audio-proxy.ts Serverless Function,本段不生效。
+
+function audioProxyDevPlugin(): Plugin {
+  return {
+    name: 'momentune-audio-proxy-dev',
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use('/api/audio-proxy', async (req, res) => {
+        // OPTIONS 预检
+        if (req.method === 'OPTIONS') {
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+          res.statusCode = 204;
+          res.end();
+          return;
+        }
+
+        if (req.method !== 'GET') {
+          res.statusCode = 405;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'Method not allowed, use GET' }));
+          return;
+        }
+
+        // 从 query 取 url 参数
+        const fullUrl = new URL(req.url ?? '', 'http://localhost');
+        const targetUrl = fullUrl.searchParams.get('url');
+        if (!targetUrl) {
+          res.statusCode = 400;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'missing url param' }));
+          return;
+        }
+
+        // 请求上游(Referer/UA 与生产环境一致)
+        let upstream: Response;
+        try {
+          upstream = await fetch(targetUrl, {
+            headers: {
+              Referer: 'https://music.163.com',
+              'User-Agent':
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            },
+          });
+        } catch {
+          res.statusCode = 502;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: 'upstream fetch failed' }));
+          return;
+        }
+
+        if (upstream.status !== 200 || !upstream.body) {
+          res.statusCode = 502;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: `upstream returned ${upstream.status}` }));
+          return;
+        }
+
+        // 流式转发
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Cache-Control', 'public, max-age=3600');
+        res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'audio/mpeg');
+
+        const nodeStream = Readable.fromWeb(
+          upstream.body as unknown as NodeReadableStream,
+        );
+        nodeStream.on('error', () => {
+          try { res.end(); } catch { /* already ended */ }
+        });
+        nodeStream.pipe(res);
+      });
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// 本地 dev middleware:把 /api/qq/* 和 /api/qishui/* 转发到对应 api/*.ts handler
+// ---------------------------------------------------------------------------
+// 与 neteaseApiDevPlugin 同模式,代理 QQ 音乐 / 汽水音乐相关端点。
+// 生产环境:Vercel 自动识别 api/ 目录部署为 Serverless Function,本段不生效。
+// CORS / OPTIONS 预检由各 handler 内部的 handleRequest / setAudioCors 处理(与 netease 一致)。
+
+/**
+ * 通用多路由 Vercel-style API dev middleware 工厂
+ *
+ * 与 neteaseApiDevPlugin 同模式:根据 pathname 匹配路由表,
+ * 用 server.ssrLoadModule 加载对应 api/*.ts 模块(支持热更新),
+ * 构造类 Vercel req/res 后调 default handler。
+ *
+ * @param pluginName Vite plugin 名(用于调试)
+ * @param routes     pathname → 模块路径映射(如 '/api/qq/qr-create' → '/api/qq/qr-create.ts')
+ */
+function createVercelApiDevPlugin(pluginName: string, routes: Record<string, string>): Plugin {
+  return {
+    name: pluginName,
+    configureServer(server: ViteDevServer) {
+      server.middlewares.use(async (req, res, next) => {
+        const url = req.url ?? '';
+        // 提取 pathname(去掉 query string)
+        const pathname = url.split('?')[0]!;
+
+        // 匹配路由,未命中交给后续 middleware
+        const modulePath = routes[pathname];
+        if (!modulePath) {
+          next();
+          return;
+        }
+
+        // 收集 body
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) {
+          if (typeof chunk === 'string' || chunk instanceof Buffer) {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          }
+        }
+        const bodyStr = Buffer.concat(chunks).toString('utf-8');
+
+        // 解析 query
+        const query: Record<string, string> = {};
+        const urlObj = new URL(url, 'http://localhost');
+        urlObj.searchParams.forEach((v, k) => { query[k] = v; });
+
+        // 解析 body
+        let body: Record<string, unknown> = {};
+        if (bodyStr) {
+          try {
+            body = JSON.parse(bodyStr);
+          } catch {
+            // 非 JSON body,空对象兜底
+          }
+        }
+
+        // 构造类 Vercel req/res
+        const vercelReq = {
+          method: req.method,
+          body,
+          query,
+        };
+        const vercelRes = {
+          status: (code: number) => ({
+            json: (data: unknown) => {
+              res.statusCode = code;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify(data));
+            },
+            end: (data?: string) => res.end(data),
+          }),
+          setHeader: (name: string, value: string) => res.setHeader(name, value),
+          end: (data?: string) => res.end(data),
+        };
+
+        // 加载 api/*.ts 模块(ssr 模式,支持热更新),调 default handler
+        try {
+          const mod = await server.ssrLoadModule(modulePath);
+          const handler = mod.default;
+          if (typeof handler !== 'function') {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: `Module ${modulePath} has no default export` }));
+            return;
+          }
+          await handler(vercelReq, vercelRes);
+        } catch (e) {
+          const message = e instanceof Error ? e.message : 'Unknown server error';
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ error: message }));
+        }
+      });
+    },
+  };
+}
+
+/** QQ 音乐 API dev middleware:代理 /api/qq/* 到 api/qq/*.ts */
+function qqApiDevPlugin(): Plugin {
+  return createVercelApiDevPlugin('momentune-qq-api-dev', {
+    '/api/qq/qr-create': '/api/qq/qr-create.ts',
+    '/api/qq/qr-check': '/api/qq/qr-check.ts',
+    '/api/qq/likelist': '/api/qq/likelist.ts',
+    '/api/qq/user-playlists': '/api/qq/user-playlists.ts',
+    '/api/qq/playlist-detail': '/api/qq/playlist-detail.ts',
+    '/api/qq/song-detail-batch': '/api/qq/song-detail-batch.ts',
+    '/api/qq/song-url': '/api/qq/song-url.ts',
+    '/api/qq/audio-proxy': '/api/qq/audio-proxy.ts',
+  });
+}
+
+/** 汽水音乐 API dev middleware:代理 /api/qishui/* 到 api/qishui/*.ts */
+function qishuiApiDevPlugin(): Plugin {
+  return createVercelApiDevPlugin('momentune-qishui-api-dev', {
+    '/api/qishui/qr-create': '/api/qishui/qr-create.ts',
+    '/api/qishui/qr-check': '/api/qishui/qr-check.ts',
+    '/api/qishui/playlist-list': '/api/qishui/playlist-list.ts',
+    '/api/qishui/playlist-detail': '/api/qishui/playlist-detail.ts',
+    '/api/qishui/song-url': '/api/qishui/song-url.ts',
+    '/api/qishui/audio-proxy': '/api/qishui/audio-proxy.ts',
+  });
+}
+
 export default defineConfig(({ mode }) => {
   // loadEnv 第三个参数 '' 表示加载所有 env(含非 VITE_ 前缀的,如 QWEN_API_KEY)
   const env = loadEnv(mode, process.cwd(), '');
@@ -189,6 +396,9 @@ export default defineConfig(({ mode }) => {
       react(),
       visionApiDevPlugin(qwenApiKey),
       neteaseApiDevPlugin(),
+      audioProxyDevPlugin(),
+      qqApiDevPlugin(),
+      qishuiApiDevPlugin(),
       // 自签名 HTTPS:demo 需在手机上现场拍照,getUserMedia 仅在 HTTPS/localhost 下可用,
       // 手机走局域网 IP 访问必须有 HTTPS(自签名证书浏览器会警告,点"高级→继续访问")。
       // basicSsl(),  // 临时注释:Trae 内置预览不支持自签名 HTTPS。手机拍照时恢复
@@ -259,30 +469,8 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       host: true,
       open: false,
-      proxy: {
-        // 网易云音频代理:绕过 CORS/ORB 限制
-        // router 是 http-proxy-middleware 的有效选项,Vite 类型定义未包含,此处用 any
-        '/api/audio-proxy': {
-          changeOrigin: true,
-          router: (req: any) => {
-            const fullUrl = new URL(req.url ?? '', 'http://localhost');
-            const targetUrl = fullUrl.searchParams.get('url');
-            if (!targetUrl) return 'http://localhost';
-            return new URL(targetUrl).origin;
-          },
-          configure: (proxy: any) => {
-            proxy.on('proxyReq', (proxyReq: any, req: any) => {
-              const fullUrl = new URL(req.url ?? '', 'http://localhost');
-              const targetUrl = fullUrl.searchParams.get('url');
-              if (!targetUrl) return;
-              const target = new URL(targetUrl);
-              proxyReq.path = target.pathname + target.search;
-              proxyReq.setHeader('host', target.host);
-              proxyReq.setHeader('Referer', 'https://music.163.com/');
-            });
-          },
-        } as any,
-      },
+      // 音频代理已由 audioProxyDevPlugin middleware 处理(替代 server.proxy)
+      // Vite 内置 proxy 对带查询参数的流式音频代理支持不佳,会报 "Must provide a proper URL as target"
     },
     build: {
       outDir: 'dist',

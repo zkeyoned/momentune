@@ -5,7 +5,7 @@ import { findNearestEmotionLabel } from '@algorithm/index';
 import { getEmotionDisplay } from '../config/emotionDisplay';
 import { SONG_PREVIEW_URLS } from '../services/songPreviewUrls';
 import type { SongPreview } from '../services/songPreviewUrls';
-import { getPreview, ensurePreview, getCoverUrl, getNeteaseCookie, getNeteaseIdBySongId } from '../services/runtimePreviews';
+import { getPreview, ensurePreviewFor, getCoverUrl, getAudioProxyPath } from '../services/runtimePreviews';
 import { LyricsPanel } from './LyricsPanel';
 
 /**
@@ -146,10 +146,10 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
     if (!preview) return '';
     if (tier === 'local' && preview.localFile) return preview.localFile;
     if (tier === 'demo' && preview.demoFile) return preview.demoFile;
-    // remote
+    // remote:各平台走各自 audio-proxy(QQ/汽水 CDN 域名与 Referer/UA 不同)
     const rawUrl = preview.url;
     if (import.meta.env.DEV) {
-      return `/api/audio-proxy?url=${encodeURIComponent(rawUrl)}`;
+      return getAudioProxyPath(currentTrack!.songId, rawUrl);
     }
     return rawUrl;
   })();
@@ -170,14 +170,14 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
     else if (existingPreview?.demoFile) setTier('demo');
     else if (existingPreview) setTier('remote');
     else {
-      // 静态表和缓存都没有,检查是否是导入歌曲(有 neteaseId 映射)
-      const neteaseId = currentTrack ? getNeteaseIdBySongId(currentTrack.songId) : undefined;
-      const cookie = getNeteaseCookie();
-      if (neteaseId && cookie) {
+      // 静态表和缓存都没有:导入歌(各平台统一入口)按 songId 前缀分发取播放地址
+      const songId = currentTrack?.songId ?? '';
+      if (songId.startsWith('user_')) {
         // 先用模拟播放,异步获取播放地址后切换到 remote
         setTier('simulated');
-        ensurePreview(currentTrack!.songId, neteaseId, cookie)
+        ensurePreviewFor(songId)
           .then((p) => {
+            console.log('[MusicPlayer] ensurePreviewFor 返回', { songId, hasUrl: !!(p && p.url), url: p?.url?.slice(0, 80) });
             if (p && p.url) {
               setRuntimePreview(p);
               setTier('remote');
@@ -187,8 +187,9 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
               setVipNotice(true);
             }
           })
-          .catch(() => {
+          .catch((err) => {
             // 获取失败,保持模拟播放
+            console.error('[MusicPlayer] ensurePreviewFor 失败', songId, err);
           });
       } else {
         setTier('simulated');

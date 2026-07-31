@@ -41,6 +41,31 @@ function mergeImportedSongs(bySource: Record<ImportedSongSource, Song[]>): Song[
   return merged;
 }
 
+/**
+ * 返回某平台导入歌的 songId 判定函数(用于登出时按平台清理)
+ * 返回 true 表示该 songId 属于该平台,应被清除
+ */
+function platformSongFilter(id: PlatformAccount['id']): (songId: string) => boolean {
+  if (id === 'qq') return (s) => s.startsWith('user_qq_');
+  if (id === 'qishui') return (s) => s.startsWith('user_qishui_');
+  // netease: 新前缀歌 + 旧数据兜底(不以 user_ 开头的视为旧 netease 数据)
+  return (s) => s.startsWith('user_netease_') || !s.startsWith('user_');
+}
+
+/** 按 songId 过滤映射表(清除判定函数返回 true 的条目) */
+function filterMapBySongId<T>(
+  map: Record<string, T>,
+  shouldRemove: (songId: string) => boolean,
+): Record<string, T> {
+  const result: Record<string, T> = {};
+  for (const [key, value] of Object.entries(map)) {
+    if (!shouldRemove(key)) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 interface UserState {
   /** 是否已完成 onboarding */
   onboarded: boolean;
@@ -56,8 +81,10 @@ interface UserState {
   importedSongs: Song[];
   /** 按来源分组的导入歌曲(画像分析用) */
   importedSongsBySource: Record<ImportedSongSource, Song[]>;
-  /** songId → neteaseId 映射(用于播放时获取播放地址) */
+  /** songId → neteaseId 映射(向后兼容,用于播放时获取播放地址) */
   neteaseIdMap: Record<string, number>;
+  /** songId → 平台歌曲 ID 映射(多平台通用:QQ 是 musicid 字符串,汽水是 track_id 字符串,网易云是 neteaseId 数字字符串) */
+  platformIdMap: Record<string, string>;
   /** songId → 封面 URL 映射(用于导入歌封面显示) */
   coverUrlMap: Record<string, string>;
 
@@ -65,7 +92,7 @@ interface UserState {
   setOnboarded: (answers: OnboardingAnswers, userPref: UserPreference) => void;
   /** 跳过/关闭 onboarding sheet,本次不再自动弹(设置页重置后会再次弹) */
   dismissOnboarding: () => void;
-  loginPlatform: (id: PlatformAccount['id'], nickname?: string, cookie?: string, neteaseUid?: number) => void;
+  loginPlatform: (id: PlatformAccount['id'], nickname?: string, cookie?: string, platformUid?: string | number) => void;
   logoutPlatform: (id: PlatformAccount['id']) => void;
   /** 设置导入的歌曲(兼容旧接口,写入 liked 来源) */
   setImportedSongs: (songs: Song[], neteaseIdMap?: Record<string, number>, coverUrlMap?: Record<string, string>) => void;
@@ -75,6 +102,7 @@ interface UserState {
     songs: Song[],
     neteaseIdMap?: Record<string, number>,
     coverUrlMap?: Record<string, string>,
+    platformPrefix?: 'user_netease_' | 'user_qq_' | 'user_qishui_',
   ) => void;
   /** 清除导入的歌曲(登出时调用) */
   clearImportedSongs: () => void;
@@ -92,6 +120,7 @@ export const useUserStore = create<UserState>()(
       importedSongs: [],
       importedSongsBySource: emptyImportedBySource(),
       neteaseIdMap: {},
+      platformIdMap: {},
       coverUrlMap: {},
 
       setOnboarded: (answers, userPref) =>
@@ -99,7 +128,7 @@ export const useUserStore = create<UserState>()(
 
       dismissOnboarding: () => set({ onboardingDismissed: true }),
 
-      loginPlatform: (id, nickname, cookie, neteaseUid) =>
+      loginPlatform: (id, nickname, cookie, platformUid) =>
         set((s) => ({
           platforms: s.platforms.map((p) =>
             p.id === id
@@ -108,27 +137,38 @@ export const useUserStore = create<UserState>()(
                   loggedIn: true,
                   nickname: nickname ?? `${p.label}用户`,
                   ...(cookie !== undefined ? { cookie } : {}),
-                  ...(neteaseUid !== undefined ? { neteaseUid } : {}),
+                  ...(platformUid !== undefined ? { platformUid } : {}),
+                  // 向后兼容:netease 场景下 platformUid 为 number 时同步写 neteaseUid
+                  ...(platformUid !== undefined && typeof platformUid === 'number'
+                    ? { neteaseUid: platformUid }
+                    : {}),
                 }
               : p,
           ),
         })),
 
       logoutPlatform: (id) =>
-        set((s) => ({
-          platforms: s.platforms.map((p) =>
-            p.id === id
-              ? { ...p, loggedIn: false, nickname: undefined, cookie: undefined, neteaseUid: undefined }
-              : p,
-          ),
-          // 登出网易云时清除导入歌曲
-          ...(id === 'netease' ? {
-            importedSongs: [],
-            importedSongsBySource: emptyImportedBySource(),
-            neteaseIdMap: {},
-            coverUrlMap: {},
-          } : {}),
-        })),
+        set((s) => {
+          const isPlatformSong = platformSongFilter(id);
+          return {
+            platforms: s.platforms.map((p) =>
+              p.id === id
+                ? { ...p, loggedIn: false, nickname: undefined, cookie: undefined, platformUid: undefined, neteaseUid: undefined }
+                : p,
+            ),
+            // 按平台前缀过滤导入歌(替代旧版仅 netease 清空全部的逻辑)
+            importedSongs: s.importedSongs.filter((song) => !isPlatformSong(song.songId)),
+            importedSongsBySource: {
+              liked: s.importedSongsBySource.liked.filter((song) => !isPlatformSong(song.songId)),
+              playlist: s.importedSongsBySource.playlist.filter((song) => !isPlatformSong(song.songId)),
+              recent: s.importedSongsBySource.recent.filter((song) => !isPlatformSong(song.songId)),
+            },
+            // 清理对应平台的映射数据
+            platformIdMap: filterMapBySongId(s.platformIdMap, isPlatformSong),
+            neteaseIdMap: filterMapBySongId(s.neteaseIdMap, isPlatformSong),
+            coverUrlMap: filterMapBySongId(s.coverUrlMap, isPlatformSong),
+          };
+        }),
 
       setImportedSongs: (songs, neteaseIdMap, coverUrlMap) =>
         set((s) => {
@@ -141,14 +181,42 @@ export const useUserStore = create<UserState>()(
           };
         }),
 
-      setImportedSongsBySource: (source, songs, neteaseIdMap, coverUrlMap) =>
+      setImportedSongsBySource: (source, songs, neteaseIdMap, coverUrlMap, platformPrefix) =>
         set((s) => {
-          const bySource = { ...s.importedSongsBySource, [source]: songs };
+          // 若指定平台前缀,把 songId 的 user_ 前缀替换为平台前缀(如 user_xxx → user_netease_xxx)
+          const applyPrefix = (songId: string): string =>
+            platformPrefix && songId.startsWith('user_')
+              ? platformPrefix + songId.slice('user_'.length)
+              : songId;
+          const finalSongs = platformPrefix
+            ? songs.map((song) => ({ ...song, songId: applyPrefix(song.songId) }))
+            : songs;
+          const remapKeys = <T>(m: Record<string, T> | undefined): Record<string, T> | undefined => {
+            if (!m || !platformPrefix) return m;
+            const out: Record<string, T> = {};
+            for (const [k, v] of Object.entries(m)) out[applyPrefix(k)] = v;
+            return out;
+          };
+          const finalNeteaseIdMap = remapKeys(neteaseIdMap);
+          const finalCoverMap = remapKeys(coverUrlMap);
+
+          const bySource = { ...s.importedSongsBySource, [source]: finalSongs };
           return {
             importedSongsBySource: bySource,
             importedSongs: mergeImportedSongs(bySource),
-            ...(neteaseIdMap ? { neteaseIdMap: { ...s.neteaseIdMap, ...neteaseIdMap } } : {}),
-            ...(coverUrlMap ? { coverUrlMap: { ...s.coverUrlMap, ...coverUrlMap } } : {}),
+            ...(finalNeteaseIdMap
+              ? {
+                  neteaseIdMap: { ...s.neteaseIdMap, ...finalNeteaseIdMap },
+                  // 同步写入多平台通用映射(neteaseId 转 string)
+                  platformIdMap: {
+                    ...s.platformIdMap,
+                    ...Object.fromEntries(
+                      Object.entries(finalNeteaseIdMap).map(([k, v]) => [k, String(v)]),
+                    ),
+                  },
+                }
+              : {}),
+            ...(finalCoverMap ? { coverUrlMap: { ...s.coverUrlMap, ...finalCoverMap } } : {}),
           };
         }),
 
@@ -157,6 +225,7 @@ export const useUserStore = create<UserState>()(
           importedSongs: [],
           importedSongsBySource: emptyImportedBySource(),
           neteaseIdMap: {},
+          platformIdMap: {},
           coverUrlMap: {},
         }),
 
@@ -175,6 +244,7 @@ export const useUserStore = create<UserState>()(
         importedSongs: s.importedSongs,
         importedSongsBySource: s.importedSongsBySource,
         neteaseIdMap: s.neteaseIdMap,
+        platformIdMap: s.platformIdMap,
         coverUrlMap: s.coverUrlMap,
       }),
     },

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useUserStore } from '../stores/userStore';
-import { importUserPlaylist, applyMultiSourcePreference } from '@algorithm/index';
-import type { Song, ImportedSongSource } from '@algorithm/index';
+import { importFlow } from '../services/platformImport';
+import type { PlatformId } from '../services/platformImport';
 import type { PlatformAccount } from '../types';
 import * as neteaseApi from '../services/neteaseApi';
+import * as qqApi from '../services/qqApi';
+import * as qishuiApi from '../services/qishuiApi';
 import styles from './PlatformQRModal.module.css';
 
 interface PlatformQRModalProps {
@@ -15,53 +17,90 @@ type Stage = 'loading' | 'pending' | 'scanned' | 'expired' | 'importing' | 'succ
 
 /** 轮询间隔(ms) */
 const POLL_INTERVAL_MS = 2500;
-/** 各来源最大导入数量 */
-const MAX_LIKED = 100;
-const MAX_PLAYLIST = 200;
-const MAX_RECENT = 100;
+
+/** 扫码状态归一化语义 */
+type QrSemantic = 'pending' | 'scanned' | 'expired' | 'success';
+
+/** 各平台扫码登录后统一字段(归一化 checkQrStatus 返回) */
+interface UnifiedQrCheckResult {
+  code: number;
+  cookie?: string;
+  nickname?: string;
+  uid?: number;
+}
+
+/** platform.id 是否为支持扫码登录的平台(netease / qq / qishui) */
+function isSupportedPlatform(id: PlatformAccount['id']): id is PlatformId {
+  return id === 'netease' || id === 'qq' || id === 'qishui';
+}
 
 /**
- * 构建 songId → neteaseId 和 songId → coverUrl 映射
- * 用于播放时获取播放地址和封面显示
+ * 各平台扫码 code 归一化为统一语义
+ *
+ * - netease: 801 等待 / 802 已扫码 / 800 过期 / 803 成功
+ * - qq:      66  等待 / 67  已扫码 / 65  过期 / 0   成功
+ * - qishui:  0   等待 / 1   已扫码 / 3   过期 / 2   成功
+ *
+ * 未知 code 兜底为 expired,让用户可重试。
  */
-function buildSongIdMaps(
-  songs: Song[],
-  entries: Array<{ title: string; artist: string }>,
-  neteaseIdMap: Map<string, number>,
-  coverUrlMap: Map<string, string>,
-): { idMap: Record<string, number>; coverMap: Record<string, string> } {
-  const idMap: Record<string, number> = {};
-  const coverMap: Record<string, string> = {};
-  songs.forEach((song, idx) => {
-    const entry = entries[idx];
-    if (entry) {
-      const key = `${entry.title}|${entry.artist}`;
-      const neteaseId = neteaseIdMap.get(key);
-      if (neteaseId !== undefined) {
-        idMap[song.songId] = neteaseId;
-      }
-      const coverUrl = coverUrlMap.get(key);
-      if (coverUrl) {
-        coverMap[song.songId] = coverUrl;
-      }
-    }
-  });
-  return { idMap, coverMap };
+function normalizeQrCode(platform: PlatformId, code: number): QrSemantic {
+  switch (platform) {
+    case 'netease':
+      if (code === 801) return 'pending';
+      if (code === 802) return 'scanned';
+      if (code === 800) return 'expired';
+      if (code === 803) return 'success';
+      break;
+    case 'qq':
+      if (code === 66) return 'pending';
+      if (code === 67) return 'scanned';
+      if (code === 65) return 'expired';
+      if (code === 0) return 'success';
+      break;
+    case 'qishui':
+      if (code === 0) return 'pending';
+      if (code === 1) return 'scanned';
+      if (code === 3) return 'expired';
+      if (code === 2) return 'success';
+      break;
+  }
+  return 'expired';
+}
+
+/** 根据 platform.id 生成二维码(三个平台均返回 { unikey, qrimg }) */
+async function createQrLoginByPlatform(platform: PlatformId): Promise<{ unikey: string; qrimg: string }> {
+  switch (platform) {
+    case 'netease':
+      return neteaseApi.createQrLogin();
+    case 'qq':
+      return qqApi.createQrLogin();
+    case 'qishui':
+      return qishuiApi.createQrLogin();
+  }
+}
+
+/** 根据 platform.id 轮询扫码状态,返回归一化结果 */
+async function checkQrStatusByPlatform(platform: PlatformId, key: string): Promise<UnifiedQrCheckResult> {
+  switch (platform) {
+    case 'netease':
+      return neteaseApi.checkQrStatus(key);
+    case 'qq':
+      return qqApi.checkQrStatus(key);
+    case 'qishui':
+      return qishuiApi.checkQrStatus(key);
+  }
 }
 
 /**
  * 扫码登录弹层
  *
- * 真实接入网易云 QR 登录:
- *   1. 调 /api/netease/qr-create 获取二维码图片 + unikey
- *   2. 每 2.5s 轮询 /api/netease/qr-check 检查扫码状态
- *   3. 登录成功后自动拉取红心歌单,通过 importUserPlaylist 导入音乐库
- *
- * 非 netease 平台暂未接入,显示"即将上线"。
+ * 支持网易云 / QQ / 汽水三个平台扫码登录:
+ *   1. 调对应平台 /api/<platform>/qr-create 获取二维码图片 + unikey
+ *   2. 每 2.5s 轮询 /api/<platform>/qr-check 检查扫码状态
+ *   3. 登录成功后通过 platformImport.importFlow 拉取歌单并导入音乐库
  */
 export function PlatformQRModal({ platform, onClose }: PlatformQRModalProps) {
   const loginPlatform = useUserStore((s) => s.loginPlatform);
-  const setImportedSongsBySource = useUserStore((s) => s.setImportedSongsBySource);
 
   const [stage, setStage] = useState<Stage>('loading');
   const [qrImg, setQrImg] = useState<string>('');
@@ -74,21 +113,22 @@ export function PlatformQRModal({ platform, onClose }: PlatformQRModalProps) {
   const loginCompletedRef = useRef(false);
 
   // -----------------------------------------------------------------------
-  // 生成二维码(仅 netease)
+  // 生成二维码(netease / qq / qishui)
   // -----------------------------------------------------------------------
   useEffect(() => {
-    if (platform.id !== 'netease') {
+    if (!isSupportedPlatform(platform.id)) {
       setStage('error');
-      setErrorMsg(`${platform.label} 扫码登录即将上线`);
+      setErrorMsg(`${platform.label} 扫码登录暂不支持`);
       return;
     }
+    const pid = platform.id;
 
     let cancelled = false;
 
     async function initQr() {
       try {
         setStage('loading');
-        const result = await neteaseApi.createQrLogin();
+        const result = await createQrLoginByPlatform(pid);
         if (cancelled) return;
         unikeyRef.current = result.unikey;
         setQrImg(result.qrimg);
@@ -111,22 +151,25 @@ export function PlatformQRModal({ platform, onClose }: PlatformQRModalProps) {
   // -----------------------------------------------------------------------
   useEffect(() => {
     if (stage !== 'pending' && stage !== 'scanned') return;
+    if (!isSupportedPlatform(platform.id)) return;
+    const pid = platform.id;
 
     const poll = async () => {
-      // 扫码已完成,不再轮询(防止 useEffect re-run 时重复启动导致被 800 覆盖)
+      // 扫码已完成,不再轮询(防止 useEffect re-run 时重复启动导致被过期码覆盖)
       if (loginCompletedRef.current) return;
       try {
-        const result = await neteaseApi.checkQrStatus(unikeyRef.current);
-        if (result.code === 801) {
+        const result = await checkQrStatusByPlatform(pid, unikeyRef.current);
+        const semantic = normalizeQrCode(pid, result.code);
+        if (semantic === 'pending') {
           // 等待扫码,保持 pending
           setStage('pending');
-        } else if (result.code === 802) {
+        } else if (semantic === 'scanned') {
           // 已扫码,待确认
           setStage('scanned');
-        } else if (result.code === 800) {
+        } else if (semantic === 'expired') {
           // 二维码过期
           setStage('expired');
-        } else if (result.code === 803 && result.cookie) {
+        } else if (semantic === 'success' && result.cookie) {
           // 登录成功,标记完成,不再轮询
           loginCompletedRef.current = true;
           // 停止 interval
@@ -134,14 +177,16 @@ export function PlatformQRModal({ platform, onClose }: PlatformQRModalProps) {
             window.clearInterval(pollTimerRef.current);
             pollTimerRef.current = null;
           }
-          loginPlatform(
-            'netease',
-            result.nickname,
-            result.cookie,
-            result.uid,
-          );
-          // 开始导入红心歌单(uid 可能因 login_status 结构差异拿不到,用 0 兜底)
-          startImportFlow(result.uid ?? 0, result.cookie);
+          // 各平台 nickname / uid 差异:
+          // - netease: 后端返回 nickname + uid(number)
+          // - qq: 后端返回 nickname,不返回 uin
+          // - qishui: 后端不返回 nickname,也不返回 uin
+          const nickname = result.nickname ?? (pid === 'qishui' ? '汽水音乐用户' : `${platform.label}用户`);
+          const platformUid = pid === 'netease' ? result.uid : undefined;
+          loginPlatform(pid, nickname, result.cookie, platformUid);
+          // 开始导入歌单(netease 需 uid 字符串,qq/qishui 传空字符串)
+          const uin = pid === 'netease' ? String(result.uid ?? 0) : '';
+          startImportFlow(pid, uin, result.cookie);
         }
       } catch {
         // 轮询失败,静默(下次重试)
@@ -161,77 +206,12 @@ export function PlatformQRModal({ platform, onClose }: PlatformQRModalProps) {
   }, [stage]);
 
   // -----------------------------------------------------------------------
-  // 多维度导入流程（红心 + 自建歌单 + 最近听过）
+  // 多维度导入流程（委托 platformImport.importFlow，内部处理各来源拉取）
   // -----------------------------------------------------------------------
-  async function startImportFlow(uid: number, cookie: string) {
+  async function startImportFlow(pid: PlatformId, uin: string, cookie: string) {
     try {
       setStage('importing');
-
-      const summary: Array<{ source: ImportedSongSource; count: number }> = [];
-
-      // —— 阶段 1: 红心歌单 ——
-      setImportProgress('正在获取红心歌单...');
-      try {
-        const likelistResult = await neteaseApi.fetchLikelist(uid, cookie);
-        const ids = likelistResult.ids.slice(0, MAX_LIKED);
-        if (ids.length > 0) {
-          const { entries, neteaseIdMap, coverUrlMap } = await neteaseApi.fetchSongDetails(ids, cookie);
-          const songs: Song[] = importUserPlaylist(entries);
-          const { idMap, coverMap } = buildSongIdMaps(songs, entries, neteaseIdMap, coverUrlMap);
-          setImportedSongsBySource('liked', songs, idMap, coverMap);
-          summary.push({ source: 'liked', count: songs.length });
-        }
-      } catch {
-        // 红心失败不阻塞
-      }
-
-      // —— 阶段 2: 自建歌单 ——
-      setImportProgress('正在获取自建歌单...');
-      try {
-        const playlistsResult = await neteaseApi.fetchUserPlaylists(uid, cookie);
-        const ids = playlistsResult.ids.slice(0, MAX_PLAYLIST);
-        if (ids.length > 0) {
-          const { entries, neteaseIdMap, coverUrlMap } = await neteaseApi.fetchSongDetails(ids, cookie);
-          const songs: Song[] = importUserPlaylist(entries);
-          const { idMap, coverMap } = buildSongIdMaps(songs, entries, neteaseIdMap, coverUrlMap);
-          setImportedSongsBySource('playlist', songs, idMap, coverMap);
-          summary.push({ source: 'playlist', count: songs.length });
-        }
-      } catch {
-        // 歌单失败不阻塞
-      }
-
-      // —— 阶段 3: 最近听过 ——
-      setImportProgress('正在获取最近听过...');
-      try {
-        const recentResult = await neteaseApi.fetchRecentSongs(uid, cookie);
-        const ids = recentResult.ids.slice(0, MAX_RECENT);
-        if (ids.length > 0) {
-          const { entries, neteaseIdMap, coverUrlMap } = await neteaseApi.fetchSongDetails(ids, cookie);
-          const songs: Song[] = importUserPlaylist(entries);
-          const { idMap, coverMap } = buildSongIdMaps(songs, entries, neteaseIdMap, coverUrlMap);
-          setImportedSongsBySource('recent', songs, idMap, coverMap);
-          summary.push({ source: 'recent', count: songs.length });
-        }
-      } catch {
-        // 最近听过失败不阻塞
-      }
-
-      // —— 应用多维度画像到 userPref ——
-      const state = useUserStore.getState();
-      if (state.userPref && summary.length > 0) {
-        const updatedPref = applyMultiSourcePreference(state.userPref, state.importedSongsBySource);
-        state.setOnboarded(state.answers ?? {
-          platform: 'netease',
-          referenceSongs: [],
-          mood: 'neutral',
-          genres: [],
-          languages: [],
-        }, updatedPref);
-      }
-
-      const totalImported = summary.reduce((sum, s) => sum + s.count, 0);
-      setImportProgress(`已导入 ${totalImported} 首歌曲（${summary.map((s) => `${s.source}: ${s.count}`).join(' · ')}）`);
+      await importFlow(pid, cookie, uin, (msg) => setImportProgress(msg));
       setStage('success');
     } catch (e) {
       setStage('error');
@@ -243,10 +223,11 @@ export function PlatformQRModal({ platform, onClose }: PlatformQRModalProps) {
   // 重新生成二维码(expired 状态)
   // -----------------------------------------------------------------------
   const handleRegenerate = async () => {
+    if (!isSupportedPlatform(platform.id)) return;
     try {
       setStage('loading');
       loginCompletedRef.current = false;  // 重置登录完成标记
-      const result = await neteaseApi.createQrLogin();
+      const result = await createQrLoginByPlatform(platform.id);
       unikeyRef.current = result.unikey;
       setQrImg(result.qrimg);
       setStage('pending');
@@ -364,15 +345,13 @@ export function PlatformQRModal({ platform, onClose }: PlatformQRModalProps) {
             <div className={styles.successIcon} aria-hidden>✕</div>
             <div className={styles.successTitle}>出错</div>
             <div className={styles.successSub}>{errorMsg}</div>
-            {platform.id === 'netease' && (
-              <button
-                type="button"
-                className={styles.mockBtn}
-                onClick={handleRegenerate}
-              >
-                重试 →
-              </button>
-            )}
+            <button
+              type="button"
+              className={styles.mockBtn}
+              onClick={handleRegenerate}
+            >
+              重试 →
+            </button>
           </div>
         )}
       </div>

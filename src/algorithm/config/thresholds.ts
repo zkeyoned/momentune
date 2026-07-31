@@ -324,3 +324,30 @@ export const HEURISTIC_A_WEIGHTS = {
   rms: 0.30,
   loudness: 0.20,
 } as const;
+
+// ============================================================================
+// 9. 五维匹配权重(Task 5 动态权重)
+// ============================================================================
+
+/** 五维 + V-A 的基准权重（V-A 高置信度时使用，总和=1.0） */
+export const MATCH_WEIGHTS_FIVE_DIM = {
+  mood: 0.20,      // 情绪基调
+  energy: 0.15,    // 能量级别
+  genre: 0.15,     // 风格倾向
+  language: 0.10,  // 语种
+  vibe: 0.15,      // 氛围
+  va: 0.25,        // V-A 距离（高置信度基准）
+} as const;
+
+/** V-A 置信度阈值：低于此值触发降权 */
+export const VA_CONFIDENCE_DEGRADE_THRESHOLD = 0.7;
+
+/** V-A 低置信度时的目标权重 */
+export const MATCH_WEIGHTS_VA_DEGRADED = {
+  mood: 0.25,      // +0.05
+  energy: 0.20,    // +0.05
+  genre: 0.20,     // +0.05
+  language: 0.10,  // 不变
+  vibe: 0.15,      // 不变
+  va: 0.10,        // -0.15
+} as const;

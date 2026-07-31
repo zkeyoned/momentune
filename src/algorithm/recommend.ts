@@ -19,7 +19,7 @@
  * @module algorithm/recommend
  */
 
-import { calcMatchScore, filterCandidatePool, calcExtendSimilarity, calcExtendScore, type MatchContext } from './match.js';
+import { calcMatchScore, filterCandidatePool, calcExtendSimilarity, calcExtendScore, calcScorePref, type MatchContext } from './match.js';
 import { calcVADistance } from './utils.js';
 import { findNearestEmotionLabel, resolveEmotionLabels } from './utils.js';
 import {
@@ -50,6 +50,7 @@ import {
 import { jaccardSimilarity } from './utils.js';
 import type {
   EmotionLabel,
+  MusicIntent,
   RecommendationMeta,
   RecommendationResult,
   RecommendedTrack,
@@ -77,6 +78,8 @@ export interface RecommendInput {
   songLibrary: readonly Song[];
   /** 探索概率(默认 0.15) */
   exploreEpsilon?: number;
+  /** AI 产出的音乐匹配意图(五维,AI 降级时缺失 → 退化为纯 V-A 模式) */
+  musicIntent?: MusicIntent;
 }
 
 // ============================================================================
@@ -103,6 +106,7 @@ function scoreAndSortCandidates(
     userPref: input.userPref,
     referenceSongs: input.referenceSongs,
     isColdStart: input.userPref.isColdStart,
+    musicIntent: input.musicIntent,
   };
 
   const scored = candidates.map((song) => ({
@@ -374,6 +378,7 @@ function generateExtendCandidatesForSource(
     userPref: input.userPref,
     referenceSongs: input.referenceSongs,
     isColdStart: input.userPref.isColdStart,
+    musicIntent: input.musicIntent,
   };
 
   const candidates: ExtendCandidate[] = [];
@@ -551,6 +556,7 @@ function adjustTotalCount(
       userPref: input.userPref,
       referenceSongs: input.referenceSongs,
       isColdStart: input.userPref.isColdStart,
+      musicIntent: input.musicIntent,
     };
 
     const padded: ExtendCandidate[] = candidates.map((c) => {
@@ -630,64 +636,186 @@ function buildMeta(
 }
 
 // ============================================================================
+// 库规模降级策略
+// ============================================================================
+
+/**
+ * 库规模降级策略：根据歌曲库大小选择匹配策略
+ * - 'full'（≥500）：完整两阶段（候选池过滤 + 核心 8 + 扩展 7-12）
+ * - 'relaxed'（50-500）：候选池阈值放宽 1.5 倍，输出 8-15 首
+ * - 'no_pool'（15-50）：跳过候选池过滤，五维全库排序，输出 8-12 首
+ * - 'fallback_only'（<15）：用户偏好 top 歌曲，照片情绪决定排序，输出全部
+ */
+export function selectStrategyByLibrarySize(
+  librarySize: number,
+): 'full' | 'relaxed' | 'no_pool' | 'fallback_only' {
+  if (librarySize >= 500) return 'full';
+  if (librarySize >= 50) return 'relaxed';
+  if (librarySize >= 15) return 'no_pool';
+  return 'fallback_only';
+}
+
+/**
+ * 降级策略配置：封装候选池阈值倍数、核心/扩展数量、是否跳过候选池等参数
+ * Task 10 会用这些参数调整 recommend 主流程
+ */
+export interface StrategyConfig {
+  /** 降级策略标识 */
+  strategy: 'full' | 'relaxed' | 'no_pool' | 'fallback_only';
+  /** 候选池 V-A 阈值倍数（1.0=原阈值，1.5=放宽 50%） */
+  candidatePoolThresholdMultiplier: number;
+  /** 是否跳过候选池过滤（no_pool 和 fallback_only 为 true） */
+  skipCandidatePool: boolean;
+  /** 核心歌曲数量 */
+  coreCount: number;
+  /** 扩展歌曲数量上限 */
+  extendCountMax: number;
+  /** 扩展歌曲数量下限 */
+  extendCountMin: number;
+  /** 是否走用户偏好兜底（fallback_only 为 true） */
+  useUserPrefFallback: boolean;
+}
+
+/**
+ * 根据降级策略返回对应的策略配置参数
+ */
+export function getStrategyConfig(
+  strategy: ReturnType<typeof selectStrategyByLibrarySize>,
+): StrategyConfig {
+  switch (strategy) {
+    case 'full':
+      return {
+        strategy,
+        candidatePoolThresholdMultiplier: 1.0,
+        skipCandidatePool: false,
+        coreCount: 8,
+        extendCountMax: 12,
+        extendCountMin: 7,
+        useUserPrefFallback: false,
+      };
+    case 'relaxed':
+      return {
+        strategy,
+        candidatePoolThresholdMultiplier: 1.5,
+        skipCandidatePool: false,
+        coreCount: 8,
+        extendCountMax: 15,
+        extendCountMin: 0,
+        useUserPrefFallback: false,
+      };
+    case 'no_pool':
+      return {
+        strategy,
+        candidatePoolThresholdMultiplier: 1.0, // 不用，因为 skipCandidatePool=true
+        skipCandidatePool: true,
+        coreCount: 8,
+        extendCountMax: 12,
+        extendCountMin: 0,
+        useUserPrefFallback: false,
+      };
+    case 'fallback_only':
+      return {
+        strategy,
+        candidatePoolThresholdMultiplier: 1.0,
+        skipCandidatePool: true,
+        coreCount: 0, // 不做核心选择，直接出用户偏好
+        extendCountMax: 0,
+        extendCountMin: 0,
+        useUserPrefFallback: true,
+      };
+  }
+}
+
+// ============================================================================
 // 推荐主入口
 // ============================================================================
 
 /**
- * 两阶段推荐主流程
+ * 两阶段推荐主流程(集成库规模降级策略 + musicIntent 透传)
+ *
+ * 库规模降级分支:
+ * - full(≥500):候选池过滤 + 核心 8 + 扩展 7-12
+ * - relaxed(50-500):候选池阈值放宽 1.5 倍 + 核心 8 + 扩展 0-15
+ * - no_pool(15-50):跳过候选池 + 全库打分 + 核心 8 + 扩展 0-12
+ * - fallback_only(<15):用户偏好排序 + 照片情绪 re-rank + 输出全部库内歌曲
+ *
+ * musicIntent 透传:
+ * - input.musicIntent → MatchContext.musicIntent → calcMatchScore 五维评分
+ * - undefined 时 calcMatchScore 自动退化为纯 V-A 模式(resolveDynamicWeights 返回 va=1.0)
  *
  * @param input 推荐输入
- * @returns 推荐结果(8 核心 + 7-12 扩展)
+ * @returns 推荐结果
  */
 export function recommend(input: RecommendInput): RecommendationResult {
-  // 阶段 1:候选池过滤
-  const poolResult = filterCandidatePool(
-    input.songLibrary,
-    input.photoEmotion,
-    CANDIDATE_POOL_VA_DISTANCE,
-    CANDIDATE_POOL_VA_DISTANCE_LOOSE,
-    CANDIDATE_POOL_MIN_SIZE,
-  );
-  const candidatePool = poolResult.candidates;
+  // —— 库规模降级策略选择 ——
+  const librarySize = input.songLibrary.length;
+  const strategy = selectStrategyByLibrarySize(librarySize);
+  const config = getStrategyConfig(strategy);
 
-  // 阶段 1:主分排序
+  // —— fallback_only 分支:用户偏好排序 + 照片情绪 re-rank ——
+  if (config.useUserPrefFallback) {
+    return recommendUserPrefFallback(input);
+  }
+
+  // —— 阶段 1:候选池过滤(按策略决定是否跳过 + 阈值放宽) ——
+  let candidatePool: readonly Song[];
+  if (config.skipCandidatePool) {
+    // no_pool:全库作为候选池
+    candidatePool = input.songLibrary;
+  } else {
+    // full / relaxed:filterCandidatePool,relaxed 时阈值乘以倍数放宽
+    const strictDist = CANDIDATE_POOL_VA_DISTANCE * config.candidatePoolThresholdMultiplier;
+    const looseDist = CANDIDATE_POOL_VA_DISTANCE_LOOSE * config.candidatePoolThresholdMultiplier;
+    const poolResult = filterCandidatePool(
+      input.songLibrary,
+      input.photoEmotion,
+      strictDist,
+      looseDist,
+      CANDIDATE_POOL_MIN_SIZE,
+    );
+    candidatePool = poolResult.candidates;
+  }
+
+  // —— 阶段 1:主分排序(透传 musicIntent 到 MatchContext) ——
   const sorted = scoreAndSortCandidates(input, candidatePool);
 
-  // 阶段 1:多样化选 8 首
+  // —— 阶段 1:多样化选 8 首(核心数量固定 8,所有非 fallback 策略一致) ——
   const { core: coreScored, exploreTrack } = selectCoreTracks(sorted, input);
 
-  // 阶段 2:扩展
+  // —— 阶段 2:扩展(透传 musicIntent) ——
   const coreIds = new Set(coreScored.map((s) => s.song.songId));
   const extendedRaw = generateExtendedTracks(coreScored, input, coreIds);
 
-  // 全局多样化
+  // —— 全局多样化 ——
   const coreArtists = new Set(coreScored.map((s) => s.song.artist));
   const coreLabels = new Set(coreScored.map((s) => findNearestEmotionLabel(s.song.va)));
   const extendedFiltered = applyGlobalDiversity(extendedRaw, coreArtists, coreLabels);
 
-  // 数量调整(含不足兜底补足)
+  // —— 按 config.extendCountMax 限制扩展数量(no_pool=12, relaxed=15, full=12) ——
+  // 注意:EXTEND_QUOTA_BY_RANK 总和 11,通常 ≤ extendCountMax,slice 是安全兜底
+  const extendedCapped = extendedFiltered.slice(0, config.extendCountMax);
+
+  // —— 数量调整(不足 15 兜底补足,超过 20 裁剪;透传 musicIntent) ——
   const allSelectedIds = new Set([
     ...coreScored.map((s) => s.song.songId),
-    ...extendedFiltered.map((e) => e.song.songId),
+    ...extendedCapped.map((e) => e.song.songId),
   ]);
   const { core: finalCore, extended: finalExtended } = adjustTotalCount(
     coreScored,
-    extendedFiltered,
+    extendedCapped,
     input,
     allSelectedIds,
   );
 
-  // 最终核心(可能被调整过)
+  // —— 转换为输出格式 ——
   const finalCoreTracks: RecommendedTrack[] = finalCore.map((s) => {
     const isExplore = s === exploreTrack;
     return toRecommendedTrack(s, 'core', isExplore);
   });
   const finalExtendedTracks: RecommendedTrack[] = finalExtended.map(toExtendedRecommendedTrack);
 
-  // 情绪标签解析
+  // —— 情绪标签解析 + 元信息 ——
   const emotionResult = resolveEmotionLabels(input.photoEmotion);
-
-  // 元信息
   const meta = buildMeta(
     finalCoreTracks,
     finalExtendedTracks,
@@ -704,6 +832,87 @@ export function recommend(input: RecommendInput): RecommendationResult {
     lowConfidence: input.photoEmotion.confidence < CONFLICT_CONFIDENCE_LOW,
     coreTracks: finalCoreTracks,
     extendedTracks: finalExtendedTracks,
+    meta,
+  };
+}
+
+/**
+ * fallback_only 分支:用户偏好排序 + 照片情绪(musicIntent)re-rank
+ *
+ * 触发条件:库规模 < 15(config.useUserPrefFallback = true)
+ *
+ * 策略:
+ * - 不做候选池过滤(库太小,过滤无意义)
+ * - 主分 = 0.5 × scorePref(用户偏好) + 0.5 × calcMatchScore.finalScore(照片情绪匹配)
+ * - 照片情绪(musicIntent)只用于 re-rank 排序,不参与过滤
+ * - 输出全部库内歌曲(不论数量,< 15 首也全输出)
+ *
+ * 边界:
+ * - songLibrary 为空 → 返回空核心 + 空扩展
+ * - musicIntent undefined → calcMatchScore 退化为纯 V-A(只用 scoreVA 做排序权重)
+ *
+ * @param input 推荐输入
+ * @returns 推荐结果(全部库内歌曲作为核心曲)
+ */
+function recommendUserPrefFallback(input: RecommendInput): RecommendationResult {
+  // —— 边界:空库 → 返回空结果(但保持结构完整) ——
+  if (input.songLibrary.length === 0) {
+    const emotionResult = resolveEmotionLabels(input.photoEmotion);
+    const meta = buildMeta([], [], 0, false);
+    return {
+      photoEmotion: input.photoEmotion,
+      primaryLabel: emotionResult.primary,
+      secondaryLabel: emotionResult.secondary,
+      isMixedEmotion: emotionResult.isMixed,
+      gpsUsed: input.photoEmotion.source === 'gps_fusion',
+      lowConfidence: input.photoEmotion.confidence < CONFLICT_CONFIDENCE_LOW,
+      coreTracks: [],
+      extendedTracks: [],
+      meta,
+    };
+  }
+
+  // —— 构建 MatchContext(透传 musicIntent) ——
+  const ctx: MatchContext = {
+    photoVA: input.photoEmotion,
+    photoEmotionLabel: findNearestEmotionLabel(input.photoEmotion),
+    photoScene: input.photoScene,
+    userPref: input.userPref,
+    referenceSongs: input.referenceSongs,
+    isColdStart: input.userPref.isColdStart,
+    musicIntent: input.musicIntent,
+  };
+
+  // —— 主分 = 0.5 × scorePref + 0.5 × finalScore(musicIntent re-rank) ——
+  const scored = input.songLibrary.map((song) => {
+    const prefScore = calcScorePref(song, input.userPref);
+    const breakdown = calcMatchScore(song, ctx);
+    const finalScore = 0.5 * prefScore + 0.5 * breakdown.finalScore;
+    return { song, breakdown, finalScore };
+  });
+  scored.sort((a, b) => b.finalScore - a.finalScore);
+
+  // —— 输出全部库内歌曲作为核心曲 ——
+  const tracks: RecommendedTrack[] = scored.map((s) => ({
+    song: s.song,
+    breakdown: s.breakdown,
+    source: 'core',
+    isExplore: false,
+  }));
+
+  // —— 元信息 ——
+  const emotionResult = resolveEmotionLabels(input.photoEmotion);
+  const meta = buildMeta(tracks, [], input.songLibrary.length, false);
+
+  return {
+    photoEmotion: input.photoEmotion,
+    primaryLabel: emotionResult.primary,
+    secondaryLabel: emotionResult.secondary,
+    isMixedEmotion: emotionResult.isMixed,
+    gpsUsed: input.photoEmotion.source === 'gps_fusion',
+    lowConfidence: input.photoEmotion.confidence < CONFLICT_CONFIDENCE_LOW,
+    coreTracks: tracks,
+    extendedTracks: [],
     meta,
   };
 }
