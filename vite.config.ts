@@ -87,32 +87,41 @@ function visionApiDevPlugin(apiKey: string): Plugin {
 }
 
 // ---------------------------------------------------------------------------
-// 本地 dev middleware:把 /api/netease/* 转发到 api/netease/*.ts 的 handler
+// 本地 dev middleware:把 /api/{netease,qq,qishui}/* 转发到对应 [action].ts handler
 // ---------------------------------------------------------------------------
-// 与 visionApiDevPlugin 类似,但支持多路由(根据 URL 路径加载对应模块)。
+// 合并后三个平台都用动态路由文件(api/<platform>/[action].ts),
+// 本 middleware 按路径前缀匹配,提取 action 段注入 req.query.action,
+// 再加载对应 [action].ts 模块调 default handler(与 Vercel 生产环境动态路由行为一致)。
 // 生产环境:Vercel 自动识别 api/ 目录部署为 Serverless Function,本段不生效。
 
-function neteaseApiDevPlugin(): Plugin {
-  // 路由 → 模块路径映射
-  const routes: Record<string, string> = {
-    '/api/netease/qr-create': '/api/netease/qr-create.ts',
-    '/api/netease/qr-check': '/api/netease/qr-check.ts',
-    '/api/netease/likelist': '/api/netease/likelist.ts',
-    '/api/netease/song-detail-batch': '/api/netease/song-detail-batch.ts',
-    '/api/netease/song-url': '/api/netease/song-url.ts',
-  };
-
+/**
+ * 通用动态路由 Vercel-style API dev middleware 工厂
+ *
+ * 按路径前缀匹配(如 '/api/netease/'),提取前缀后的单段路径作为 action,
+ * 注入 req.query.action,加载 modulePath(如 '/api/netease/[action].ts')并调 default handler。
+ *
+ * @param pluginName Vite plugin 名(用于调试)
+ * @param prefix     路径前缀(如 '/api/netease/',带尾斜杠)
+ * @param modulePath 对应的动态路由模块路径(如 '/api/netease/[action].ts')
+ */
+function createDynamicApiDevPlugin(pluginName: string, prefix: string, modulePath: string): Plugin {
   return {
-    name: 'momentune-netease-api-dev',
+    name: pluginName,
     configureServer(server: ViteDevServer) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url ?? '';
         // 提取 pathname(去掉 query string)
         const pathname = url.split('?')[0]!;
 
-        // 匹配路由
-        const modulePath = routes[pathname];
-        if (!modulePath) {
+        // 匹配前缀;未命中交给后续 middleware
+        if (!pathname.startsWith(prefix)) {
+          next();
+          return;
+        }
+
+        // 提取 action(前缀后的单段路径,不含 /)
+        const action = pathname.slice(prefix.length);
+        if (!action || action.includes('/')) {
           next();
           return;
         }
@@ -130,6 +139,8 @@ function neteaseApiDevPlugin(): Plugin {
         const query: Record<string, string> = {};
         const urlObj = new URL(url, 'http://localhost');
         urlObj.searchParams.forEach((v, k) => { query[k] = v; });
+        // 注入动态路由参数(与 Vercel 生产环境行为一致)
+        query.action = action;
 
         // 解析 body
         let body: Record<string, unknown> = {};
@@ -160,6 +171,7 @@ function neteaseApiDevPlugin(): Plugin {
           end: (data?: string) => res.end(data),
         };
 
+        // 加载 [action].ts 模块(ssr 模式,支持热更新),调 default handler
         try {
           const mod = await server.ssrLoadModule(modulePath);
           const handler = mod.default;
@@ -179,6 +191,11 @@ function neteaseApiDevPlugin(): Plugin {
       });
     },
   };
+}
+
+/** 网易云 API dev middleware:代理 /api/netease/* 到 api/netease/[action].ts */
+function neteaseApiDevPlugin(): Plugin {
+  return createDynamicApiDevPlugin('momentune-netease-api-dev', '/api/netease/', '/api/netease/[action].ts');
 }
 
 // ---------------------------------------------------------------------------
@@ -263,127 +280,21 @@ function audioProxyDevPlugin(): Plugin {
 }
 
 // ---------------------------------------------------------------------------
-// 本地 dev middleware:把 /api/qq/* 和 /api/qishui/* 转发到对应 api/*.ts handler
+// 本地 dev middleware:把 /api/qq/* 和 /api/qishui/* 转发到对应 [action].ts handler
 // ---------------------------------------------------------------------------
 // 与 neteaseApiDevPlugin 同模式,代理 QQ 音乐 / 汽水音乐相关端点。
+// 三个平台合并后都用动态路由文件(api/<platform>/[action].ts),本 middleware 按
+// 路径前缀匹配,提取 action 段注入 req.query.action,再加载对应 [action].ts 调 default handler。
 // 生产环境:Vercel 自动识别 api/ 目录部署为 Serverless Function,本段不生效。
-// CORS / OPTIONS 预检由各 handler 内部的 handleRequest / setAudioCors 处理(与 netease 一致)。
 
-/**
- * 通用多路由 Vercel-style API dev middleware 工厂
- *
- * 与 neteaseApiDevPlugin 同模式:根据 pathname 匹配路由表,
- * 用 server.ssrLoadModule 加载对应 api/*.ts 模块(支持热更新),
- * 构造类 Vercel req/res 后调 default handler。
- *
- * @param pluginName Vite plugin 名(用于调试)
- * @param routes     pathname → 模块路径映射(如 '/api/qq/qr-create' → '/api/qq/qr-create.ts')
- */
-function createVercelApiDevPlugin(pluginName: string, routes: Record<string, string>): Plugin {
-  return {
-    name: pluginName,
-    configureServer(server: ViteDevServer) {
-      server.middlewares.use(async (req, res, next) => {
-        const url = req.url ?? '';
-        // 提取 pathname(去掉 query string)
-        const pathname = url.split('?')[0]!;
-
-        // 匹配路由,未命中交给后续 middleware
-        const modulePath = routes[pathname];
-        if (!modulePath) {
-          next();
-          return;
-        }
-
-        // 收集 body
-        const chunks: Buffer[] = [];
-        for await (const chunk of req) {
-          if (typeof chunk === 'string' || chunk instanceof Buffer) {
-            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-          }
-        }
-        const bodyStr = Buffer.concat(chunks).toString('utf-8');
-
-        // 解析 query
-        const query: Record<string, string> = {};
-        const urlObj = new URL(url, 'http://localhost');
-        urlObj.searchParams.forEach((v, k) => { query[k] = v; });
-
-        // 解析 body
-        let body: Record<string, unknown> = {};
-        if (bodyStr) {
-          try {
-            body = JSON.parse(bodyStr);
-          } catch {
-            // 非 JSON body,空对象兜底
-          }
-        }
-
-        // 构造类 Vercel req/res
-        const vercelReq = {
-          method: req.method,
-          body,
-          query,
-        };
-        const vercelRes = {
-          status: (code: number) => ({
-            json: (data: unknown) => {
-              res.statusCode = code;
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify(data));
-            },
-            end: (data?: string) => res.end(data),
-          }),
-          setHeader: (name: string, value: string) => res.setHeader(name, value),
-          end: (data?: string) => res.end(data),
-        };
-
-        // 加载 api/*.ts 模块(ssr 模式,支持热更新),调 default handler
-        try {
-          const mod = await server.ssrLoadModule(modulePath);
-          const handler = mod.default;
-          if (typeof handler !== 'function') {
-            res.statusCode = 500;
-            res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ error: `Module ${modulePath} has no default export` }));
-            return;
-          }
-          await handler(vercelReq, vercelRes);
-        } catch (e) {
-          const message = e instanceof Error ? e.message : 'Unknown server error';
-          res.statusCode = 500;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: message }));
-        }
-      });
-    },
-  };
-}
-
-/** QQ 音乐 API dev middleware:代理 /api/qq/* 到 api/qq/*.ts */
+/** QQ 音乐 API dev middleware:代理 /api/qq/* 到 api/qq/[action].ts */
 function qqApiDevPlugin(): Plugin {
-  return createVercelApiDevPlugin('momentune-qq-api-dev', {
-    '/api/qq/qr-create': '/api/qq/qr-create.ts',
-    '/api/qq/qr-check': '/api/qq/qr-check.ts',
-    '/api/qq/likelist': '/api/qq/likelist.ts',
-    '/api/qq/user-playlists': '/api/qq/user-playlists.ts',
-    '/api/qq/playlist-detail': '/api/qq/playlist-detail.ts',
-    '/api/qq/song-detail-batch': '/api/qq/song-detail-batch.ts',
-    '/api/qq/song-url': '/api/qq/song-url.ts',
-    '/api/qq/audio-proxy': '/api/qq/audio-proxy.ts',
-  });
+  return createDynamicApiDevPlugin('momentune-qq-api-dev', '/api/qq/', '/api/qq/[action].ts');
 }
 
-/** 汽水音乐 API dev middleware:代理 /api/qishui/* 到 api/qishui/*.ts */
+/** 汽水音乐 API dev middleware:代理 /api/qishui/* 到 api/qishui/[action].ts */
 function qishuiApiDevPlugin(): Plugin {
-  return createVercelApiDevPlugin('momentune-qishui-api-dev', {
-    '/api/qishui/qr-create': '/api/qishui/qr-create.ts',
-    '/api/qishui/qr-check': '/api/qishui/qr-check.ts',
-    '/api/qishui/playlist-list': '/api/qishui/playlist-list.ts',
-    '/api/qishui/playlist-detail': '/api/qishui/playlist-detail.ts',
-    '/api/qishui/song-url': '/api/qishui/song-url.ts',
-    '/api/qishui/audio-proxy': '/api/qishui/audio-proxy.ts',
-  });
+  return createDynamicApiDevPlugin('momentune-qishui-api-dev', '/api/qishui/', '/api/qishui/[action].ts');
 }
 
 export default defineConfig(({ mode }) => {
