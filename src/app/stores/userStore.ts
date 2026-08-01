@@ -11,8 +11,24 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { initUserPreference } from '@algorithm/index';
 import type { OnboardingAnswers, Song, UserPreference, ImportedSongSource } from '@algorithm/index';
 import type { PlatformAccount } from '../types';
+
+/**
+ * 默认 onboarding 答案(无问卷时的冷启动兜底,与 mockApi.createDefaultUserPref 保持一致)
+ * 注意:问卷已移除,这里仅作为偏好中心初始化的兜底值
+ */
+const DEFAULT_ONBOARDING_ANSWERS: OnboardingAnswers = {
+  platform: 'netease',
+  referenceSongs: [],
+  mood: 'neutral',
+  genres: ['rap', 'rnb', 'electronic'],
+  languages: ['mandarin', 'english'],
+};
+
+/** 默认用户偏好(无问卷时初始化,导入红心歌后由 setUserPref 更新) */
+const DEFAULT_USER_PREF: UserPreference = initUserPreference(DEFAULT_ONBOARDING_ANSWERS, []);
 
 const DEFAULT_PLATFORMS: PlatformAccount[] = [
   { id: 'netease', name: 'netease', label: '网易云音乐', loggedIn: false, color: '#c20c0c', available: true },
@@ -67,13 +83,7 @@ function filterMapBySongId<T>(
 }
 
 interface UserState {
-  /** 是否已完成 onboarding */
-  onboarded: boolean;
-  /** 用户是否已跳过/关闭 onboarding sheet(不再自动弹) */
-  onboardingDismissed: boolean;
-  /** onboarding 问卷答案 */
-  answers: OnboardingAnswers | null;
-  /** 算法偏好对象(完成 onboarding 后由 mockApi 初始化) */
+  /** 算法偏好对象(无问卷时用默认偏好初始化,导入红心歌后由 setUserPref 更新) */
   userPref: UserPreference | null;
   /** 平台账号列表 */
   platforms: PlatformAccount[];
@@ -89,9 +99,8 @@ interface UserState {
   coverUrlMap: Record<string, string>;
 
   // —— actions ——
-  setOnboarded: (answers: OnboardingAnswers, userPref: UserPreference) => void;
-  /** 跳过/关闭 onboarding sheet,本次不再自动弹(设置页重置后会再次弹) */
-  dismissOnboarding: () => void;
+  /** 更新用户偏好(导入红心歌后应用多维度画像) */
+  setUserPref: (userPref: UserPreference) => void;
   loginPlatform: (id: PlatformAccount['id'], nickname?: string, cookie?: string, platformUid?: string | number) => void;
   logoutPlatform: (id: PlatformAccount['id']) => void;
   /** 设置导入的歌曲(兼容旧接口,写入 liked 来源) */
@@ -106,16 +115,12 @@ interface UserState {
   ) => void;
   /** 清除导入的歌曲(登出时调用) */
   clearImportedSongs: () => void;
-  resetOnboarding: () => void;
 }
 
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
-      onboarded: false,
-      onboardingDismissed: false,
-      answers: null,
-      userPref: null,
+      userPref: DEFAULT_USER_PREF,
       platforms: DEFAULT_PLATFORMS,
       importedSongs: [],
       importedSongsBySource: emptyImportedBySource(),
@@ -123,10 +128,7 @@ export const useUserStore = create<UserState>()(
       platformIdMap: {},
       coverUrlMap: {},
 
-      setOnboarded: (answers, userPref) =>
-        set({ onboarded: true, onboardingDismissed: true, answers, userPref }),
-
-      dismissOnboarding: () => set({ onboardingDismissed: true }),
+      setUserPref: (userPref) => set({ userPref }),
 
       loginPlatform: (id, nickname, cookie, platformUid) =>
         set((s) => ({
@@ -228,17 +230,11 @@ export const useUserStore = create<UserState>()(
           platformIdMap: {},
           coverUrlMap: {},
         }),
-
-      resetOnboarding: () =>
-        set({ onboarded: false, onboardingDismissed: false, answers: null, userPref: null }),
     }),
     {
       name: 'momentune-user',
       storage: createJSONStorage(() => localStorage),
       partialize: (s) => ({
-        onboarded: s.onboarded,
-        onboardingDismissed: s.onboardingDismissed,
-        answers: s.answers,
         userPref: s.userPref,
         platforms: s.platforms,
         importedSongs: s.importedSongs,
