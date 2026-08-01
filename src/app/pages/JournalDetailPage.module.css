@@ -27,7 +27,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-sm);
-  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.6) 100%);
+  background: linear-gradient(180deg, transparent 0%, var(--media-overlay) 100%);
 }
 
 .emotionPill {
@@ -36,7 +36,7 @@
   font-size: 0.8rem;
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--on-media-text);
   background: var(--accent-light);
   border-radius: var(--radius-pill);
   backdrop-filter: blur(4px);
@@ -44,7 +44,7 @@
 
 .location {
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--on-media-text) 85%, transparent);
   font-family: var(--font-mono);
 }
 
