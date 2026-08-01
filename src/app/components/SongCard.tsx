@@ -11,17 +11,6 @@ interface SongCardProps {
   rank?: number;
 }
 
-/** 由歌曲 V-A 生成封面渐变色(无真实封面时的 fallback) */
-function coverGradient(song: Song): string {
-  const { v, a } = song.va;
-  // 高 V 偏暖橙,低 V 偏冷蓝紫;高 A 提亮
-  const hue = Math.round(20 + v * 320); // 20→340
-  const sat = 45 + a * 35;
-  const light1 = 55 + a * 10;
-  const light2 = 35 + a * 8;
-  return `linear-gradient(135deg, hsl(${hue}, ${sat}%, ${light1}%), hsl(${hue + 30}, ${sat}%, ${light2}%))`;
-}
-
 /** 歌曲首字母(封面占位) */
 function coverInitial(title: string): string {
   const ch = title.trim().charAt(0);
@@ -57,7 +46,7 @@ export function SongCard({
     >
       <div
         className={styles.cover}
-        style={{ background: coverGradient(song) }}
+        style={{ background: 'var(--cover-placeholder)' }}
         aria-hidden
       >
         <span className={styles.coverInitial}>{coverInitial(song.title)}</span>

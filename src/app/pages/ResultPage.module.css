@@ -1,172 +1,140 @@
 /* ============================================================
-   ResultPage — 结果页重排(毛玻璃 + 拍立得 + 横向封面胶卷)
-   参考设计: result-page-preview-v2.html
-   配色: 暖色胶片 + 毛玻璃质感
+   ResultPage — 结果页
+   - loading:全屏照片 + 渐变遮罩 + 三步进度 + 底部进度条
+   - 成功:照片主角(上半) + SongWheel/信息/输入/按钮(下半) flex column
+   颜色全部走 token;新增的媒体层 token(--media-overlay /
+   --media-overlay-strong / --on-media-text / --cover-placeholder)
+   由其他 agent 加到 global.css,此处用 var(..., fallback) 兜底。
+   TODO:token 接入后可去掉 fallback
    ============================================================ */
 
 .page {
   position: relative;
-  /* 动态氛围色背景:跟着照片色调走(任务E)
-     --ambient-1/2 由 ResultPage.tsx computeAmbientVars 注入,
-     缺失时回退到原来的暖色光晕 + --bg 兜底 */
-  background:
-    radial-gradient(circle at 25% 15%, var(--ambient-1, var(--glow-1)), transparent 55%),
-    radial-gradient(circle at 80% 60%, var(--ambient-2, var(--glow-2)), transparent 50%),
-    var(--bg);
-  /* 切换照片时颜色柔和过渡 */
-  transition: background 0.8s ease;
-  /* ResultPage 有自己的内嵌播放器,不需要给全局悬浮播放器留空间
-     但仍需给 BottomNav 留空间 */
-  padding: 20px var(--space-md) calc(var(--nav-height) + var(--safe-bottom) + 20px);
   min-height: 100%;
-  overflow: hidden;
+  background: var(--bg);
 }
 
-/* 底部深色渐变压住页面下沿,提高明度对比(任务E) */
-.page::after {
-  content: '';
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 80px;
-  background: linear-gradient(to top, var(--ambient-deep, var(--track)), transparent);
-  pointer-events: none;
-  z-index: 0;
+/* —— 成功态:flex column,照片在上,内容在下 —— */
+.pageSuccess {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 0;
 }
 
-/* —— 拍立得照片区(参考:深色边框 #33291E, 200px 宽, -1.2deg 旋转) —— */
+/* ============================================================
+   成功态 · 上半:照片主角
+   ============================================================ */
 .photoSection {
   position: relative;
   z-index: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 0 var(--space-sm);
+  padding: calc(var(--safe-top) + var(--space-sm)) var(--space-md) var(--space-md);
 }
 
-.polaroid {
-  width: 200px;
-  max-width: 56vw;
-  background: var(--polaroid);
-  border-radius: 12px;
-  padding: 9px 9px 26px;
-  box-shadow: var(--shadow-card);
-  transform: rotate(-1.2deg);
-  transition: transform 0.3s ease;
-}
-
-.polaroid:hover {
-  transform: rotate(-0.6deg) scale(1.01);
-}
-
-.polaroidImg {
+.heroImg {
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
+  max-height: 52vh;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   display: block;
   background: var(--bg2);
+  box-shadow: var(--shadow-card);
 }
 
-.photoMeta {
+.photoCaption {
+  margin-top: var(--space-sm);
   text-align: center;
-  margin-top: 8px;
   color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 2px;
   font-family: var(--font-mono);
-}
-
-.photoDate {
-  /* 日期:等宽小字,参考设计稿格式 */
+  font-size: 0.68rem;
+  letter-spacing: 0.04em; /* 收紧:原拍立得 0.15em 太散 */
 }
 
 .photoLoc {
-  margin-left: 8px;
+  margin-left: var(--space-xs);
   opacity: 0.85;
 }
 
-/* —— 情绪一句话(参考:斜体小字 + 焦糖色情绪标签) —— */
-.moodLine {
+/* ============================================================
+   成功态 · 下半:轮播 + 信息 + 输入 + 按钮
+   ============================================================ */
+.bottomSection {
   position: relative;
   z-index: 1;
-  text-align: center;
-  margin: 12px 0 2px;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: 0 var(--space-md) calc(var(--safe-bottom) + var(--space-lg));
+}
+
+/* 歌曲信息一行:歌名 · 歌手 … 情绪标签(右贴)
+   整行可点击切换播放/暂停,切歌时 key 变化触发 mtFade 淡入 */
+.songInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+  cursor: pointer;
+  padding: var(--space-xs) 0;
+  animation: mtFade var(--dur-hov) var(--ease-tap);
+  transition: transform var(--dur-tap) var(--ease-tap);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.songInfo:active {
+  transform: scale(var(--tap-scale));
+}
+
+.songTitle {
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.songArtist {
+  font-size: 0.78rem;
   color: var(--muted);
-  font-size: 12.5px;
-  font-style: italic;
-  line-height: 1.5;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .moodTag {
-  color: var(--accent);
-  font-weight: 700;
-  font-style: normal;
-}
-
-/* —— 封面胶卷区(参考:横向滚动 + scroll-snap + 80x80 封面) —— */
-.wheelSection {
-  position: relative;
-  z-index: 1;
-  margin: 0 calc(var(--space-md) * -1);
-  /* 让胶卷出血到页面左右边缘 */
-}
-
-/* —— 内嵌毛玻璃播放器 —— */
-.playerSection {
-  position: relative;
-  z-index: 2;
-  margin: 10px 0 0;
-}
-
-/* —— 感想输入区 —— */
-.inputSection {
-  position: relative;
-  z-index: 2;
-  margin: 12px 0 0;
-}
-
-.inputLabel {
-  display: block;
+  margin-left: auto;
+  flex: 0 0 auto;
   font-family: var(--font-display);
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin-bottom: 6px;
-  opacity: 0.8;
+  font-style: italic;
+  font-size: 0.7rem;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 0.2em 0.7em;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
 }
 
-/* —— 毛玻璃卡片(播放器 + 输入区共用,参考设计稿)
-     任务E:更亮更白(rgba 0.55),和背后氛围色拉开层次,让玻璃"浮"起来 —— */
-.glassCard {
-  background: var(--surface);
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  border: 1px solid var(--surface-border);
-  box-shadow:
-    var(--shadow-card),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  border-radius: 20px;
-  padding: 14px 16px 12px;
-}
-
-/* —— textarea(参考:透明背景融入卡片, 2 行, 斜体) —— */
 .textarea {
   width: 100%;
-  min-height: 46px;
-  max-height: 120px;
-  padding: 0;
+  min-height: calc(var(--space-2xl) + var(--space-md));
+  padding: var(--space-sm) var(--space-md);
   font-family: var(--font-serif);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-style: italic;
   line-height: 1.6;
   color: var(--ink);
   background: transparent;
-  border: none;
-  border-radius: 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
   resize: none;
   outline: none;
   box-sizing: border-box;
@@ -177,59 +145,140 @@
   opacity: 0.75;
 }
 
-/* —— 底部按钮(同一行两端对齐,参考设计稿) —— */
+.textarea:focus {
+  border-color: var(--accent);
+}
+
+/* 两按钮等宽等高:再拍一张(描边)/ 保存为日记(实心绿) */
 .actions {
-  position: relative;
-  z-index: 2;
   display: flex;
-  gap: 12px;
-  margin: 14px 0 0;
+  gap: var(--space-md);
 }
 
 .actionBtn {
   flex: 1;
-  height: 46px;
-  max-width: 48%;
-  padding: 0 1.2em;
-  font-size: 14.5px;
-  border-radius: 999px;
+  height: calc(var(--space-2xl) + var(--space-sm));
+  max-width: none;
+  padding: 0 1em;
+  font-size: 0.9rem;
+  border-radius: var(--radius-pill);
 }
 
-/* —— Loading state —— */
-.previewWrap {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 4 / 3;
+/* ============================================================
+   Loading 视图:全屏照片背景 + 渐变遮罩 + 三步 + 进度条
+   ============================================================ */
+.loadingPage {
+  position: fixed;
+  inset: 0;
+  z-index: 200; /* 盖住底部导航等 */
   overflow: hidden;
-  background: var(--bg2);
+  background: var(--bg);
 }
 
-.analyzing {
+.loadingBg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 上浅下深的渐变遮罩:顶部偏透,底部加深以保证下半屏文字可读 */
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--media-overlay) 0%,
+    var(--media-overlay-strong) 100%
+  );
+}
+
+.loadingContent {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--safe-bottom) + var(--space-2xl));
+  padding: 0 var(--space-lg);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: var(--space-lg) 0;
+  gap: var(--space-lg);
 }
 
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--rule);
-  border-top-color: var(--accent);
+.loadingTitle {
+  margin: 0;
+  color: var(--on-media-text);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-shadow: 0 1px 10px color-mix(in srgb, var(--cam-bg) 35%, transparent);
+}
+
+.stepList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* 小圆点:pending 灰 / doing 转圈 / done 绿底白勾 */
+.stepDot {
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  animation: spin 0.9s linear infinite;
+  flex-shrink: 0;
+  background: var(--track);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: var(--accent-ink); /* SVG 勾用 currentColor */
+}
+
+.stepDone {
+  background: var(--accent);
+}
+
+.stepDoing {
+  background: transparent;
+  border: 2px solid var(--accent);
+  border-top-color: transparent;
+  animation: spin 0.8s linear infinite;
+}
+
+.stepLabel {
+  color: var(--on-media-text);
+  font-size: 0.95rem;
+  text-shadow: 0 1px 6px color-mix(in srgb, var(--cam-bg) 30%, transparent);
+}
+
+/* 底部细进度条(高 2px):轨道 track / 填充 accent,宽度随步骤完成度 */
+.progressTrack {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--track);
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.4s var(--ease-tap);
 }
 
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-/* —— 性能兜底:低端安卓机 backdrop-filter 降到 8px —— */
-@media (max-width: 380px) and (max-resolution: 2dppx) {
-  .glassCard {
-    backdrop-filter: blur(8px) saturate(1.1);
-    -webkit-backdrop-filter: blur(8px) saturate(1.1);
   }
 }

@@ -43,6 +43,14 @@
   /* 深色卡片(播放器/歌曲卡) */
   --dark-surface: linear-gradient(135deg, #1A201C, #0F1411);
 
+  /* —— 主题无关：媒体/占位 token —— */
+  --cover-placeholder: linear-gradient(135deg, #6B7280, #4B5563);  /* 中性灰封面占位 */
+  --on-media-text: #FFFFFF;            /* 图片/媒体上的白字（两主题都白） */
+  --on-media-text-soft: rgba(255, 255, 255, 0.7);  /* 媒体上的半透明白字 */
+  --media-overlay: rgba(0, 0, 0, 0.55);     /* 图片暗化遮罩 */
+  --media-overlay-strong: rgba(0, 0, 0, 0.72);
+  --cam-bg: #000000;                   /* 相机取景框纯黑（永远黑） */
+
   /* —— 旧 token 映射(保持兼容,避免大面积改组件) —— */
   --warm-cream: var(--surface);       /* 卡片底 → 毛玻璃 surface */
   --film-grain: var(--track);         /* 纹理层 → track */

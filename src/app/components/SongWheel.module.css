@@ -1,62 +1,79 @@
 /* ============================================================
-   SongWheel — 横向封面胶卷选歌器
-   参考: result-page-preview-v2.html 的 .film-strip + .cover-card
+   SongWheel — 居中放大封面轮播选歌器
+   - 中间那张大且清晰,左右各露一点、缩小变淡
+   - 基于 transform: translateX 控制,不用原生 scroll-snap
+   - 底部圆点指示器
    ============================================================ */
 
-/* —— 胶卷视口(横向滚动 + scroll-snap 居中吸附) —— */
-.filmStrip {
+/* —— 轮播外层容器 —— */
+.carousel {
+  /* 封面尺寸 + 间距(用 token 派生,不写死字面量) */
+  --cover-size: calc(var(--space-2xl) + var(--space-xl)); /* 48+32 = 80px */
+  --cover-gap: var(--space-sm); /* 8px */
   display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  /* 左右 padding = 50% - 40px(封面宽 80 的一半),让首尾封面也能居中吸附 */
-  padding: 14px calc(50% - 40px) 6px;
-  scrollbar-width: none;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* —— 视口:overflow hidden 裁掉两侧溢出的封面 —— */
+.carouselViewport {
+  overflow: hidden;
+  /* 视口高度 = 封面高 + 上下余量(给 scale 和 shadow 留空间) */
+  height: calc(var(--cover-size) + var(--space-lg));
+  /* 纵向滚动穿透给上拉面板,横向自己拦住 */
+  touch-action: pan-y;
+  display: flex;
+  align-items: center;
+}
+
+/* —— 轨道:flex 排列封面,整体 translateX 控制居中 —— */
+.carouselTrack {
+  display: flex;
+  align-items: center;
+  gap: var(--cover-gap);
+  /* 左右 padding = 50% - 封面/2,让首尾封面也能居中 */
+  padding: 0 calc(50% - var(--cover-size) / 2);
+  height: 100%;
+  will-change: transform;
+  transition: transform var(--dur-hov) var(--ease-tap);
   cursor: grab;
-  touch-action: pan-x;
-  scroll-behavior: smooth;
+  /* 横向拖拽由组件自己处理,不让浏览器干预 */
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.filmStrip::-webkit-scrollbar {
-  display: none;
+.carouselTrack.dragging {
+  transition: none;
+  cursor: grabbing;
 }
 
-/* —— 单张封面(参考:80x80, 二态切换) —— */
+/* —— 单张封面 —— */
 .coverCard {
   flex-shrink: 0;
-  width: 80px;
-  height: 80px;
-  border-radius: 14px;
-  scroll-snap-align: center;
+  width: var(--cover-size);
+  height: var(--cover-size);
+  border-radius: var(--radius-sm);
   position: relative;
   overflow: hidden;
-  /* 非 active 态:缩小 + 半透明 */
-  transform: scale(0.86);
-  opacity: 0.55;
-  transition:
-    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.28s ease,
-    box-shadow 0.28s ease;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   box-shadow: var(--shadow-card);
+  /* scale 和 opacity 由组件内联样式控制(连续变化) */
+  transition: box-shadow var(--dur-hov) ease;
 }
 
-/* active 态:放大 + 不透明 + 焦糖色描边(参考:box-shadow 0 0 0 2.5px var(--accent)) */
+/* 中心卡:焦糖色描边 */
 .coverCard.active {
-  transform: scale(1.06);
-  opacity: 1;
   box-shadow:
     var(--shadow-card),
-    0 0 0 2.5px var(--accent);
+    0 0 0 calc(var(--space-xs) / 2) var(--accent);
 }
 
 /* —— 封面图/渐变色容器 —— */
 .art {
   position: absolute;
   inset: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   background-size: cover;
   background-position: center;
   background-color: var(--bg2);
@@ -77,35 +94,35 @@
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  color: var(--accent-ink);
+  text-shadow: 0 1px 4px var(--accent2);
 }
 
-/* —— 播放角标(封面右上角) —— */
+/* —— 中心卡播放角标(波形动画) —— */
 .playingDot {
   position: absolute;
-  right: 4px;
-  top: 4px;
+  right: var(--space-xs);
+  top: var(--space-xs);
   display: flex;
   align-items: flex-end;
-  gap: 2px;
-  height: 10px;
-  padding: 2px 3px;
-  background: rgba(0, 0, 0, 0.7);
+  gap: calc(var(--space-xs) / 2);
+  height: calc(var(--space-sm) + var(--space-xs));
+  padding: var(--space-xs) var(--space-xs);
+  background: color-mix(in srgb, var(--ink) 70%, transparent);
   border-radius: var(--radius-pill);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(var(--space-xs));
   z-index: 2;
 }
 
 .bar {
-  width: 2px;
+  width: calc(var(--space-xs) / 2);
   background: var(--accent);
-  border-radius: 1px;
-  animation: barWave 0.9s ease-in-out infinite;
+  border-radius: calc(var(--space-xs) / 2);
+  animation: barWave calc(var(--dur-hov) + var(--dur-hov) + var(--dur-hov) + var(--dur-hov) + var(--dur-tap)) ease-in-out infinite;
 }
 
-.bar:nth-child(1) { height: 60%; animation-delay: -0.4s; }
-.bar:nth-child(2) { height: 100%; animation-delay: -0.2s; }
+.bar:nth-child(1) { height: 60%; animation-delay: calc(var(--dur-hov) * -1 - var(--dur-hov)); }
+.bar:nth-child(2) { height: 100%; animation-delay: calc(var(--dur-hov) * -1); }
 .bar:nth-child(3) { height: 70%; animation-delay: 0s; }
 
 @keyframes barWave {
@@ -113,15 +130,22 @@
   50% { transform: scaleY(1); }
 }
 
-.pausedBadge {
-  position: absolute;
-  right: 4px;
-  top: 4px;
-  font-size: 0.55rem;
-  color: var(--accent-ink);
-  background: rgba(0, 0, 0, 0.7);
-  padding: 2px 4px;
-  border-radius: var(--radius-pill);
-  backdrop-filter: blur(4px);
-  z-index: 2;
+/* —— 底部圆点指示器(不可点击) —— */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0 0;
+}
+
+.dot {
+  width: var(--space-xs);
+  height: var(--space-xs);
+  border-radius: 50%;
+  background: var(--track);
+  transition: background var(--dur-hov) ease;
+}
+
+.dotActive {
+  background: var(--accent);
 }

@@ -1,0 +1,19 @@
+# 本地音频/封面/歌词(版权内容,demo 不部署)
+public/audio/
+public/covers/
+public/lyrics/
+
+# 音乐库构建产物(脚本可重建)
+data/soda_songs.json
+data/unified_library.json
+data/unified_tags.json
+
+# Capacitor 原生工程
+ios/
+android/
+.capacitor/
+
+# 设计稿/任务书
+Momentune.html
+result-page-preview-v2.html
+TRAE-任务书.md

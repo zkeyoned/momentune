@@ -1,11 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { hapticTap } from '../hooks/useHapticTap';
+import { useAnalysisStore } from '../stores/analysisStore';
 import styles from './BottomNav.module.css';
 
 /* —— 线性 SVG 图标(暖色胶片设计稿风格) ——
-   5 项导航: 时间线 / 日历 / 相机凸起 / 收藏 / 我的
-   图标来自 Momentune.html 设计稿
-   中间相机按钮为凸起圆形 caramel 渐变 */
+   5 项导航: 时间线 / 日历 / [相机凸起] / 收藏 / 我的
+   中间相机按钮为凸起圆形 caramel 渐变
+   分析中(loading)整栏变灰不可点(.nav.dim) */
 
 const TimelineIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden>
@@ -46,6 +47,7 @@ const CameraIcon = () => (
 
 export function BottomNav() {
   const navigate = useNavigate();
+  const loading = useAnalysisStore((s) => s.loading);
 
   // 中间相机按钮:跳到首页拍照
   const handleCamera = () => {
@@ -54,7 +56,10 @@ export function BottomNav() {
   };
 
   return (
-    <nav className={styles.nav} aria-label="主导航">
+    <nav
+      className={`${styles.nav}${loading ? ` ${styles.dim}` : ''}`}
+      aria-label="主导航"
+    >
       {/* 左 1: 时间线 */}
       <NavLink
         to="/timeline"

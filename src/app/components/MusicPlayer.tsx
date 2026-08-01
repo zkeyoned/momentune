@@ -34,16 +34,8 @@ const TICK_MS = 500;
 
 type SourceTier = 'local' | 'demo' | 'remote' | 'simulated';
 
-/** 由歌曲 V-A 生成封面渐变色 */
-function coverGradient(song: Song): string {
-  const { v, a } = song.va;
-  const hue = Math.round(20 + v * 320);
-  const sat = 45 + a * 35;
-  return `linear-gradient(135deg, hsl(${hue}, ${sat}%, 58%), hsl(${hue + 30}, ${sat}%, 38%))`;
-}
-
 function fmtTime(sec: number): string {
-  if (!isFinite(sec) || sec < 0) sec = 0;
+  if (!isFinite(sec) || sec <= 0) return '--:--';
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return `${m}:${String(s).padStart(2, '0')}`;
@@ -322,7 +314,6 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
   }
 
   const hasCoverImg = !!(coverUrl && !coverError);
-  const gradient = coverGradient(currentTrack);
 
   // ============================================================
   // 渲染: 卡带封面子组件
@@ -380,7 +371,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
             <div
               style={{
                 width: '100%', height: '100%',
-                background: gradient,
+                background: 'var(--cover-placeholder)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -390,8 +381,8 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
                 fontFamily: 'var(--font-display)',
                 fontSize,
                 fontWeight: 600,
-                color: 'rgba(255,255,255,0.92)',
-                textShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                color: 'color-mix(in srgb, var(--on-media-text) 92%, transparent)',
+                textShadow: '0 1px 2px color-mix(in srgb, var(--cam-bg) 20%, transparent)',
                 lineHeight: 1,
               }}>
                 {currentTrack.title.charAt(0)}
@@ -473,6 +464,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
         background: 'transparent',
         borderRadius: 20,
         boxShadow: 'none',
+        outline: 'none',
         padding: '12px 14px 10px',
         // 内嵌模式不占用 fixed 层,让父级毛玻璃卡片控制层级
       }
@@ -486,6 +478,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
         background: 'var(--warm-cream)',
         borderRadius: 16,
         boxShadow: 'var(--shadow-card)',
+        outline: 'none',
         zIndex: 99,
         padding: collapsed ? '0 12px' : '10px 12px 8px',
         transition: 'padding 0.25s ease',
@@ -518,6 +511,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
             width: '100%', height: 44,
             gap: 10, padding: '0 4px',
             borderRadius: 16,
+            outline: 'none',
           }}
         >
           <CassetteCover size={30} />
@@ -739,7 +733,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10, color: 'var(--muted)',
               }}>
-                {fmtTime(duration || SIM_DURATION)}
+                {fmtTime(duration)}
               </span>
             </div>
           </div>
