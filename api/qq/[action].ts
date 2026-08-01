@@ -39,7 +39,7 @@ import {
   type VercelReq,
   type VercelRes,
   type ApiHandler,
-} from './_shared';
+} from './_shared.js';
 
 // ---------------------------------------------------------------------------
 // handler: qr-create  (原 api/qq/qr-create.ts)

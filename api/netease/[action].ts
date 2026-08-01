@@ -17,7 +17,7 @@ import {
   type VercelReq,
   type VercelRes,
   type ApiHandler,
-} from './_shared';
+} from './_shared.js';
 
 // ---------------------------------------------------------------------------
 // handler: qr-create  (原 api/netease/qr-create.ts)
@@ -85,6 +85,7 @@ async function qrCheck(req: VercelReq, res: VercelRes): Promise<void> {
   });
   const code = checkResult?.code as number;
   const message = checkResult?.message as string | undefined;
+  console.log(`[netease] qr-check unikey=${unikey.slice(0, 8)}... code=${code} msg=${message ?? ''}`);
 
   // 未成功,返回状态码(803 = 登录成功)
   if (code !== 803) {

@@ -11,7 +11,7 @@
 import { Readable } from 'node:stream';
 import type { ServerResponse } from 'node:http';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
-import { getField, type VercelReq, type VercelRes } from './netease/_shared';
+import { getField, type VercelReq, type VercelRes } from './netease/_shared.js';
 
 /** 音频代理专用 CORS 头(仅允许 GET/OPTIONS) */
 function setAudioCors(res: VercelRes): void {
