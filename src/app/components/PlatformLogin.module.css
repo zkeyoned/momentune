@@ -4,30 +4,20 @@
   gap: var(--space-md);
 }
 
-.header {
-  margin-bottom: var(--space-xs);
-}
-
-.desc {
-  font-size: 0.78rem;
-  color: var(--muted);
-  line-height: 1.6;
-  margin: 0;
-}
-
-/* —— 平台卡片网格 (2 列) —— */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+/* —— 平台纵向列表 —— */
+.list {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-sm);
 }
 
-.card {
+.row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-md) var(--space-sm);
+  gap: var(--space-md);
+  width: 100%;
+  padding: 0 var(--space-md);
+  min-height: calc(var(--space-xl) * 2); /* 可用行 64px */
   background: var(--bg2);
   border: 1px solid var(--rule);
   border-radius: var(--radius-md);
@@ -36,16 +26,17 @@
     background var(--dur-hov) ease,
     transform var(--dur-tap) var(--ease-tap);
   -webkit-tap-highlight-color: transparent;
-  text-align: center;
+  text-align: left;
 }
 
-.card:active {
+.row:active {
   transform: scale(var(--tap-scale));
 }
 
-/* 未开放:置灰 + 禁用光标 */
+/* 未开放:置灰 + 矮行 + 禁用光标 */
 .disabled {
-  opacity: 0.4;
+  opacity: 0.5;
+  min-height: var(--space-2xl); /* 未开放行 48px */
   cursor: not-allowed;
 }
 
@@ -53,24 +44,10 @@
   transform: none;
 }
 
-.disabled .name {
-  color: var(--muted);
-}
-
-.disabled .status {
-  color: var(--muted);
-  font-style: italic;
-}
-
-/* 已连接:暖琥珀描边 + 微弱暖底 */
-.connected {
-  border-color: var(--accent);
-  background: var(--accent-light);
-}
-
 .icon {
-  width: 40px;
-  height: 40px;
+  flex: none;
+  width: calc(var(--space-lg) + var(--space-md)); /* 40px 圆形 */
+  height: calc(var(--space-lg) + var(--space-md));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -78,23 +55,29 @@
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 600;
-  color: #fff;
+  background: var(--accent);
+  color: var(--accent-ink);
   transition: background var(--dur-hov) ease;
 }
 
 .name {
-  font-size: 0.85rem;
+  flex: 1;
+  font-size: 0.95rem;
   font-weight: 500;
   color: var(--ink);
 }
 
 .status {
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   color: var(--muted);
   letter-spacing: 0.04em;
 }
 
-.connected .status {
-  color: var(--accent);
+.arrow {
+  flex: none;
+  margin-left: var(--space-xs);
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
 }

@@ -15,8 +15,8 @@ interface PlatformQRModalProps {
 
 type Stage = 'loading' | 'pending' | 'scanned' | 'expired' | 'importing' | 'success' | 'error';
 
-/** 轮询间隔(ms) */
-const POLL_INTERVAL_MS = 2500;
+/** 轮询间隔(ms) — 网易云限流较严,3s 比较稳妥 */
+const POLL_INTERVAL_MS = 3000;
 
 /** 扫码状态归一化语义 */
 type QrSemantic = 'pending' | 'scanned' | 'expired' | 'success';
@@ -41,7 +41,8 @@ function isSupportedPlatform(id: PlatformAccount['id']): id is PlatformId {
  * - qq:      66  等待 / 67  已扫码 / 65  过期 / 0   成功
  * - qishui:  0   等待 / 1   已扫码 / 3   过期 / 2   成功
  *
- * 未知 code 兜底为 expired,让用户可重试。
+ * 未知 code(如 502 限流 / 504 频繁)兜底为 pending,保持等待状态不误杀,
+ * 避免限流抖动导致二维码被误判为"已过期"。
  */
 function normalizeQrCode(platform: PlatformId, code: number): QrSemantic {
   switch (platform) {
@@ -64,7 +65,7 @@ function normalizeQrCode(platform: PlatformId, code: number): QrSemantic {
       if (code === 2) return 'success';
       break;
   }
-  return 'expired';
+  return 'pending';
 }
 
 /** 根据 platform.id 生成二维码(三个平台均返回 { unikey, qrimg }) */
@@ -159,6 +160,9 @@ export function PlatformQRModal({ platform, onClose }: PlatformQRModalProps) {
       if (loginCompletedRef.current) return;
       try {
         const result = await checkQrStatusByPlatform(pid, unikeyRef.current);
+        // fetch 期间可能已被另一个并发 poll 标记为成功,忽略这个迟到的响应
+        // (网易云对已使用的 key 会返回 800 过期码,会覆盖成功状态)
+        if (loginCompletedRef.current) return;
         const semantic = normalizeQrCode(pid, result.code);
         if (semantic === 'pending') {
           // 等待扫码,保持 pending

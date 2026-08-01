@@ -18,7 +18,7 @@
 import * as neteaseApi from './neteaseApi';
 import * as qqApi from './qqApi';
 import * as qishuiApi from './qishuiApi';
-import { importUserPlaylist, applyMultiSourcePreference } from '@algorithm/index';
+import { importUserPlaylist, applyMultiSourcePreference, initUserPreference } from '@algorithm/index';
 import type { ImportedSongEntry, Song, OnboardingAnswers } from '@algorithm/index';
 import { useUserStore } from '../stores/userStore';
 
@@ -127,9 +127,10 @@ function writePlatformIdMap(
 function applyMultiSourcePrefIfAvailable(summary: ImportProgress[]): void {
   if (summary.length === 0) return;
   const state = useUserStore.getState();
-  if (!state.userPref) return;
-  const updatedPref = applyMultiSourcePreference(state.userPref, state.importedSongsBySource);
-  state.setOnboarded(state.answers ?? DEFAULT_ONBOARDING_ANSWERS, updatedPref);
+  // userPref 初始即默认偏好(非 null),兜底防老数据 null
+  const basePref = state.userPref ?? initUserPreference(DEFAULT_ONBOARDING_ANSWERS, []);
+  const updatedPref = applyMultiSourcePreference(basePref, state.importedSongsBySource);
+  state.setUserPref(updatedPref);
 }
 
 /** 格式化进度回调节尾消息 */

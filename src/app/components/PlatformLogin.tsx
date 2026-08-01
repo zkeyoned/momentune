@@ -12,13 +12,16 @@ interface PlatformLoginProps {
 }
 
 /**
- * 音乐平台简洁状态卡片
+ * 音乐平台纵向列表
  *
  * - 未开放平台(other)置灰显示"未开放",不可点击
  * - 可用未连接平台点击 → 打开 QR 扫码弹层(mock)
  * - 已连接平台点击 → 断开连接
  */
 export function PlatformLogin({ compact = false }: PlatformLoginProps) {
+  // compact 模式行为与默认一致:列表样式不变,扫码说明已统一移除
+  void compact;
+
   const platforms = useUserStore((s) => s.platforms);
   const logoutPlatform = useUserStore((s) => s.logoutPlatform);
   const [qrPlatform, setQrPlatform] = useState<PlatformAccount | null>(null);
@@ -37,41 +40,28 @@ export function PlatformLogin({ compact = false }: PlatformLoginProps) {
 
   return (
     <div className={styles.wrap}>
-      {!compact && (
-        <div className={styles.header}>
-          <p className={styles.desc}>
-            点击卡片扫码登录。demo 阶段为模拟扫码,正式版会接入平台授权。
-          </p>
-        </div>
-      )}
-
-      <div className={styles.grid}>
+      <div className={styles.list}>
         {platforms.map((p) => {
           const disabled = p.available === false;
           return (
             <button
               key={p.id}
               type="button"
-              className={`${styles.card} ${p.loggedIn ? styles.connected : ''} ${disabled ? styles.disabled : ''}`}
+              className={`${styles.row} ${disabled ? styles.disabled : ''}`}
               onClick={() => handleClick(p)}
               aria-pressed={p.loggedIn}
               disabled={disabled}
             >
-              <span
-                className={styles.icon}
-                style={{ background: p.loggedIn ? p.color : 'var(--film-grain)' }}
-                aria-hidden
-              >
+              <span className={styles.icon} aria-hidden>
                 {p.label.charAt(0)}
               </span>
               <span className={styles.name}>{p.label}</span>
               <span className={styles.status}>
-                {disabled
-                  ? '未开放'
-                  : p.loggedIn
-                    ? '已连接'
-                    : '扫码连接'}
+                {disabled ? '未开放' : p.loggedIn ? '已连接' : '未连接'}
               </span>
+              {!disabled && (
+                <span className={styles.arrow} aria-hidden>›</span>
+              )}
             </button>
           );
         })}

@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--media-overlay-strong);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -77,7 +77,7 @@
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--on-media-text);
 }
 
 .platformName {
@@ -101,7 +101,7 @@
   width: 220px;
   height: 220px;
   margin: 0 auto var(--space-md);
-  background: #fff;
+  background: var(--on-media-text);
   border-radius: var(--radius-md);
   padding: 8px;
   overflow: hidden;
@@ -224,7 +224,7 @@
   margin: 0 auto var(--space-sm);
   border-radius: 50%;
   background: var(--accent);
-  color: #2E2620;
+  color: var(--accent-ink);
   font-size: 2rem;
   font-weight: 700;
   display: flex;
