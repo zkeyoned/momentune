@@ -174,7 +174,7 @@
 /* —— 取景屏: 黑色亮面 LCD 厚边框 —— */
 .viewfinder {
   position: relative;
-  width: min(100%, 420px, 58vh * 4 / 5);
+  width: min(100%, 380px, 54vh * 4 / 5);
   aspect-ratio: 4 / 5;
   background: var(--lcd-frame);
   padding: 9px;
