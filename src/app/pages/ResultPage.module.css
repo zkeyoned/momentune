@@ -1,29 +1,72 @@
 /* ============================================================
-   ResultPage — 结果页
-   - loading:全屏照片 + 渐变遮罩 + 三步进度 + 底部进度条
-   - 成功:照片主角(上半) + SongWheel/信息/输入/按钮(下半) flex column
-   颜色全部走 token;新增的媒体层 token(--media-overlay /
-   --media-overlay-strong / --on-media-text / --cover-placeholder)
-   由其他 agent 加到 global.css,此处用 var(..., fallback) 兜底。
-   TODO:token 接入后可去掉 fallback
+   ResultPage — 银色 CCD 机身 + LCD 壳
+   - page 根: 银色机身(--metal-body) + ::before 高光
+   - lcdShell: LCD 外框(--lcd-frame, 9px bezel, radius 10px)
+   - screen: LCD 屏(--lcd-bg 底, --lcd-ink 字)
+   - 屏内卡片: --lcd-card, 橙色日期戳 --stamp-orange
+   - loading: 全屏照片 + LCD 底 + 橙色进度
    ============================================================ */
 
+/* —— 页面根: 银色机身 —— */
 .page {
   position: relative;
   min-height: 100%;
-  background: var(--bg);
-}
-
-/* —— 成功态:flex column,照片在上,内容在下 —— */
-.pageSuccess {
+  background: var(--metal-body);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  padding: 8px; /* 露出银色机身边缘 */
+  box-sizing: border-box;
+}
+
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--metal-highlight);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* —— LCD 外框(深色 bezel) —— */
+.lcdShell {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--lcd-frame);
+  padding: 9px;
+  border-radius: 10px;
+  min-height: 0;
+}
+
+/* —— LCD 屏(深色底 + 浅色字) —— */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--lcd-bg);
+  color: var(--lcd-ink);
+  border-radius: 4px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 空/错态屏: 居中 */
+.centerScreen {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-lg) var(--space-md);
+}
+
+.centerScreen :global(.section) {
   padding: 0;
 }
 
 /* ============================================================
-   成功态 · 上半:照片主角
+   成功态 · 上半: 照片主角
    ============================================================ */
 .photoSection {
   position: relative;
@@ -42,26 +85,32 @@
   object-fit: cover;
   border-radius: var(--radius-sm);
   display: block;
-  background: var(--bg2);
-  box-shadow: var(--shadow-card);
+  background: var(--lcd-card);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
 }
 
 .photoCaption {
   margin-top: var(--space-sm);
   text-align: center;
-  color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.68rem;
-  letter-spacing: 0.04em; /* 收紧:原拍立得 0.15em 太散 */
+  letter-spacing: 0.04em;
+}
+
+/* 拍摄日期: 橙色等宽日期戳 + glow */
+.photoDate {
+  color: var(--stamp-orange);
+  text-shadow: var(--stamp-glow);
 }
 
 .photoLoc {
   margin-left: var(--space-xs);
+  color: var(--nav-ink);
   opacity: 0.85;
 }
 
 /* ============================================================
-   成功态 · 下半:轮播 + 信息 + 输入 + 按钮
+   成功态 · 下半: 轮播 + 信息 + 输入 + 按钮
    ============================================================ */
 .bottomSection {
   position: relative;
@@ -70,11 +119,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: 0 var(--space-md) calc(var(--safe-bottom) + var(--space-lg));
+  padding: 0 var(--space-md) var(--space-lg);
 }
 
-/* 歌曲信息一行:歌名 · 歌手 … 情绪标签(右贴)
-   整行可点击切换播放/暂停,切歌时 key 变化触发 mtFade 淡入 */
+/* 歌曲信息一行: 整行可点击切换播放/暂停 */
 .songInfo {
   display: flex;
   align-items: center;
@@ -95,7 +143,7 @@
   font-family: var(--font-serif);
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--ink);
+  color: var(--lcd-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -105,24 +153,26 @@
 
 .songArtist {
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--nav-ink);
   white-space: nowrap;
   flex: 0 0 auto;
 }
 
+/* 情绪标签: 橙色胶囊 */
 .moodTag {
   margin-left: auto;
   flex: 0 0 auto;
   font-family: var(--font-display);
   font-style: italic;
   font-size: 0.7rem;
-  color: var(--accent);
-  background: var(--accent-light);
+  color: var(--stamp-orange);
+  background: color-mix(in srgb, var(--stamp-orange) 16%, transparent);
   padding: 0.2em 0.7em;
   border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 
+/* 感想输入框: LCD 屏内深色卡片 + 银色边 */
 .textarea {
   width: 100%;
   min-height: calc(var(--space-2xl) + var(--space-md));
@@ -131,25 +181,26 @@
   font-size: 0.875rem;
   font-style: italic;
   line-height: 1.6;
-  color: var(--ink);
-  background: transparent;
-  border: 1px solid var(--rule);
+  color: var(--lcd-ink);
+  background: var(--lcd-card);
+  border: 1px solid var(--chip-metal-ink);
   border-radius: var(--radius-sm);
   resize: none;
   outline: none;
   box-sizing: border-box;
+  transition: border-color var(--dur-hov) ease;
 }
 
 .textarea::placeholder {
-  color: var(--muted);
-  opacity: 0.75;
+  color: var(--nav-ink);
+  opacity: 0.7;
 }
 
 .textarea:focus {
-  border-color: var(--accent);
+  border-color: var(--stamp-orange);
 }
 
-/* 两按钮等宽等高:再拍一张(描边)/ 保存为日记(实心绿) */
+/* 两按钮等宽等高 */
 .actions {
   display: flex;
   gap: var(--space-md);
@@ -164,15 +215,45 @@
   border-radius: var(--radius-pill);
 }
 
+/* —— 覆盖全局按钮绿色: 主按钮橙色 / ghost 银色 LCD —— */
+.page :global(.btn-primary) {
+  background: var(--stamp-orange);
+  color: var(--lcd-bg);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.page :global(.btn-primary):hover {
+  background: var(--stamp-orange);
+  filter: brightness(0.92);
+}
+
+.page :global(.btn-ghost) {
+  background: var(--lcd-card);
+  color: var(--lcd-ink);
+  border-color: var(--chip-metal-ink);
+  box-shadow: none;
+}
+
+.page :global(.btn-ghost):hover {
+  border-color: var(--stamp-orange);
+  color: var(--stamp-orange);
+}
+
+/* 空/错态次要文字 */
+.page :global(.muted) {
+  color: var(--nav-ink);
+}
+
 /* ============================================================
-   Loading 视图:全屏照片背景 + 渐变遮罩 + 三步 + 进度条
+   Loading 视图: 全屏照片背景 + LCD 底 + 橙色三步 + 进度条
    ============================================================ */
 .loadingPage {
   position: fixed;
   inset: 0;
   z-index: 200; /* 盖住底部导航等 */
   overflow: hidden;
-  background: var(--bg);
+  background: var(--lcd-bg);
 }
 
 .loadingBg {
@@ -183,7 +264,7 @@
   object-fit: cover;
 }
 
-/* 上浅下深的渐变遮罩:顶部偏透,底部加深以保证下半屏文字可读 */
+/* 上浅下深的渐变遮罩 */
 .loadingOverlay {
   position: absolute;
   inset: 0;
@@ -230,27 +311,27 @@
   gap: var(--space-md);
 }
 
-/* 小圆点:pending 灰 / doing 转圈 / done 绿底白勾 */
+/* 小圆点: pending 深卡 / doing 橙圈 / done 橙底深勾 */
 .stepDot {
   width: 20px;
   height: 20px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: var(--track);
+  background: var(--lcd-card);
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  color: var(--accent-ink); /* SVG 勾用 currentColor */
+  color: var(--lcd-bg); /* SVG 勾用 currentColor */
 }
 
 .stepDone {
-  background: var(--accent);
+  background: var(--stamp-orange);
 }
 
 .stepDoing {
   background: transparent;
-  border: 2px solid var(--accent);
+  border: 2px solid var(--stamp-orange);
   border-top-color: transparent;
   animation: spin 0.8s linear infinite;
 }
@@ -261,19 +342,19 @@
   text-shadow: 0 1px 6px color-mix(in srgb, var(--cam-bg) 30%, transparent);
 }
 
-/* 底部细进度条(高 2px):轨道 track / 填充 accent,宽度随步骤完成度 */
+/* 底部细进度条: 轨道深卡 / 填充橙 */
 .progressTrack {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--track);
+  background: var(--lcd-card);
 }
 
 .progressFill {
   height: 100%;
-  background: var(--accent);
+  background: var(--stamp-orange);
   transition: width 0.4s var(--ease-tap);
 }
 

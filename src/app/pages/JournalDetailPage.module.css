@@ -1,13 +1,76 @@
+/* ============================================================
+   JournalDetailPage — 银色 CCD 机身 + LCD 壳
+   - page 根: 银色机身(--metal-body) + ::before 高光
+   - lcdShell: LCD 外框(--lcd-frame, 9px bezel, radius 10px)
+   - screen: LCD 屏(--lcd-bg 底, --lcd-ink 字)
+   - 保留全局 MusicPlayer(不在本文件)
+   ============================================================ */
+
+/* —— 页面根: 银色机身 —— */
 .page {
-  padding-bottom: var(--space-2xl);
+  position: relative;
+  min-height: 100%;
+  background: var(--metal-body);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 8px; /* 露出银色机身边缘 */
+  box-sizing: border-box;
 }
 
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--metal-highlight);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* —— LCD 外框(深色 bezel) —— */
+.lcdShell {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--lcd-frame);
+  padding: 9px;
+  border-radius: 10px;
+  min-height: 0;
+}
+
+/* —— LCD 屏(深色底 + 浅色字) —— */
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--lcd-bg);
+  color: var(--lcd-ink);
+  border-radius: 4px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 空/错态屏: 居中 */
+.centerScreen {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-lg) var(--space-md);
+}
+
+.centerScreen :global(.section) {
+  padding: 0;
+}
+
+/* —— 照片区(LCD 屏内取景) —— */
 .photoWrap {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: var(--bg2);
+  background: var(--lcd-card);
 }
 
 .photo {
@@ -30,6 +93,7 @@
   background: linear-gradient(180deg, transparent 0%, var(--media-overlay) 100%);
 }
 
+/* 情绪标签: 橙色半透胶囊(压在照片上) */
 .emotionPill {
   display: inline-block;
   padding: 0.3em 0.9em;
@@ -37,7 +101,7 @@
   font-family: var(--font-mono);
   letter-spacing: 0.04em;
   color: var(--on-media-text);
-  background: var(--accent-light);
+  background: color-mix(in srgb, var(--stamp-orange) 30%, transparent);
   border-radius: var(--radius-pill);
   backdrop-filter: blur(4px);
 }
@@ -48,9 +112,15 @@
   font-family: var(--font-mono);
 }
 
+/* —— meta 日期: 橙色等宽日期戳 + glow —— */
 .meta {
   font-size: 0.78rem;
   margin-bottom: var(--space-xs);
+}
+
+.meta :global(.mono) {
+  color: var(--stamp-orange);
+  text-shadow: var(--stamp-glow);
 }
 
 .title {
@@ -58,16 +128,17 @@
   font-size: clamp(1.8rem, 8vw, 2.3rem);
   font-weight: 600;
   margin: 0 0 var(--space-md);
+  color: var(--lcd-ink);
   font-variation-settings: "opsz" 144;
 }
 
-/* 心情文本用手写感字体,和 ResultPage textarea 呼应,落实"胶片日记"体验 */
+/* 心情文本 */
 .text {
   font-family: var(--font-hand);
   font-size: 1.25rem;
   line-height: 1.7;
   white-space: pre-wrap;
-  color: var(--ink);
+  color: var(--lcd-ink);
 }
 
 .songList {
@@ -76,6 +147,20 @@
   gap: var(--space-sm);
 }
 
+/* —— 覆盖全局 h2 绿色下划线 / section 绿色分隔线 —— */
+.screen :global(h2) {
+  color: var(--lcd-ink);
+}
+
+.screen :global(h2)::after {
+  background: var(--stamp-orange);
+}
+
+.screen :global(.section) + :global(.section) {
+  border-top-color: var(--nav-seam);
+}
+
+/* —— 操作按钮区 —— */
 .actions {
   display: flex;
   justify-content: space-between;
@@ -83,11 +168,31 @@
   padding: var(--space-md);
 }
 
+/* —— 覆盖全局按钮绿色: ghost 银色 LCD —— */
+.page :global(.btn-ghost) {
+  background: var(--lcd-card);
+  color: var(--lcd-ink);
+  border-color: var(--chip-metal-ink);
+  box-shadow: none;
+}
+
+.page :global(.btn-ghost):hover {
+  border-color: var(--stamp-orange);
+  color: var(--stamp-orange);
+}
+
+/* 空/错态次要文字 */
+.page :global(.muted) {
+  color: var(--nav-ink);
+}
+
+/* 删除按钮: 橙色描边强调 */
 .deleteBtn {
-  color: var(--accent2);
-  border-color: var(--accent2);
+  color: var(--stamp-orange);
+  border-color: var(--stamp-orange);
 }
 
 .deleteBtn:hover {
-  background: var(--accent-light);
+  background: color-mix(in srgb, var(--stamp-orange) 14%, transparent);
+  color: var(--stamp-orange);
 }

@@ -1,7 +1,9 @@
+/* JournalCard — 跨页卡片, 银色 CCD LCD 屏内卡片 */
+
 .card {
-  background: var(--warm-cream);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
+  background: var(--lcd-card);
+  border: 1px solid var(--nav-seam);
+  border-radius: var(--lcd-card-radius);
   overflow: hidden;
   cursor: pointer;
   transition: border-color var(--dur-hov) ease,
@@ -10,21 +12,21 @@
 }
 
 .card:hover {
-  border-color: var(--accent);
+  border-color: var(--stamp-orange);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
 }
 
 .card:active {
   transform: scale(var(--tap-scale));
-  box-shadow: var(--shadow-card);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
 }
 
 .photoWrap {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 10;
-  background: var(--bg2);
+  background: var(--lcd-bg);
   overflow: hidden;
 }
 
@@ -47,8 +49,8 @@
   font-size: 0.7rem;
   padding: 3px 10px;
   border-radius: var(--radius-pill);
-  background: var(--media-overlay-strong);
-  color: var(--warm-cream);
+  background: color-mix(in srgb, var(--stamp-orange) 22%, transparent);
+  color: var(--on-media-text);
   backdrop-filter: blur(4px);
   letter-spacing: 0.04em;
 }
@@ -64,30 +66,32 @@
   margin-bottom: var(--space-xs);
 }
 
+/* 日期: 橙色等宽日期戳 + glow */
 .date {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  color: var(--muted);
+  color: var(--stamp-orange);
+  text-shadow: var(--stamp-glow);
   letter-spacing: 0.04em;
 }
 
 .location {
   font-size: 0.7rem;
-  color: var(--accent);
+  color: var(--nav-ink);
 }
 
 .title {
   font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--lcd-ink);
   margin: 0 0 6px;
 }
 
 .text {
   font-size: 0.85rem;
   line-height: 1.65;
-  color: var(--muted);
+  color: var(--nav-ink);
   margin: 0 0 var(--space-md);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -102,12 +106,12 @@
   justify-content: space-between;
   gap: var(--space-sm);
   padding-top: var(--space-sm);
-  border-top: 1px dashed var(--rule);
+  border-top: 1px dashed var(--nav-seam);
 }
 
 .vibe {
   font-size: 0.72rem;
-  color: var(--accent2);
+  color: var(--nav-ink);
   font-style: italic;
   flex: 1;
   min-width: 0;
@@ -119,7 +123,7 @@
 .songMini {
   font-family: var(--font-mono);
   font-size: 0.68rem;
-  color: var(--muted);
+  color: var(--nav-ink);
   white-space: nowrap;
   flex-shrink: 0;
 }

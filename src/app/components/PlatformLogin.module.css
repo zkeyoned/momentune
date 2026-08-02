@@ -1,3 +1,5 @@
+/* PlatformLogin — 平台登录组件, 银色 CCD 主题(清绿色) */
+
 .wrap {
   display: flex;
   flex-direction: column;
@@ -18,9 +20,9 @@
   width: 100%;
   padding: 0 var(--space-md);
   min-height: calc(var(--space-xl) * 2); /* 可用行 64px */
-  background: var(--bg2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
+  background: var(--lcd-card);
+  border: 1px solid var(--nav-seam);
+  border-radius: var(--lcd-card-radius);
   cursor: pointer;
   transition: border-color var(--dur-hov) ease,
     background var(--dur-hov) ease,
@@ -31,6 +33,16 @@
 
 .row:active {
   transform: scale(var(--tap-scale));
+}
+
+/* 已连接(选中态): 浅绿胶囊图标 + 浅绿描边 */
+.row[aria-pressed="true"] {
+  border-color: var(--chip-active-ink);
+}
+
+.row[aria-pressed="true"] .icon {
+  background: var(--chip-active);
+  color: var(--chip-active-ink);
 }
 
 /* 未开放:置灰 + 矮行 + 禁用光标 */
@@ -44,6 +56,7 @@
   transform: none;
 }
 
+/* 平台图标圆: 默认银色金属, 已连接切换为浅绿(见上) */
 .icon {
   flex: none;
   width: calc(var(--space-lg) + var(--space-md)); /* 40px 圆形 */
@@ -55,8 +68,8 @@
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 600;
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--chip-metal);
+  color: var(--chip-metal-ink);
   transition: background var(--dur-hov) ease;
 }
 
@@ -64,20 +77,20 @@
   flex: 1;
   font-size: 0.95rem;
   font-weight: 500;
-  color: var(--ink);
+  color: var(--lcd-ink);
 }
 
 .status {
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: var(--muted);
+  color: var(--nav-ink);
   letter-spacing: 0.04em;
 }
 
 .arrow {
   flex: none;
   margin-left: var(--space-xs);
-  color: var(--muted);
+  color: var(--nav-ink);
   font-size: 1.1rem;
   line-height: 1;
 }

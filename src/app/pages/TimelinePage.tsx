@@ -37,6 +37,8 @@ export function TimelinePage() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.lcdScreen}>
+        <div className={styles.lcdInner}>
       {/* —— 页头:italic 标语 + Momentune 大标题 + 右上角头像 + 月份行 —— */}
       <header className={styles.header}>
         <div className={styles.headerGlow} aria-hidden />
@@ -107,6 +109,8 @@ export function TimelinePage() {
           })}
         </section>
       )}
+        </div>
+      </div>
     </div>
   );
 }

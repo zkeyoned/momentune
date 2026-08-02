@@ -21,8 +21,8 @@
   position: relative;
   width: 100%;
   max-width: 320px;
-  background: var(--bg2);
-  border: 1px solid var(--rule);
+  background: var(--lcd-bg);
+  border: 1px solid var(--nav-seam);
   border-radius: var(--radius-lg);
   padding: var(--space-xl) var(--space-lg) var(--space-lg);
   box-shadow: var(--shadow-card);
@@ -46,7 +46,7 @@
   justify-content: center;
   background: transparent;
   border: none;
-  color: var(--muted);
+  color: var(--nav-ink);
   font-size: 1rem;
   cursor: pointer;
   border-radius: 50%;
@@ -54,8 +54,8 @@
 }
 
 .closeBtn:hover {
-  color: var(--ink);
-  background: var(--film-grain);
+  color: var(--lcd-ink);
+  background: var(--nav-seam);
 }
 
 /* —— 平台标识 —— */
@@ -83,14 +83,14 @@
 .platformName {
   font-size: 1rem;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--lcd-ink);
   text-align: left;
 }
 
 .platformSub {
   font-family: var(--font-mono);
   font-size: 0.65rem;
-  color: var(--muted);
+  color: var(--nav-ink);
   letter-spacing: 0.06em;
   text-align: left;
 }
@@ -119,7 +119,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--muted);
+  color: var(--nav-ink);
   font-size: 0.8rem;
 }
 
@@ -130,8 +130,8 @@
   right: 8px;
   top: 8px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  box-shadow: 0 0 8px var(--accent);
+  background: linear-gradient(90deg, transparent, var(--stamp-orange), transparent);
+  box-shadow: var(--stamp-glow);
   animation: scan 2s ease-in-out infinite;
 }
 
@@ -143,12 +143,12 @@
 /* —— 提示文字 —— */
 .hint {
   font-size: 0.85rem;
-  color: var(--ink);
+  color: var(--lcd-ink);
   margin: 0 0 var(--space-sm);
 }
 
 .platformTag {
-  color: var(--accent);
+  color: var(--stamp-orange);
   font-weight: 600;
 }
 
@@ -164,8 +164,8 @@
 .spinner {
   width: 12px;
   height: 12px;
-  border: 2px solid var(--rule);
-  border-top-color: var(--accent);
+  border: 2px solid var(--nav-seam);
+  border-top-color: var(--stamp-orange);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -177,7 +177,7 @@
 .waitingText {
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: var(--muted);
+  color: var(--nav-ink);
   letter-spacing: 0.04em;
 }
 
@@ -186,9 +186,9 @@
   width: 100%;
   padding: 0.7em 1em;
   background: transparent;
-  border: 1px dashed var(--rule);
+  border: 1px dashed var(--nav-seam);
   border-radius: var(--radius-pill);
-  color: var(--muted);
+  color: var(--nav-ink);
   font-family: var(--font-mono);
   font-size: 0.72rem;
   cursor: pointer;
@@ -199,8 +199,8 @@
 }
 
 .mockBtn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--stamp-orange);
+  color: var(--stamp-orange);
 }
 
 .mockBtn:active {
@@ -223,26 +223,26 @@
   height: 64px;
   margin: 0 auto var(--space-sm);
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--stamp-orange);
+  color: var(--on-media-text);
   font-size: 2rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px var(--accent-light);
+  box-shadow: var(--stamp-glow), 0 8px 24px var(--nav-seam);
 }
 
 .successTitle {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--lcd-ink);
   margin-bottom: 2px;
 }
 
 .successSub {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--accent);
+  color: var(--stamp-orange);
   letter-spacing: 0.04em;
 }

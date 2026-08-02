@@ -127,6 +127,8 @@ export function CalendarPage() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.lcdScreen}>
+        <div className={styles.lcdInner}>
       {/* —— 页头:italic "memories" + 年月 + 左右箭头 —— */}
       <header className={styles.header}>
         <div className={styles.headerGlow} aria-hidden />
@@ -207,6 +209,8 @@ export function CalendarPage() {
           </div>
         )}
       </section>
+        </div>
+      </div>
     </div>
   );
 }

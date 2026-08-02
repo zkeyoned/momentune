@@ -46,11 +46,15 @@ export function ResultPage() {
   if (!pending) {
     return (
       <div className={styles.page}>
-        <div className="section center">
-          <p className="muted">还没有选择照片</p>
-          <Link to="/" className="btn btn-primary mt-md">
-            去拍照
-          </Link>
+        <div className={styles.lcdShell}>
+          <div className={`${styles.screen} ${styles.centerScreen}`}>
+            <div className="section center">
+              <p className="muted">还没有选择照片</p>
+              <Link to="/" className="btn btn-primary mt-md">
+                去拍照
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -63,11 +67,15 @@ export function ResultPage() {
   if (error || !result) {
     return (
       <div className={styles.page}>
-        <div className="section center">
-          <p className="muted">分析失败:{error ?? '未知错误'}</p>
-          <Link to="/" className="btn btn-ghost mt-md">
-            返回重试
-          </Link>
+        <div className={styles.lcdShell}>
+          <div className={`${styles.screen} ${styles.centerScreen}`}>
+            <div className="section center">
+              <p className="muted">分析失败:{error ?? '未知错误'}</p>
+              <Link to="/" className="btn btn-ghost mt-md">
+                返回重试
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -247,67 +255,71 @@ function ResultSuccessView({
   };
 
   return (
-    <div className={`${styles.page} ${styles.pageSuccess}`}>
-      {/* —— 上半:照片主角 —— */}
-      <section className={styles.photoSection}>
-        <img src={pending.previewUrl} alt={pending.title} className={styles.heroImg} />
-        <div className={styles.photoCaption}>
-          <span className={styles.photoDate}>{fmtShootDate()}</span>
-          {pending.location && <span className={styles.photoLoc}>· {pending.location}</span>}
+    <div className={styles.page}>
+      <div className={styles.lcdShell}>
+        <div className={styles.screen}>
+          {/* —— 上半:照片主角 —— */}
+          <section className={styles.photoSection}>
+            <img src={pending.previewUrl} alt={pending.title} className={styles.heroImg} />
+            <div className={styles.photoCaption}>
+              <span className={styles.photoDate}>{fmtShootDate()}</span>
+              {pending.location && <span className={styles.photoLoc}>· {pending.location}</span>}
+            </div>
+          </section>
+
+          {/* —— 下半:轮播 + 信息 + 输入 + 按钮 —— */}
+          <section className={styles.bottomSection}>
+            <SongWheel
+              songs={allSongs}
+              currentSongId={currentSongId}
+              isPlaying={isPlaying}
+              onSelect={(song) => onPlayTrack(song, allSongs)}
+            />
+
+            {currentSong && (
+              <div
+                className={styles.songInfo}
+                key={currentSongId}
+                role="button"
+                tabIndex={0}
+                aria-label={isPlaying ? '暂停' : '播放'}
+                onClick={handlePlayClick}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handlePlayClick();
+                  }
+                }}
+              >
+                <span className={styles.songTitle}>{currentSong.title}</span>
+                <span className={styles.songArtist}>{currentSong.artist}</span>
+                <span className={styles.moodTag}>{primaryEmotionZh}</span>
+              </div>
+            )}
+
+            <textarea
+              className={styles.textarea}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="今天的情绪，一句话记下来…"
+              rows={2}
+            />
+
+            <div className={styles.actions}>
+              <Link to="/" className={`btn btn-ghost ${styles.actionBtn}`}>
+                再拍一张
+              </Link>
+              <button
+                className={`btn btn-primary ${styles.actionBtn}`}
+                onClick={onSave}
+                disabled={saved}
+              >
+                {saved ? '已保存 ✓' : '保存为日记'}
+              </button>
+            </div>
+          </section>
         </div>
-      </section>
-
-      {/* —— 下半:轮播 + 信息 + 输入 + 按钮 —— */}
-      <section className={styles.bottomSection}>
-        <SongWheel
-          songs={allSongs}
-          currentSongId={currentSongId}
-          isPlaying={isPlaying}
-          onSelect={(song) => onPlayTrack(song, allSongs)}
-        />
-
-        {currentSong && (
-          <div
-            className={styles.songInfo}
-            key={currentSongId}
-            role="button"
-            tabIndex={0}
-            aria-label={isPlaying ? '暂停' : '播放'}
-            onClick={handlePlayClick}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handlePlayClick();
-              }
-            }}
-          >
-            <span className={styles.songTitle}>{currentSong.title}</span>
-            <span className={styles.songArtist}>{currentSong.artist}</span>
-            <span className={styles.moodTag}>{primaryEmotionZh}</span>
-          </div>
-        )}
-
-        <textarea
-          className={styles.textarea}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="今天的情绪，一句话记下来…"
-          rows={2}
-        />
-
-        <div className={styles.actions}>
-          <Link to="/" className={`btn btn-ghost ${styles.actionBtn}`}>
-            再拍一张
-          </Link>
-          <button
-            className={`btn btn-primary ${styles.actionBtn}`}
-            onClick={onSave}
-            disabled={saved}
-          >
-            {saved ? '已保存 ✓' : '保存为日记'}
-          </button>
-        </div>
-      </section>
+      </div>
     </div>
   );
 }

@@ -62,11 +62,11 @@
   transition: box-shadow var(--dur-hov) ease;
 }
 
-/* 中心卡:焦糖色描边 */
+/* 中心卡:橙色描边 */
 .coverCard.active {
   box-shadow:
     var(--shadow-card),
-    0 0 0 calc(var(--space-xs) / 2) var(--accent);
+    0 0 0 calc(var(--space-xs) / 2) var(--stamp-orange);
 }
 
 /* —— 封面图/渐变色容器 —— */
@@ -76,7 +76,7 @@
   border-radius: var(--radius-sm);
   background-size: cover;
   background-position: center;
-  background-color: var(--bg2);
+  background-color: var(--lcd-card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,8 +94,8 @@
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--accent-ink);
-  text-shadow: 0 1px 4px var(--accent2);
+  color: var(--on-media-text);
+  text-shadow: 0 1px 4px var(--lcd-bg);
 }
 
 /* —— 中心卡播放角标(波形动画) —— */
@@ -108,7 +108,7 @@
   gap: calc(var(--space-xs) / 2);
   height: calc(var(--space-sm) + var(--space-xs));
   padding: var(--space-xs) var(--space-xs);
-  background: color-mix(in srgb, var(--ink) 70%, transparent);
+  background: color-mix(in srgb, var(--lcd-ink) 70%, transparent);
   border-radius: var(--radius-pill);
   backdrop-filter: blur(var(--space-xs));
   z-index: 2;
@@ -116,7 +116,7 @@
 
 .bar {
   width: calc(var(--space-xs) / 2);
-  background: var(--accent);
+  background: var(--stamp-orange);
   border-radius: calc(var(--space-xs) / 2);
   animation: barWave calc(var(--dur-hov) + var(--dur-hov) + var(--dur-hov) + var(--dur-hov) + var(--dur-tap)) ease-in-out infinite;
 }
@@ -142,10 +142,10 @@
   width: var(--space-xs);
   height: var(--space-xs);
   border-radius: 50%;
-  background: var(--track);
+  background: var(--nav-seam);
   transition: background var(--dur-hov) ease;
 }
 
 .dotActive {
-  background: var(--accent);
+  background: var(--stamp-orange);
 }

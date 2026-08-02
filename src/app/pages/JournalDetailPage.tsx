@@ -28,11 +28,15 @@ export function JournalDetailPage() {
   if (!journal) {
     return (
       <div className={styles.page}>
-        <div className="section center">
-          <p className="muted">日记不存在</p>
-          <Link to="/journal" className="btn btn-ghost mt-md">
-            ← 返回回忆
-          </Link>
+        <div className={styles.lcdShell}>
+          <div className={`${styles.screen} ${styles.centerScreen}`}>
+            <div className="section center">
+              <p className="muted">日记不存在</p>
+              <Link to="/journal" className="btn btn-ghost mt-md">
+                ← 返回回忆
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -48,58 +52,62 @@ export function JournalDetailPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.photoWrap}>
-        <img
-          src={journal.photoUrl}
-          alt={journal.photoTitle}
-          className={styles.photo}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.opacity = '0.3';
-          }}
-        />
-        <div className={styles.photoOverlay}>
-          <span className={styles.emotionPill}>{journal.emotion.displayLabel}</span>
-          {journal.location && <span className={styles.location}>@ {journal.location}</span>}
-        </div>
-      </div>
-
-      <section className="section">
-        <div className={styles.meta}>
-          <span className="mono muted">{formatDate(journal.createdAt)}</span>
-        </div>
-        <h1 className={styles.title}>{journal.photoTitle}</h1>
-      </section>
-
-      <section className="section">
-        <h2>这一天的心情</h2>
-        <p className={styles.text}>{journal.text}</p>
-      </section>
-
-      {journal.songs.length > 0 && (
-        <section className="section">
-          <h2>那天推荐的歌 · {journal.songs.length} 首</h2>
-          <div className={styles.songList}>
-            {journal.songs.map((song, idx) => (
-              <SongCard
-                key={song.songId}
-                song={song}
-                rank={idx + 1}
-                onPlay={() => playTrack(song, journal.songs)}
-                isCurrent={currentSongId === song.songId}
-                isPlaying={isPlaying && currentSongId === song.songId}
-              />
-            ))}
+      <div className={styles.lcdShell}>
+        <div className={styles.screen}>
+          <div className={styles.photoWrap}>
+            <img
+              src={journal.photoUrl}
+              alt={journal.photoTitle}
+              className={styles.photo}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.opacity = '0.3';
+              }}
+            />
+            <div className={styles.photoOverlay}>
+              <span className={styles.emotionPill}>{journal.emotion.displayLabel}</span>
+              {journal.location && <span className={styles.location}>@ {journal.location}</span>}
+            </div>
           </div>
-        </section>
-      )}
 
-      <div className={styles.actions}>
-        <Link to="/journal" className="btn btn-ghost">
-          ← 回忆
-        </Link>
-        <button className={`btn btn-ghost ${styles.deleteBtn}`} onClick={handleDelete}>
-          删除
-        </button>
+          <section className="section">
+            <div className={styles.meta}>
+              <span className="mono muted">{formatDate(journal.createdAt)}</span>
+            </div>
+            <h1 className={styles.title}>{journal.photoTitle}</h1>
+          </section>
+
+          <section className="section">
+            <h2>这一天的心情</h2>
+            <p className={styles.text}>{journal.text}</p>
+          </section>
+
+          {journal.songs.length > 0 && (
+            <section className="section">
+              <h2>那天推荐的歌 · {journal.songs.length} 首</h2>
+              <div className={styles.songList}>
+                {journal.songs.map((song, idx) => (
+                  <SongCard
+                    key={song.songId}
+                    song={song}
+                    rank={idx + 1}
+                    onPlay={() => playTrack(song, journal.songs)}
+                    isCurrent={currentSongId === song.songId}
+                    isPlaying={isPlaying && currentSongId === song.songId}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className={styles.actions}>
+            <Link to="/journal" className="btn btn-ghost">
+              ← 回忆
+            </Link>
+            <button className={`btn btn-ghost ${styles.deleteBtn}`} onClick={handleDelete}>
+              删除
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

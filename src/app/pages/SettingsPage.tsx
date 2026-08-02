@@ -17,6 +17,8 @@ export function SettingsPage() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.lcdScreen}>
+        <div className={styles.lcdInner}>
       <header className={styles.header}>
         <span className={styles.filmBadge} aria-hidden>ROLL · 03</span>
         <h1 className={styles.title}>设置</h1>
@@ -56,6 +58,8 @@ export function SettingsPage() {
           })}
         </div>
       </section>
+        </div>
+      </div>
     </div>
   );
 }

@@ -26,8 +26,8 @@
   /* 进度条轨道 / pill 底 */
   --track: rgba(26, 32, 28, 0.12);
 
-  /* 导航栏 */
-  --nav-bg: rgba(248, 250, 247, 0.88);
+  /* 导航栏 (银色 CCD 主题固定,不随日夜变) */
+  --nav-bg: linear-gradient(to bottom, #24262a, #131517);
 
   /* 拍立得 */
   --polaroid: #FFFFFF;      /* 日间纯白框 */
@@ -95,6 +95,39 @@
   --ease-tap: cubic-bezier(0.4, 0, 0.2, 1);
   --tap-scale: 0.97;
   --tap-scale-strong: 0.9;
+
+  /* ============================================================
+     银色 CCD 相机主题变量 (全 App 统一,固定不随日夜变)
+     所有页面/组件引用这些变量,禁止单页写死颜色
+     ============================================================ */
+  /* 机身高光叠层(叠在 --metal-body 上) */
+  --metal-body: linear-gradient(to bottom, #f4f5f6 0%, #d8dadd 8%, #b8bcc0 22%, #cfd2d5 38%, #9fa4a9 60%, #c6c9cd 80%, #888d92 100%);
+  --metal-highlight: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.5) 42%, transparent 54%);
+
+  /* LCD 外框 */
+  --lcd-frame: linear-gradient(150deg, #3a3d40, #1b1d1f 40%, #2c2f32 70%, #101214);
+  --lcd-bg: #101214;
+  --lcd-ink: #e8eaec;
+
+  /* 橙色日期戳 */
+  --stamp-orange: #ff9a2a;
+  --stamp-glow: 0 0 7px rgba(255,140,20,0.9);
+
+  /* 胶囊芯片(铭牌) */
+  --chip-metal: linear-gradient(to bottom, #f2f3f4, #c9ccd0 55%, #dfe1e3);
+  --chip-metal-ink: #4a4f54;
+  --chip-active: linear-gradient(to bottom, #9fe8c0, #52b47f 55%, #7fd3a4);
+  --chip-active-ink: #0e3b24;
+
+  /* 底部导航辅助 */
+  --nav-ink: #8d9297;
+  --nav-ink-active: #e8eaec;
+  --nav-seam: rgba(255,255,255,0.15); /* 机身与导航接缝高光线 */
+  --nav-camera-ring: #0b0c0d; /* 中间相机钮外圈描边 */
+
+  /* LCD 屏内卡片 */
+  --lcd-card: #1b1d1f;
+  --lcd-card-radius: 8px;
 }
 
 /* —— 墨夜 · 夜间 —— */
@@ -116,8 +149,8 @@ html[data-theme="dark"] {
   /* 进度条轨道 / pill 底 */
   --track: rgba(228, 235, 230, 0.14);
 
-  /* 导航栏 */
-  --nav-bg: rgba(15, 20, 17, 0.88);
+  /* 导航栏 (银色 CCD 主题固定,夜间同值) */
+  --nav-bg: linear-gradient(to bottom, #24262a, #131517);
 
   /* 拍立得 */
   --polaroid: #1A201C;      /* 夜间深绿框 */

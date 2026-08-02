@@ -1,11 +1,13 @@
+/* SongCard — 跨页歌曲卡片, 银色 CCD LCD 屏内深色风格 */
+
 .card {
   display: flex;
   align-items: center;
   gap: var(--space-md);
   padding: var(--space-md);
-  background: var(--warm-cream);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-md);
+  background: var(--lcd-card);
+  border: 1px solid var(--nav-seam);
+  border-radius: var(--lcd-card-radius);
   transition: border-color var(--dur-hov) ease,
     transform var(--dur-tap) var(--ease-tap), box-shadow var(--dur-hov) ease;
   cursor: pointer;
@@ -13,17 +15,18 @@
 }
 
 .card:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-card);
+  border-color: var(--stamp-orange);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
 }
 
 .card:active {
   transform: scale(var(--tap-scale));
 }
 
+/* 当前播放: 橙色描边 + 微橙底 */
 .current {
-  border-color: var(--accent);
-  background: var(--accent-light);
+  border-color: var(--stamp-orange);
+  background: color-mix(in srgb, var(--stamp-orange) 12%, var(--lcd-card));
 }
 
 .cover {
@@ -93,7 +96,7 @@
 .rank {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--accent);
+  color: var(--stamp-orange);
   flex-shrink: 0;
 }
 
@@ -101,7 +104,7 @@
   font-family: var(--font-serif);
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--lcd-ink);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -110,7 +113,7 @@
 
 .artist {
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--nav-ink);
   margin: 2px 0 6px;
   white-space: nowrap;
   overflow: hidden;
@@ -128,44 +131,45 @@
   font-size: 0.65rem;
   padding: 1px 6px;
   border-radius: var(--radius-pill);
-  background: var(--accent-light);
-  color: var(--accent2);
+  background: color-mix(in srgb, var(--stamp-orange) 16%, transparent);
+  color: var(--stamp-orange);
   letter-spacing: 0.02em;
 }
 
 .tagMuted {
-  background: var(--track);
-  color: var(--muted);
+  background: color-mix(in srgb, var(--nav-ink) 18%, transparent);
+  color: var(--nav-ink);
 }
 
 .tagHot {
-  background: var(--accent-light);
-  color: var(--accent2);
+  background: color-mix(in srgb, var(--stamp-orange) 24%, transparent);
+  color: var(--stamp-orange);
   font-weight: 500;
 }
 
+/* 播放钮: 银色金属胶囊(硬件按钮感) */
 .playBtn {
   flex-shrink: 0;
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--accent);
-  color: var(--accent-ink);
+  background: var(--chip-metal);
+  color: var(--chip-metal-ink);
   font-size: 0.8rem;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background var(--dur-hov) ease,
     transform var(--dur-tap) var(--ease-tap), box-shadow var(--dur-hov) ease;
-  box-shadow: 0 2px 6px var(--accent-light);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   -webkit-tap-highlight-color: transparent;
 }
 
 .playBtn:hover {
-  background: var(--accent2);
+  filter: brightness(1.05);
 }
 
 .playBtn:active {
   transform: scale(var(--tap-scale-strong));
-  box-shadow: 0 1px 3px var(--accent-light);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
