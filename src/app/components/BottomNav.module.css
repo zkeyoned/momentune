@@ -1,11 +1,16 @@
 /* ============================================================
    BottomNav — 悬浮胶囊导航
    5 项: 时间线 / 日历 / [相机凸起] / 收藏 / 我的
-   中间相机按钮 58px 正圆, 凸出导航栏, 背景跟随主色变量
+   底色: 更深的墨绿纯色 #143A2C(全局统一,纯色非毛玻璃)
+   文字: 奶白系,激活态纯奶白
    分析中(loading)整栏变灰不可点(.nav.dim)
    ============================================================ */
 
+/* 局部固定配色 token(底部导航全局统一,不随主题变) */
 .nav {
+  --nav-deep: #143A2C;       /* 更深的墨绿纯色底 */
+  --nav-cream: #F4F8F4;      /* 奶白文字/图标 */
+  --nav-green: #1F5C42;      /* 凸起相机按钮墨绿 */
   position: fixed;
   bottom: calc(var(--safe-bottom) + var(--space-sm));
   left: 50%;
@@ -14,15 +19,13 @@
   max-width: calc(var(--app-max-width) - 2 * var(--space-md));
   height: var(--nav-height);
   padding: 0 var(--space-sm);
-  background: var(--nav-bg);
-  backdrop-filter: blur(16px) saturate(1.05);
-  -webkit-backdrop-filter: blur(16px) saturate(1.05);
-  border: 1px solid var(--rule);
+  background: var(--nav-deep);
+  border: 1px solid rgba(244, 248, 244, 0.12);
   border-radius: var(--radius-pill);
   display: flex;
   align-items: center;
   z-index: 100;
-  box-shadow: var(--shadow-soft);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.32);
 }
 
 /* 分析中:整栏变灰不可点 */
@@ -42,7 +45,7 @@
   gap: 3px;
   position: relative;
   height: 100%;
-  color: var(--muted);
+  color: rgba(244, 248, 244, 0.6);
   text-decoration: none;
   background: transparent;
   border: 0;
@@ -59,9 +62,9 @@
   transform: scale(var(--tap-scale));
 }
 
-/* 激活态: 主色 + 顶部小条指示 */
+/* 激活态: 纯奶白 + 顶部小条指示 */
 .tab.active {
-  color: var(--accent);
+  color: var(--nav-cream);
 }
 
 .tab.active::before {
@@ -72,7 +75,7 @@
   transform: translateX(-50%);
   width: 24px;
   height: 2.5px;
-  background: var(--accent);
+  background: var(--nav-cream);
   border-radius: 0 0 2px 2px;
   animation: tabIndicator 0.3s var(--ease-tap);
 }
@@ -90,8 +93,8 @@
 
 /* 禁用态(收藏暂未开放) */
 .disabled {
-  color: var(--muted);
-  opacity: 0.4;
+  color: rgba(244, 248, 244, 0.6);
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
@@ -119,7 +122,7 @@
 }
 
 /* —— 中间凸起相机按钮 ——
-   58px 正圆, 向上凸出导航栏, 渐变跟随主色变量 */
+   58px 正圆, 向上凸出导航栏, 奶白底 + 墨绿图标(纯色,与首页快门呼应) */
 .cameraBtn {
   flex: 1;
   position: relative;
@@ -141,13 +144,14 @@
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  background: linear-gradient(145deg, var(--accent), var(--accent2));
+  background: var(--nav-cream);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-ink);
-  box-shadow: var(--shadow-amber),
-    0 0 0 4px var(--nav-bg);
+  color: var(--nav-green);
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.3),
+    0 0 0 4px var(--nav-deep);
   transition: transform var(--dur-tap) var(--ease-tap),
     box-shadow var(--dur-hov) ease;
 }
@@ -158,8 +162,9 @@
 }
 
 .cameraBtn:hover .cameraBtnInner {
-  box-shadow: var(--shadow-amber), var(--shadow-soft),
-    0 0 0 4px var(--nav-bg);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.34),
+    0 0 0 4px var(--nav-deep);
 }
 
 .cameraBtn:active .cameraBtnInner {
