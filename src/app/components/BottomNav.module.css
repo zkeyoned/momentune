@@ -9,20 +9,29 @@
 
 .nav {
   position: fixed;
-  bottom: calc(var(--safe-bottom) + var(--space-sm));
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 2 * var(--space-md));
-  max-width: calc(var(--app-max-width) - 2 * var(--space-md));
-  height: 72px;
+  bottom: 0;
+  left: 0;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
+  height: calc(72px + var(--safe-bottom));
   padding: 0 var(--space-sm);
-  background: var(--nav-bg);
-  border-radius: var(--radius-pill);
+  padding-bottom: var(--safe-bottom);
+  background: linear-gradient(to bottom, #24262a, #131517);
+  border-radius: 0;
   display: flex;
   align-items: center;
   z-index: 100;
-  /* 上边缘接缝高光 + 投影 */
-  box-shadow: 0 -1px 0 var(--nav-seam), 0 10px 26px rgba(0, 0, 0, 0.32);
+}
+
+.nav::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
 }
 
 /* 分析中:整栏变灰不可点 */

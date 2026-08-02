@@ -167,14 +167,14 @@
   align-items: center;
   background: transparent;
   padding: 14px var(--space-md) calc(env(safe-area-inset-bottom, 0px) + 14px);
-  gap: 14px;
+  gap: 16px;
   z-index: 2;
 }
 
 /* —— 取景屏: 黑色亮面 LCD 厚边框 —— */
 .viewfinder {
   position: relative;
-  width: min(100%, 300px, 52vh * 4 / 5);
+  width: min(100%, 420px, 58vh * 4 / 5);
   aspect-ratio: 4 / 5;
   background: var(--lcd-frame);
   padding: 9px;
@@ -190,9 +190,10 @@
 /* 摄像头实时画面: 屏幕内凹感 */
 .video {
   position: absolute;
-  inset: 9px;
-  width: auto;
-  height: auto;
+  top: 9px;
+  left: 9px;
+  width: calc(100% - 18px);
+  height: calc(100% - 18px);
   object-fit: cover;
   background: var(--lcd-bg);
   box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9);
@@ -348,7 +349,7 @@
   align-items: center;
   justify-content: center;
   gap: 28px;
-  margin-top: 16px;
+  margin-top: 4px;
   flex-shrink: 0;
   padding-top: 4px;
 }
@@ -476,9 +477,10 @@
 }
 .flipLabel {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   letter-spacing: 0.08em;
-  color: var(--chip-metal-ink);
+  color: #4a4f54;
+  margin-top: 8px;
   opacity: 0.8;
 }
 

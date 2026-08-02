@@ -256,7 +256,7 @@ export function HomePage() {
                 <path d="M20 20v-5h-5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <span className={styles.flipLabel}>翻转</span>
+            <span className={styles.flipLabel}>翻转摄像头</span>
           </button>
         </div>
 
