@@ -441,10 +441,11 @@
 
 /* 右: 翻转摄像头(银色小圆钮) */
 .flipBtn {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
+  width: 56px;
+  height: 56px;
   background: transparent;
   border: 0;
   padding: 0;
@@ -476,11 +477,16 @@
   transform: scale(0.92);
 }
 .flipLabel {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
   color: #4a4f54;
-  margin-top: 8px;
   opacity: 0.8;
 }
 

@@ -140,14 +140,6 @@ export function HomePage() {
         </div>
 
         <span className={styles.powerLed} aria-label="电源指示灯" />
-
-        <div className={styles.dialGroup}>
-          <div className={styles.modeDial} aria-hidden>
-            <span className={styles.dialText}>标准</span>
-            <span className={styles.dialPointer} />
-          </div>
-          <div className={styles.dialCaption}>格式：标准・邮票・专辑</div>
-        </div>
       </div>
 
       <div className={styles.body}>
