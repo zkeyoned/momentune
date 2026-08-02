@@ -129,40 +129,24 @@ export function HomePage() {
     );
   };
 
-  const handlePlaceholder = () => {
-    void hapticImpact('light');
-  };
-
   return (
     <div className={styles.page}>
       <div className={styles.topPlate}>
-        <button
-          type="button"
-          className={styles.dial}
-          onClick={handlePlaceholder}
-          aria-label="胶片"
-        >
-          <span className={styles.dialKnob} aria-hidden>
-            <span className={styles.dialNotch} />
-            <span className={styles.dialNotch} />
-            <span className={styles.dialNotch} />
-            <span className={styles.dialNotch} />
-          </span>
-          <span className={styles.dialLabel}>胶片</span>
-        </button>
-
-        <div className={styles.brand} aria-label="MOMENTUNE">
-          MOMENTUNE
+        <div className={styles.brandGroup}>
+          <div className={styles.brand} aria-label="MOMENTUNE">
+            MOMENTUNE
+          </div>
+          <div className={styles.brandSub}>5.0 MEGA PIXELS・CCD</div>
         </div>
 
-        <div className={styles.dial} aria-label="格式 标准">
-          <span className={styles.dialKnob} aria-hidden>
-            <span className={styles.dialScale} data-on>标准</span>
-            <span className={styles.dialScale}>方形</span>
-            <span className={styles.dialScale}>宽幅</span>
-          </span>
-          <span className={styles.dialPointer} aria-hidden />
-          <span className={styles.dialLabel}>格式</span>
+        <span className={styles.powerLed} aria-label="电源指示灯" />
+
+        <div className={styles.dialGroup}>
+          <div className={styles.modeDial} aria-hidden>
+            <span className={styles.dialText}>标准</span>
+            <span className={styles.dialPointer} />
+          </div>
+          <div className={styles.dialCaption}>格式：标准・邮票・专辑</div>
         </div>
       </div>
 
@@ -176,6 +160,16 @@ export function HomePage() {
             autoPlay
           />
 
+          <span className={styles.moodLabel}>MOOD·AUTO</span>
+          <div className={styles.battery} aria-label="电量">
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className={styles.dateStamp}>{fmtDate()}</div>
+          <span className={styles.glassReflect} aria-hidden />
+
           {gridOn && (
             <>
               <span className={`${styles.gridLine} ${styles.gridH1}`} aria-hidden />
@@ -184,10 +178,6 @@ export function HomePage() {
               <span className={`${styles.gridLine} ${styles.gridV2}`} aria-hidden />
             </>
           )}
-
-          <div className={styles.dateStamp} aria-label="今日日期">
-            {fmtDate()}
-          </div>
 
           {shutterFlash && <div className={styles.flash} aria-hidden />}
 
@@ -268,6 +258,12 @@ export function HomePage() {
             </span>
             <span className={styles.flipLabel}>翻转</span>
           </button>
+        </div>
+
+        <div className={styles.speaker} aria-hidden>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span key={i} className={styles.speakerHole} />
+          ))}
         </div>
       </div>
 

@@ -1,173 +1,217 @@
 /* ============================================================
-   HomePage — 复古相机正面
-   两主色:奶白 #F4F8F4 / 墨绿 #1F5C42;唯一点缀:橙色日期戳
-   纯色平涂 + 阴影质感,无渐变/无铜色/无花纹理/无图片素材
-   配色固定,不随日夜主题变化
+   HomePage — 2005 年前后索尼/佳能卡片机银色金属 CCD 外观
+   - 机身: 银灰金属渐变 + 斜向高光
+   - 顶板: 银色金属 + 压印品牌 + 电源灯 + 滚花模式转盘
+   - 取景屏: 黑色亮面 LCD 边框 + 内凹屏幕 + 玻璃反光 + HUD
+   - 铭牌/快门/相册/翻转 全部镀铬/拉丝金属质感
+   - 颜色固定银色金属,不随日/夜主题变化
    ============================================================ */
 
+:root {
+  --silver-light: #E8EBEF;
+  --silver-mid: #C5CBD3;
+  --silver-dark: #8A929E;
+  --silver-darker: #5A6270;
+  --silver-bezel: #1a1a1a;     /* LCD 边框黑 */
+  --metal-green: #7FC99A;      /* 电源灯/电量格/铭牌选中浅绿金属 */
+  --metal-green-glow: #4ADE80;
+  --ccd-orange: #FF8C2E;       /* 日期戳橙 */
+}
+
+/* —— 机身: 银灰金属渐变 + 斜向高光 —— */
 .page {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
   padding: 0;
-  background: var(--cam-green);
-  /* 复古相机固定配色 token(局部,不污染全局) */
-  --cam-cream: #F4F8F4;
-  --cam-green: #1F5C42;
-  --cam-green-deep: #143A2C;
-  --cam-green-darker: #0E2A20;
-  --cam-green-light: #5BB585; /* 铭牌选中浅绿 */
-  --cam-orange: #FF8C2E;      /* 整页唯一点缀色 */
+  background: linear-gradient(
+    180deg,
+    var(--silver-light) 0%,
+    var(--silver-mid) 40%,
+    var(--silver-dark) 100%
+  );
 }
 
-/* —— 顶部奶白顶板 —— */
+/* 机身斜向高光层(覆盖整个 page) */
+.page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 62%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* —— 顶部银色金属顶板 —— */
 .topPlate {
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-sm);
-  background: var(--cam-cream);
+  background: linear-gradient(180deg, var(--silver-light), var(--silver-mid));
   padding:
-    calc(env(safe-area-inset-top, 0px) + 12px)
+    calc(env(safe-area-inset-top, 0px) + 14px)
     var(--space-md)
-    12px;
-  /* 顶板下沿极细墨绿分隔线 + 微弱投影做层次 */
-  border-bottom: 1px solid color-mix(in srgb, var(--cam-green) 16%, transparent);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  position: relative;
-  z-index: 2;
+    16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
 }
 
-/* 品牌 MOMENTUNE 刻字(墨绿凹陷刻字感) */
+/* 左侧品牌组: 压印 MOMENTUNE + 小字 */
+.brandGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .brand {
   font-family: var(--font-mono);
   font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.3em;
-  color: var(--cam-green);
+  color: var(--silver-darker);
+  /* 上亮下暗 = 压印效果 */
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7),
-    0 -1px 0 rgba(20, 58, 44, 0.18);
+    0 1px 0 rgba(255, 255, 255, 0.6),
+    0 -1px 0 rgba(0, 0, 0, 0.1);
   white-space: nowrap;
 }
 
-/* —— 两侧圆旋钮(通用) —— */
-.dial {
+.brandSub {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  color: var(--silver-dark);
+  white-space: nowrap;
+}
+
+/* 中间绿色电源灯(带光晕) */
+.powerLed {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #4ADE80, #22C55E);
+  box-shadow:
+    0 0 6px rgba(74, 222, 128, 0.9),
+    0 0 12px rgba(74, 222, 128, 0.5),
+    inset 0 0 1px rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+
+/* 右侧模式转盘组 */
+.dialGroup {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  background: transparent;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
+  gap: 3px;
+  min-width: 0;
 }
 
-.dialKnob {
+/* 滚花金属模式转盘 */
+.modeDial {
   position: relative;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--cam-cream);
-  border: 2px solid var(--cam-green);
+  /* 滚花纹理: conic 交替银灰 */
+  background: repeating-conic-gradient(
+    var(--silver-mid) 0deg 10deg,
+    var(--silver-dark) 10deg 20deg
+  );
+  border: 2px solid var(--silver-darker);
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.15),
-    inset 0 1px 2px rgba(255, 255, 255, 0.6),
-    inset 0 -1px 2px rgba(20, 58, 44, 0.08);
+    inset 0 1px 2px rgba(255, 255, 255, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.dialLabel {
+.dialText {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
-  color: var(--cam-green);
-  opacity: 0.82;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--silver-darker);
+  background: var(--silver-light);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
-/* 胶片旋钮:四向刻槽(表示可旋转) */
-.dialNotch {
-  position: absolute;
-  width: 2px;
-  height: 5px;
-  border-radius: 1px;
-  background: var(--cam-green);
-  opacity: 0.42;
-}
-.dialNotch:nth-child(1) { top: 4px; left: 50%; transform: translateX(-50%); }
-.dialNotch:nth-child(2) { bottom: 4px; left: 50%; transform: translateX(-50%); }
-.dialNotch:nth-child(3) { left: 4px; top: 50%; transform: translateY(-50%); }
-.dialNotch:nth-child(4) { right: 4px; top: 50%; transform: translateY(-50%); }
-
-/* 格式转盘:刻度文字绕圆心分布 */
-.dialScale {
-  position: absolute;
-  font-family: var(--font-mono);
-  font-size: 0.5rem;
-  line-height: 1;
-  color: var(--cam-green);
-  opacity: 0.38;
-  white-space: nowrap;
-}
-.dialScale[data-on] {
-  opacity: 1;
-  font-weight: 700;
-}
-.dialScale:nth-child(1) { top: 4px; left: 50%; transform: translateX(-50%); }   /* 标准 */
-.dialScale:nth-child(2) { bottom: 4px; left: 3px; }                              /* 方形 */
-.dialScale:nth-child(3) { bottom: 4px; right: 3px; }                             /* 宽幅 */
-
-/* 格式转盘指针(旋钮外上方,尖端指向「标准」) */
+/* 橙色指针(转盘上方三角) */
 .dialPointer {
   position: absolute;
-  top: -7px;
+  top: -4px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
   border-left: 4px solid transparent;
   border-right: 4px solid transparent;
-  border-bottom: 6px solid var(--cam-green);
+  border-bottom: 6px solid var(--ccd-orange);
+  filter: drop-shadow(0 0 2px rgba(255, 140, 46, 0.6));
 }
 
-/* —— 机身:哑光墨绿纯色 —— */
+.dialCaption {
+  font-family: var(--font-mono);
+  font-size: 0.48rem;
+  color: var(--silver-dark);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+
+/* —— 机身主体 —— */
 .body {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: var(--cam-green);
-  /* 哑光质感:极淡顶部内高光(非渐变,纯阴影) */
-  box-shadow: inset 0 1px 0 rgba(244, 248, 244, 0.04);
+  background: linear-gradient(
+    180deg,
+    var(--silver-light) 0%,
+    var(--silver-mid) 60%,
+    var(--silver-dark) 100%
+  );
   padding: 14px var(--space-md) calc(env(safe-area-inset-bottom, 0px) + 14px);
   gap: 14px;
+  z-index: 2;
 }
 
-/* —— 取景画面:奶白边框 + 内凹屏幕 —— */
+/* —— 取景屏: 黑色亮面 LCD 厚边框 —— */
 .viewfinder {
   position: relative;
-  /* 宽度取三者最小,保证高度不超 52vh,小屏不撑爆机身 */
   width: min(100%, 300px, 52vh * 4 / 5);
   aspect-ratio: 4 / 5;
   background: #000;
-  /* 奶白边框(纯色) */
-  border: 8px solid var(--cam-cream);
-  border-radius: 14px;
+  border: 10px solid var(--silver-bezel);
+  border-radius: 12px;
   overflow: hidden;
   flex-shrink: 0;
   box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.28),
-    0 2px 6px rgba(0, 0, 0, 0.2),
-    inset 0 0 0 1px rgba(20, 58, 44, 0.35);
+    0 8px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 摄像头实时画面:填满屏幕区(border 内 padding box)
-   后置(默认)不镜像;前置(.videoFront)镜像预览(自拍像照镜子) */
+/* 摄像头实时画面: 屏幕内凹感 */
 .video {
   position: absolute;
   inset: 0;
@@ -175,47 +219,91 @@
   height: 100%;
   object-fit: cover;
   background: #000;
-  /* 屏幕四边往里凹:内阴影,像真取景屏 */
-  box-shadow:
-    inset 0 4px 10px rgba(0, 0, 0, 0.65),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.45),
-    inset 2px 0 5px rgba(0, 0, 0, 0.35),
-    inset -2px 0 5px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.6);
 }
 
 .videoFront {
   transform: scaleX(-1);
 }
 
-/* —— 九宫格辅助线(屏幕内) —— */
+/* —— 屏幕玻璃斜向反光层 —— */
+.glassReflect {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: linear-gradient(
+    135deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.12) 45%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* —— 屏内 HUD —— */
+.moodLabel {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  z-index: 4;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.1em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.battery {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  z-index: 4;
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  pointer-events: none;
+}
+.battery span {
+  width: 3px;
+  height: 8px;
+  background: var(--metal-green-glow);
+  border-radius: 1px;
+  box-shadow: 0 0 3px rgba(74, 222, 128, 0.6);
+}
+/* 第 4 格不满电 */
+.battery span:nth-child(4) {
+  height: 6px;
+  opacity: 0.85;
+}
+
+.dateStamp {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 4;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--ccd-orange);
+  text-shadow:
+    0 0 3px rgba(255, 140, 46, 0.9),
+    0 0 7px rgba(255, 140, 46, 0.5);
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+/* —— 九宫格辅助线(白色半透明) —— */
 .gridLine {
   position: absolute;
   z-index: 2;
-  background: rgba(244, 248, 244, 0.22);
+  background: rgba(255, 255, 255, 0.25);
   pointer-events: none;
 }
 .gridH1 { top: 33.33%; left: 0; right: 0; height: 1px; }
 .gridH2 { top: 66.66%; left: 0; right: 0; height: 1px; }
 .gridV1 { left: 33.33%; top: 0; bottom: 0; width: 1px; }
 .gridV2 { left: 66.66%; top: 0; bottom: 0; width: 1px; }
-
-/* —— 右下角老 CCD 橙色日期戳(整页唯一点缀色) —— */
-.dateStamp {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  z-index: 3;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--cam-orange);
-  /* 发光橙:双层 text-shadow */
-  text-shadow:
-    0 0 3px rgba(255, 140, 46, 0.9),
-    0 0 7px rgba(255, 140, 46, 0.5);
-  pointer-events: none;
-}
 
 /* —— 快门闭合黑屏闪 —— */
 .flash {
@@ -231,7 +319,7 @@
   to { opacity: 1; }
 }
 
-/* —— 取景屏中央占位提示(原生 / 未就绪 / 错误) —— */
+/* —— 取景屏中央占位提示 —— */
 .vfHint {
   position: absolute;
   inset: 0;
@@ -251,11 +339,11 @@
 .vfHintText {
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: rgba(244, 248, 244, 0.7);
+  color: rgba(255, 255, 255, 0.7);
   letter-spacing: 0.06em;
 }
 
-/* —— 屏幕下方铭牌:情绪·自动 / 网格 —— */
+/* —— 屏幕下方铭牌: 金属凹槽胶囊 —— */
 .nameplates {
   display: flex;
   gap: 10px;
@@ -266,51 +354,58 @@
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   padding: 6px 14px;
-  border-radius: 4px;
-  border: 1px solid rgba(244, 248, 244, 0.14);
+  border-radius: 14px;
+  border: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background var(--dur-hov) ease, color var(--dur-hov) ease,
-    border-color var(--dur-hov) ease;
-  /* 未选中:深绿底白字 */
-  background: var(--cam-green-deep);
-  color: var(--cam-cream);
+    box-shadow var(--dur-hov) ease;
+  /* 银色渐变 + 内凹槽 */
+  background: linear-gradient(180deg, var(--silver-light), var(--silver-dark));
+  color: var(--silver-darker);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.3);
 }
 .nameplate[data-active] {
-  /* 选中:浅绿底深字 */
-  background: var(--cam-green-light);
-  color: var(--cam-green-deep);
-  border-color: rgba(20, 58, 44, 0.2);
+  /* 选中: 浅绿金属 */
+  background: linear-gradient(180deg, #B8E6C9, #7FC99A);
+  color: #2D5A3D;
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.25),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.4),
+    0 0 4px rgba(127, 201, 154, 0.4);
 }
 
-/* —— 主操作行:相册 / 快门 / 翻转 —— */
+/* —— 主操作行: 相册 / 快门 / 翻转 —— */
 .actionRow {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 28px;
-  margin-top: auto; /* 推到机身底部 */
+  margin-top: auto;
   flex-shrink: 0;
   padding-top: 4px;
 }
 
-/* 左:相册入口(深绿小方窗) */
+/* 左: 相册入口(银框小方窗) */
 .albumBtn {
   width: 52px;
   height: 52px;
   border-radius: 8px;
-  background: var(--cam-green-deep);
-  border: 1px solid var(--cam-green-darker);
+  /* 外银内深: padding 充当金属边框 */
+  background: linear-gradient(180deg, var(--silver-light), var(--silver-dark));
+  padding: 3px;
+  border: none;
   overflow: hidden;
-  padding: 0;
   cursor: pointer;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.4),
-    0 1px 2px rgba(0, 0, 0, 0.2);
+    0 2px 5px rgba(0, 0, 0, 0.3),
+    inset 0 1px 1px rgba(255, 255, 255, 0.5);
   transition: transform var(--dur-tap) var(--ease-tap);
   -webkit-tap-highlight-color: transparent;
 }
@@ -320,38 +415,39 @@
 .albumImg {
   width: 100%;
   height: 100%;
+  border-radius: 5px;
+  background: #000;
   object-fit: cover;
 }
 
-/* 中:大圆形快门(奶白钮 + 绿芯) */
+/* 中: 镀铬大圆快门钮 */
 .shutter {
   width: 76px;
   height: 76px;
   border-radius: 50%;
   border: none;
-  background: var(--cam-cream);
   padding: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  /* 外圈高光环 */
+  background: linear-gradient(180deg, #F5F7FA, #B8BFC8);
   box-shadow:
-    0 4px 10px rgba(0, 0, 0, 0.3),
-    0 1px 3px rgba(0, 0, 0, 0.2),
+    0 4px 10px rgba(0, 0, 0, 0.35),
+    0 1px 3px rgba(0, 0, 0, 0.25),
     inset 0 2px 3px rgba(255, 255, 255, 0.7),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.1);
+    inset 0 -2px 4px rgba(0, 0, 0, 0.15);
   transition: transform var(--dur-tap) var(--ease-tap),
     box-shadow var(--dur-hov) ease;
   -webkit-tap-highlight-color: transparent;
 }
 .shutter:active {
   transform: scale(0.93);
-  /* 按压阴影变化:内陷 */
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.25),
-    inset 0 2px 5px rgba(0, 0, 0, 0.25),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.4);
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 .shutter:disabled {
   opacity: 0.5;
@@ -361,17 +457,18 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: var(--cam-green);
+  /* 内芯浅银 */
+  background: linear-gradient(180deg, #E8EBEF, #C5CBD3);
   box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.35),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.15);
+    inset 0 2px 4px rgba(0, 0, 0, 0.25),
+    inset 0 -1px 2px rgba(255, 255, 255, 0.4);
   transition: background var(--dur-hov) ease;
 }
 .shutter:disabled .shutterInner {
-  background: color-mix(in srgb, var(--cam-green) 50%, #6B7280);
+  background: linear-gradient(180deg, #B8BFC8, #8A929E);
 }
 
-/* 右:翻转摄像头(奶白圆钮 + 旋转箭头,下配小字) */
+/* 右: 翻转摄像头(银色小圆钮) */
 .flipBtn {
   display: flex;
   flex-direction: column;
@@ -388,14 +485,15 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--cam-cream);
+  background: linear-gradient(180deg, var(--silver-light), var(--silver-dark));
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--cam-green);
+  color: var(--silver-darker);
   box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.25),
-    inset 0 1px 2px rgba(255, 255, 255, 0.6);
+    0 3px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.6),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.15);
   transition: transform var(--dur-tap) var(--ease-tap);
 }
 .flipKnob svg {
@@ -403,14 +501,35 @@
   height: 24px;
 }
 .flipBtn:active .flipKnob {
-  transform: scale(var(--tap-scale));
+  transform: scale(0.92);
 }
 .flipLabel {
   font-family: var(--font-mono);
   font-size: 0.6rem;
   letter-spacing: 0.08em;
-  color: var(--cam-cream);
-  opacity: 0.82;
+  color: var(--silver-darker);
+  opacity: 0.8;
+}
+
+/* —— 机身左下角扬声器阵列 —— */
+.speaker {
+  position: absolute;
+  left: 16px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  z-index: 5;
+  pointer-events: none;
+}
+.speakerHole {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--silver-darker);
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 /* —— 隐藏文件输入 —— */

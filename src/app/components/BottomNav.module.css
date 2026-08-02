@@ -1,16 +1,13 @@
 /* ============================================================
    BottomNav — 悬浮胶囊导航
    5 项: 时间线 / 日历 / [相机凸起] / 收藏 / 我的
-   底色: 更深的墨绿纯色 #143A2C(全局统一,纯色非毛玻璃)
-   文字: 奶白系,激活态纯奶白
+   底色: 深灰近黑纯色 #2A2D31(固定,不随主题变)
+   文字: 浅灰,激活态纯白 + 银色顶部指示条
+   相机按钮: 银色金属圆钮
    分析中(loading)整栏变灰不可点(.nav.dim)
    ============================================================ */
 
-/* 局部固定配色 token(底部导航全局统一,不随主题变) */
 .nav {
-  --nav-deep: #143A2C;       /* 更深的墨绿纯色底 */
-  --nav-cream: #F4F8F4;      /* 奶白文字/图标 */
-  --nav-green: #1F5C42;      /* 凸起相机按钮墨绿 */
   position: fixed;
   bottom: calc(var(--safe-bottom) + var(--space-sm));
   left: 50%;
@@ -19,8 +16,8 @@
   max-width: calc(var(--app-max-width) - 2 * var(--space-md));
   height: var(--nav-height);
   padding: 0 var(--space-sm);
-  background: var(--nav-deep);
-  border: 1px solid rgba(244, 248, 244, 0.12);
+  background: #2A2D31;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-pill);
   display: flex;
   align-items: center;
@@ -45,7 +42,7 @@
   gap: 3px;
   position: relative;
   height: 100%;
-  color: rgba(244, 248, 244, 0.6);
+  color: rgba(255, 255, 255, 0.55);
   text-decoration: none;
   background: transparent;
   border: 0;
@@ -62,9 +59,9 @@
   transform: scale(var(--tap-scale));
 }
 
-/* 激活态: 纯奶白 + 顶部小条指示 */
+/* 激活态: 纯白 + 顶部银色小条指示 */
 .tab.active {
-  color: var(--nav-cream);
+  color: #FFFFFF;
 }
 
 .tab.active::before {
@@ -75,7 +72,7 @@
   transform: translateX(-50%);
   width: 24px;
   height: 2.5px;
-  background: var(--nav-cream);
+  background: #C5CBD3;
   border-radius: 0 0 2px 2px;
   animation: tabIndicator 0.3s var(--ease-tap);
 }
@@ -93,7 +90,7 @@
 
 /* 禁用态(收藏暂未开放) */
 .disabled {
-  color: rgba(244, 248, 244, 0.6);
+  color: rgba(255, 255, 255, 0.4);
   opacity: 0.35;
   cursor: not-allowed;
 }
@@ -122,7 +119,8 @@
 }
 
 /* —— 中间凸起相机按钮 ——
-   58px 正圆, 向上凸出导航栏, 奶白底 + 墨绿图标(纯色,与首页快门呼应) */
+   76px 正圆, 向上凸出导航栏 2px
+   银色金属渐变圆钮 + 深灰图标(纯 CSS,不引入素材) */
 .cameraBtn {
   flex: 1;
   position: relative;
@@ -138,34 +136,38 @@
 
 .cameraBtnInner {
   position: absolute;
-  /* 上下各轻微凸出 4px:按钮 80px > 导航栏 72px,top -4px → 上凸4px 下凸4px */
-  top: -4px;
+  /* 上下各轻微凸出 2px:按钮 76px > 导航栏 72px,top -2px → 上凸2px 下凸2px */
+  top: -2px;
   left: 50%;
   transform: translateX(-50%);
-  width: 80px;
-  height: 80px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
-  background: var(--nav-cream);
+  background: linear-gradient(180deg, #E8EBEF, #8A929E);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--nav-green);
+  color: #2A2D31;
   box-shadow:
-    0 6px 14px rgba(0, 0, 0, 0.3),
-    0 0 0 4px var(--nav-deep);
+    inset 0 2px 3px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 0 0 4px #2A2D31;
   transition: transform var(--dur-tap) var(--ease-tap),
     box-shadow var(--dur-hov) ease;
 }
 
 .cameraBtnInner svg {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
 }
 
 .cameraBtn:hover .cameraBtnInner {
   box-shadow:
-    0 8px 18px rgba(0, 0, 0, 0.34),
-    0 0 0 4px var(--nav-deep);
+    inset 0 2px 3px rgba(255, 255, 255, 0.7),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.25),
+    0 4px 10px rgba(0, 0, 0, 0.45),
+    0 0 0 4px #2A2D31;
 }
 
 .cameraBtn:active .cameraBtnInner {
