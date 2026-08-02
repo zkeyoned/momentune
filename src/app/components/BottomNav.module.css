@@ -138,11 +138,12 @@
 
 .cameraBtnInner {
   position: absolute;
-  top: -18px;
+  /* 上下各轻微凸出 4px:按钮 80px > 导航栏 72px,top -4px → 上凸4px 下凸4px */
+  top: -4px;
   left: 50%;
   transform: translateX(-50%);
-  width: 58px;
-  height: 58px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background: var(--nav-cream);
   display: flex;
@@ -157,8 +158,8 @@
 }
 
 .cameraBtnInner svg {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
 }
 
 .cameraBtn:hover .cameraBtnInner {
