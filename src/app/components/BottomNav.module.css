@@ -147,8 +147,8 @@
 
 .cameraBtnInner {
   position: absolute;
-  /* 凸出导航上方 26px: 按钮顶部 -26px */
-  top: -26px;
+  /* 凸出导航上方 20px: 按钮顶部 -20px */
+  top: -20px;
   left: 50%;
   transform: translateX(-50%);
   width: 54px;
