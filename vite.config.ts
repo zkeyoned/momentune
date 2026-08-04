@@ -320,9 +320,9 @@ export default defineConfig(({ mode }) => {
           name: 'Momentune · 瞬间旋律',
           short_name: 'Momentune',
           description: '拍照→AI情绪分析→音乐推荐→图文音乐日记',
-          // 深色主题:智能绿主色 + 深蓝黑底
-          theme_color: '#0d1117',
-          background_color: '#0d1117',
+          // 银色 CCD 主题:状态栏/启动画面与机身连成一片
+          theme_color: '#e9ebec',
+          background_color: '#f4f5f6',
           display: 'standalone',
           display_override: ['standalone', 'fullscreen', 'window-controls-overlay'],
           orientation: 'portrait',

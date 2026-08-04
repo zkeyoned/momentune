@@ -193,7 +193,7 @@ body {
   background:
     radial-gradient(circle at 20% 12%, var(--glow-1), transparent 55%),
     radial-gradient(circle at 80% 60%, var(--glow-2), transparent 50%),
-    var(--bg);
+    linear-gradient(to bottom, #f4f5f6 0%, #d8dadd 8%, #b8bcc1 60%, #c9ccd0 100%);
   color: var(--ink);
   font-family: var(--font-serif);
   font-weight: 300;

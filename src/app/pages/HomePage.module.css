@@ -174,8 +174,8 @@
 /* —— 取景屏: 黑色亮面 LCD 厚边框 —— */
 .viewfinder {
   position: relative;
-  width: min(100%, 380px, 54vh * 4 / 5);
-  aspect-ratio: 4 / 5;
+  width: min(100%, 380px, 54vh * 3 / 4);
+  aspect-ratio: 3 / 4;
   background: var(--lcd-frame);
   padding: 9px;
   border-radius: 10px;
@@ -352,6 +352,7 @@
   margin-top: 4px;
   flex-shrink: 0;
   padding-top: 4px;
+  margin-bottom: 8px;
 }
 
 /* 左: 相册入口(银框小方窗) */

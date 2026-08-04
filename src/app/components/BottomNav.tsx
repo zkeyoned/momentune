@@ -88,15 +88,18 @@ export function BottomNav() {
         <span className={styles.label}>日历</span>
       </NavLink>
 
-      {/* 中: 凸起相机按钮 */}
+      {/* 中: 相机按钮 */}
       <button
         type="button"
         className={styles.cameraBtn}
         onClick={handleCamera}
         aria-label="拍照"
       >
-        <span className={styles.cameraBtnInner} aria-hidden>
-          <CameraIcon />
+        <span className={styles.cameraBtnInner}>
+          <span className={styles.icon} aria-hidden>
+            <CameraIcon />
+          </span>
+          <span className={styles.label}>相机</span>
         </span>
       </button>
 
