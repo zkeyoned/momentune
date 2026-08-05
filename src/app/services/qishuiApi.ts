@@ -10,6 +10,8 @@
  * 扫码登录:后端返回 token,前端映射为 unikey(对齐 neteaseApi 风格)。
  */
 
+import { apiUrl } from './apiBase';
+
 // ---------------------------------------------------------------------------
 // 类型
 // ---------------------------------------------------------------------------
@@ -71,7 +73,7 @@ async function postJson<T>(
   url: string,
   body: Record<string, unknown>,
 ): Promise<T> {
-  const resp = await fetch(url, {
+  const resp = await fetch(apiUrl(url), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

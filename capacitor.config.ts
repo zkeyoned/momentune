@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchShowDuration: 800,
-      backgroundColor: '#0d1117',
+      backgroundColor: '#f2f3f4',
       showSpinner: false,
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP',
@@ -17,8 +17,8 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     StatusBar: {
-      // 深色主题:状态栏文字白色
-      style: 'DARK',
+      // 状态栏白字,配 App 深色场景(拍照/播放)
+      style: 'LIGHT',
       backgroundColor: '#0d1117',
       overlaysWebView: false,
     },

@@ -16,6 +16,7 @@
 
 import type { PhotoFeatures, MusicIntent } from '@algorithm/index';
 import { musicIntentStore } from './musicIntentStore';
+import { apiUrl } from './apiBase';
 
 // ---------------------------------------------------------------------------
 // 常量
@@ -128,7 +129,7 @@ export async function analyzePhotoWithQwen(
 
   let resp: Response;
   try {
-    resp = await fetch('/api/vision', {
+    resp = await fetch(apiUrl('/api/vision'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageDataUrl: compressed }),

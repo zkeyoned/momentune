@@ -8,6 +8,7 @@
  */
 
 import { SONG_PREVIEW_URLS, type SongPreview } from './songPreviewUrls';
+import { apiUrl } from './apiBase';
 import { fetchSongUrl as fetchNeteaseSongUrl } from './neteaseApi';
 import * as qqApi from './qqApi';
 import * as qishuiApi from './qishuiApi';
@@ -25,10 +26,10 @@ const PREFIX_QISHUI = 'user_qishui_';
  * build:直连原始 URL(生产环境由 Vercel 上同路径的 Serverless Function 兜底)
  */
 export function getAudioProxyPath(songId: string, rawUrl: string): string {
-  if (songId.startsWith(PREFIX_QQ)) return `/api/qq/audio-proxy?url=${encodeURIComponent(rawUrl)}`;
-  if (songId.startsWith(PREFIX_QISHUI)) return `/api/qishui/audio-proxy?url=${encodeURIComponent(rawUrl)}`;
+  if (songId.startsWith(PREFIX_QQ)) return apiUrl(`/api/qq/audio-proxy?url=${encodeURIComponent(rawUrl)}`);
+  if (songId.startsWith(PREFIX_QISHUI)) return apiUrl(`/api/qishui/audio-proxy?url=${encodeURIComponent(rawUrl)}`);
   // 网易云导入歌 + 热歌库:走网易云代理
-  return `/api/audio-proxy?url=${encodeURIComponent(rawUrl)}`;
+  return apiUrl(`/api/audio-proxy?url=${encodeURIComponent(rawUrl)}`);
 }
 
 /** URL 缓存有效期(2 小时) */
