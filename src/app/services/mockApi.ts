@@ -229,7 +229,7 @@ export function analyzePhoto(
 
   // 步骤 4:用户导入歌曲优先排前
   // 不改算法选曲,只对最终推荐结果内部重排,把 songId 以 user_ 开头的歌提到各自数组前面
-  // 这样 SongWheel 第一眼看到的就是用户扫码导入的歌,MusicPlayer 默认播第一首即导入歌
+  // 这样推荐列表第一眼看到的就是用户扫码导入的歌,MusicPlayer 默认播第一首即导入歌
   const reorderedRecommendation = {
     ...recommendation,
     coreTracks: prioritizeImportedTracks(recommendation.coreTracks),

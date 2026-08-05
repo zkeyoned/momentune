@@ -1,0 +1,221 @@
+/* ============================================================
+   RecognitionOverlay — 识别中覆盖层
+   - 绝对铺满父容器, 半透明压暗, 下层机身可见
+   - 中央 SVG 橙色圆环进度 + 等宽字体百分比
+   - 圆环下方双行标题 + 三行 Light/Mood/Music Match 小进度
+   - 错误态: 隐藏圆环与进度, 显示文案 + 返回重试按钮
+   ============================================================ */
+
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  /* 半透明黑色压暗, 让下层相机机身仍可见 */
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 待识别照片打底: 压暗铺满 */
+.photoBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: brightness(0.45);
+  /* 略微放大避免边缘漏白 */
+  transform: scale(1.02);
+  pointer-events: none;
+}
+
+/* 中央内容垂直居中 */
+.content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px;
+  text-align: center;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* —— 圆环 —— */
+.ringWrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 120px;
+  height: 120px;
+  /* 从 12 点钟方向起笔 */
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.ringTrack {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 4;
+}
+
+.ringProgress {
+  fill: none;
+  stroke: var(--stamp-orange);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s ease;
+  filter: drop-shadow(0 0 4px rgba(255, 154, 42, 0.5));
+}
+
+.ringPct {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  color: var(--stamp-orange);
+  letter-spacing: 0.02em;
+}
+
+/* —— 标题 —— */
+.titleBig {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: #ffffff;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.titleSmall {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+/* —— 三行小进度 —— */
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 240px;
+  margin-top: 4px;
+}
+
+.stepRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stepLabel {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.04em;
+  /* 固定宽度对齐 */
+  width: 92px;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.stepBarWrap {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.stepBarFill {
+  height: 100%;
+  background: var(--stamp-orange);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.stepCheck {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--stamp-orange);
+  animation: roFadeIn 0.3s ease;
+}
+
+/* —— 错误态 —— */
+.errorBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.errorText {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--stamp-orange);
+  letter-spacing: 0.04em;
+  margin: 0;
+  max-width: 260px;
+  text-align: center;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.retryBtn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--stamp-orange);
+  background: transparent;
+  border: 1px solid var(--stamp-orange);
+  border-radius: var(--radius-pill);
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: transform var(--dur-tap) var(--ease-tap),
+    background var(--dur-hov) ease, color var(--dur-hov) ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.retryBtn:hover {
+  background: var(--stamp-orange);
+  color: #0a0a0a;
+}
+
+.retryBtn:active {
+  transform: scale(var(--tap-scale));
+}
+
+/* —— 对勾出现动画 —— */
+@keyframes roFadeIn {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* —— Reduced motion: 禁用所有 transition/animation —— */
+@media (prefers-reduced-motion: reduce) {
+  .ringProgress,
+  .stepBarFill,
+  .stepCheck,
+  .retryBtn {
+    transition: none !important;
+    animation: none !important;
+  }
+}

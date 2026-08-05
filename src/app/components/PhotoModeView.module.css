@@ -1,0 +1,309 @@
+/* ============================================================
+   PhotoModeView — 状态二: 全屏相纸模式
+   - 根容器全屏近黑径向渐变
+   - 中央 CCD 相纸 (复用 PhotoPaper)
+   - 顶部毛玻璃胶囊 (小唱片 + 歌名歌手 + 跳动音量条)
+   - 相纸下方圆点指示器
+   - 两侧淡 ‹ › 箭头提示
+   - 右上角小图标按钮打开保存日记浮层
+   - 底部一行等宽小字提示
+   ============================================================ */
+
+/* —— keyframes —— */
+@keyframes pmv-disc-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pmv-vol-bar {
+  0%,
+  100% {
+    height: 4px;
+  }
+  50% {
+    height: 12px;
+  }
+}
+
+/* —— 根容器 —— */
+.page {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  /* 中心略亮、四周暗角 */
+  background: radial-gradient(ellipse at center, #1a1a1a 0%, #050505 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* 抑制移动端长按选中 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}
+
+/* —— CCD 相纸外层 —— */
+.paperWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.paper {
+  /* 相纸宽度限制: 不遮挡顶部胶囊和底部圆点 */
+  max-width: min(78vw, 320px);
+  max-height: 68vh;
+  /* PhotoPaper 内部是 aspect-ratio 3/4, 这里让宽度驱动高度 */
+  width: min(78vw, 320px);
+}
+
+/* —— 顶部毛玻璃胶囊 —— */
+.capsule {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 240px;
+  max-width: calc(100% - 96px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: transform var(--dur-tap) var(--ease-tap),
+    background var(--dur-hov) ease, border-color var(--dur-hov) ease;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 3;
+}
+
+.capsule:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.capsule:active {
+  transform: translateX(-50%) scale(0.97);
+}
+
+/* 左侧迷你小唱片图标 */
+.discIcon {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  /* 深色纹理 (黑胶感) */
+  background: repeating-conic-gradient(
+    #1a1a1a 0% 1.8%,
+    transparent 1.8% 3.6%
+  );
+  background-color: #0a0a0a;
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.discSpinning {
+  animation: pmv-disc-spin 4s linear infinite;
+}
+
+/* 中心橙色实心圆 */
+.discCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background: var(--stamp-orange);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(255, 154, 42, 0.6);
+}
+
+/* 中间歌名・歌手 */
+.songMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.songTitle {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: #fff;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.songArtist {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 右侧跳动音量条 */
+.volBars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.volBar {
+  width: 2px;
+  height: 8px;
+  background: var(--stamp-orange);
+  border-radius: 1px;
+  animation: pmv-vol-bar 1s ease-in-out infinite;
+}
+
+.volBar:nth-child(1) {
+  animation-delay: 0s;
+}
+.volBar:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.volBar:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.volBar:nth-child(4) {
+  animation-delay: 0.6s;
+}
+
+.volPaused {
+  animation-play-state: paused;
+}
+
+/* —— 圆点指示器 —— */
+.dots {
+  position: absolute;
+  bottom: calc(var(--safe-bottom, 0px) + 56px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 3;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transition: all 0.3s ease;
+}
+
+.dotActive {
+  width: 18px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--stamp-orange);
+  box-shadow: 0 0 6px rgba(255, 154, 42, 0.5);
+}
+
+/* —— 两侧淡 ‹ › 箭头 —— */
+.arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 1.8rem;
+  color: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.arrowLeft {
+  left: 12px;
+}
+
+.arrowRight {
+  right: 12px;
+}
+
+/* —— 右上角小图标按钮 —— */
+.saveBtn {
+  position: absolute;
+  top: calc(var(--safe-top, 0px) + 16px);
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--dur-tap) var(--ease-tap),
+    background var(--dur-hov) ease;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 4;
+}
+
+.saveBtn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.saveBtn:active {
+  transform: scale(0.92);
+}
+
+.saveIcon {
+  width: 16px;
+  height: 16px;
+}
+
+/* —— 底部一行等宽小字提示 —— */
+.hint {
+  position: absolute;
+  bottom: calc(var(--safe-bottom, 0px) + 20px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* —— Reduced motion: 禁用唱片旋转与音量条跳动 —— */
+@media (prefers-reduced-motion: reduce) {
+  .discIcon,
+  .discSpinning {
+    animation: none !important;
+  }
+  .volBar {
+    animation: none !important;
+    height: 8px !important;
+  }
+}

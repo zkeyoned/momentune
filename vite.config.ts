@@ -312,7 +312,7 @@ export default defineConfig(({ mode }) => {
       qishuiApiDevPlugin(),
       // 自签名 HTTPS:demo 需在手机上现场拍照,getUserMedia 仅在 HTTPS/localhost 下可用,
       // 手机走局域网 IP 访问必须有 HTTPS(自签名证书浏览器会警告,点"高级→继续访问")。
-      // basicSsl(),  // 临时注释:Trae 内置预览不支持自签名 HTTPS。手机拍照时恢复
+      basicSsl(),
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'icon.svg'],

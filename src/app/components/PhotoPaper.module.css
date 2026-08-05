@@ -1,0 +1,71 @@
+/* PhotoPaper — CCD 拍立得相纸: 白底卡片 + 橙色日期戳 + 底部刻字 */
+
+.paper {
+  position: relative;
+  background: #fafafa;
+  /* 顶/左/右 18px, 下 52px (下边更宽, 给刻字留位) */
+  padding: 18px 18px 52px;
+  border-radius: 5px;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  /* 宽度由父级控制 */
+}
+
+.photoWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 2px;
+  background: #000;
+}
+
+.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 照片内部右下橙色日期戳 (相对照片区域, 与相机屏日期戳同色) */
+.dateStamp {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--stamp-orange);
+  text-shadow: var(--stamp-glow);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* 白边底部居中刻字 */
+.engraving {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: #999;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* 可选位置文字, 放在刻字下方, 等宽灰色小字 */
+.location {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: #999;
+  white-space: nowrap;
+  pointer-events: none;
+}

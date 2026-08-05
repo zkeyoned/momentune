@@ -1,13 +1,15 @@
-import { useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnalysisStore } from '../stores/analysisStore';
 import { useJournalStore } from '../stores/journalStore';
 import { useUiStore } from '../stores/uiStore';
+import { useUserStore } from '../stores/userStore';
 import { SAMPLE_PHOTOS } from '../services/mockApi';
 import type { SamplePhoto } from '../services/mockApi';
 import { isNative, hapticImpact, hapticNotify } from '../services/nativeBridge';
 import { createPhotoStrategy } from '../services/photoStrategy';
 import { useCameraManager } from '../hooks/useCameraManager';
+import { RecognitionOverlay } from '../components/RecognitionOverlay';
 import styles from './HomePage.module.css';
 
 function fmtDate(): string {
@@ -43,6 +45,13 @@ function flipHorizontal(dataUrl: string): Promise<string> {
 export function HomePage() {
   const navigate = useNavigate();
   const setPending = useAnalysisStore((s) => s.setPending);
+  const pending = useAnalysisStore((s) => s.pending);
+  const loading = useAnalysisStore((s) => s.loading);
+  const result = useAnalysisStore((s) => s.result);
+  const error = useAnalysisStore((s) => s.error);
+  const clear = useAnalysisStore((s) => s.clear);
+  const runAnalysis = useAnalysisStore((s) => s.runAnalysis);
+  const userPref = useUserStore((s) => s.userPref);
   const recentPhoto = useJournalStore((s) => s.journals[0]?.photoUrl);
   const drawerOpen = useUiStore((s) => s.drawerOpen);
   const toggleDrawer = useUiStore((s) => s.toggleDrawer);
@@ -62,6 +71,38 @@ export function HomePage() {
   const [gridOn, setGridOn] = useState(false);
   const [autoMood, setAutoMood] = useState(true);
   const [shutterFlash, setShutterFlash] = useState(false);
+  const [step, setStep] = useState(0);
+  const progress = Math.round((step / 3) * 100);
+
+  // 监听 loading 推进 step: false→true 重置并按 1.2s/2.4s 推进; true→false 一次性到 3
+  const prevLoadingRef = useRef(false);
+  useEffect(() => {
+    const prev = prevLoadingRef.current;
+    if (!prev && loading) {
+      setStep(0);
+      const t1 = setTimeout(() => setStep(1), 1200);
+      const t2 = setTimeout(() => setStep(2), 2400);
+      prevLoadingRef.current = true;
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+    if (prev && !loading) {
+      setStep(3);
+      prevLoadingRef.current = false;
+    }
+    return undefined;
+  }, [loading]);
+
+  // 识别完成后延时跳转,让圆环动画走完
+  useEffect(() => {
+    if (!loading && result) {
+      const t = setTimeout(() => navigate('/result'), 400);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [loading, result, navigate]);
 
   const submitPhoto = (
     dataUrl: string,
@@ -91,7 +132,8 @@ export function HomePage() {
       });
     }
     void hapticNotify('success');
-    navigate('/result');
+    // 主动触发识别,不再立即跳转;跳转时机由上方 effect 控制
+    void runAnalysis(userPref);
   };
 
   const handleShutter = async () => {
@@ -293,6 +335,16 @@ export function HomePage() {
           accept="image/*"
           className={styles.hiddenInput}
           onChange={handleFile}
+        />
+      )}
+
+      {(loading || error) && pending && (
+        <RecognitionOverlay
+          previewUrl={pending.previewUrl}
+          step={step}
+          progress={progress}
+          error={error}
+          onRetry={() => clear()}
         />
       )}
     </div>

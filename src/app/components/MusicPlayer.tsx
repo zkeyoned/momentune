@@ -84,18 +84,11 @@ function ensureRetroStyle(): void {
 
 export interface MusicPlayerProps {
   onToggleLyrics?: (show: boolean) => void;
-  /**
-   * 内嵌模式:ResultPage 用。容器变成 relative + 透明背景 + 100% 宽,
-   * 让父级毛玻璃卡片透出来;不渲染收起按钮(始终展开)。
-   * 播放逻辑、事件监听、音源降级全部不变。
-   */
-  inline?: boolean;
 }
 
-export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps = {}) {
+export function MusicPlayer({ onToggleLyrics }: MusicPlayerProps = {}) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const simTimeRef = useRef(0);
-  const [collapsed, setCollapsed] = useState(false);
   // 音源层级:见 SourceTier 注释。切歌时按 local→remote→simulated 优先级重置
   const [tier, setTier] = useState<SourceTier>('simulated');
   // 封面图加载失败时降级到渐变色
@@ -436,12 +429,6 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
       <path d="M4 6h16M4 12h10M4 18h13" />
     </svg>
   );
-  const ChevronUpIcon = () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
-      strokeLinecap="round" strokeLinejoin="round" width="16" height="16" aria-hidden>
-      <polyline points="18 15 12 9 6 15" />
-    </svg>
-  );
 
   // ============================================================
   // 公共按钮样式
@@ -457,32 +444,21 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
   // 主容器样式
   // ============================================================
 
-  const playerStyle: React.CSSProperties = inline
-    ? {
-        position: 'relative',
-        width: '100%',
-        background: 'transparent',
-        borderRadius: 20,
-        boxShadow: 'none',
-        outline: 'none',
-        padding: '12px 14px 10px',
-        // 内嵌模式不占用 fixed 层,让父级毛玻璃卡片控制层级
-      }
-    : {
-        position: 'fixed',
-        bottom: 'calc(var(--safe-bottom) + 12px)',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: 'calc(100% - 24px)',
-        maxWidth: 'calc(var(--app-max-width) - 24px)',
-        background: 'var(--warm-cream)',
-        borderRadius: 16,
-        boxShadow: 'var(--shadow-card)',
-        outline: 'none',
-        zIndex: 99,
-        padding: collapsed ? '0 12px' : '10px 12px 8px',
-        transition: 'padding 0.25s ease',
-      };
+  // 全局浮动条版本样式(常驻展开,不再有 inline / collapsed 分支)
+  const playerStyle: React.CSSProperties = {
+    position: 'fixed',
+    bottom: 'calc(var(--safe-bottom) + 12px)',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 'calc(100% - 24px)',
+    maxWidth: 'calc(var(--app-max-width) - 24px)',
+    background: 'var(--warm-cream)',
+    borderRadius: 16,
+    boxShadow: 'var(--shadow-card)',
+    outline: 'none',
+    zIndex: 99,
+    padding: '10px 12px 8px',
+  };
 
   return (
     <div style={playerStyle}>
@@ -497,43 +473,10 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
         isPlaying={isPlaying}
       />
 
-      {/* 内嵌模式始终展开,不渲染收起态横条 */}
-      {!inline && collapsed ? (
-        /* ================================================================
-           收起态: 44px 胶囊横条
-           ================================================================ */
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          aria-label="展开播放器"
-          style={{
-            ...btnBase,
-            width: '100%', height: 44,
-            gap: 10, padding: '0 4px',
-            borderRadius: 16,
-            outline: 'none',
-          }}
-        >
-          <CassetteCover size={30} />
-          <span style={{
-            flex: 1, minWidth: 0,
-            fontFamily: 'var(--font-serif)',
-            fontSize: '0.78rem', fontWeight: 600,
-            color: 'var(--ink)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            textAlign: 'left',
-          }}>
-            {currentTrack.title}
-          </span>
-          <span style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <ChevronUpIcon />
-          </span>
-        </button>
-      ) : (
-        /* ================================================================
-           展开态: 两行浮动卡片
-           ================================================================ */
-        <>
+      {/* ================================================================
+         展开态: 两行浮动卡片(全局浮动条常驻展开,不再有收起态)
+         ================================================================ */}
+      <>
           {/* ---- Row 1: 卡带封面 | 歌曲信息 | 控制按钮 ---- */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             {/* 卡带封面 */}
@@ -663,7 +606,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
                 歌词
               </button>
 
-              {/* 右侧提示 / 收起 */}
+              {/* 右侧提示 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 {hint && (
                   <span style={{
@@ -673,22 +616,6 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
                   }}>
                     {hint}
                   </span>
-                )}
-                {!inline && (
-                  <button
-                    type="button"
-                    onClick={() => setCollapsed(true)}
-                    style={{
-                      ...btnBase,
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '0.58rem', color: 'var(--muted)',
-                      padding: '1px 4px',
-                      borderRadius: 'var(--radius-pill)',
-                      transition: 'color 0.2s ease',
-                    }}
-                  >
-                    ▼ 收起
-                  </button>
                 )}
               </div>
             </div>
@@ -738,7 +665,6 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
             </div>
           </div>
         </>
-      )}
     </div>
   );
 }

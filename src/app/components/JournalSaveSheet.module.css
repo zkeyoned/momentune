@@ -1,0 +1,117 @@
+/* JournalSaveSheet — 从底部滑入的保存浮层 */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* 默认隐藏, 动画结束后才 visibility:hidden 避免动画期间不可见 */
+  visibility: hidden;
+  transition: visibility 0s linear 0.3s;
+}
+
+.overlay.show {
+  visibility: visible;
+  transition: visibility 0s;
+}
+
+.sheet {
+  position: relative;
+  width: 100%;
+  max-width: var(--app-max-width);
+  background: var(--warm-cream);
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.overlay.show .sheet {
+  transform: translateY(0);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 10px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur-hov) ease;
+}
+
+.closeBtn:hover {
+  color: var(--ink);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 64px;
+  resize: none;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--ink);
+  background: var(--track);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 12px;
+  outline: none;
+  transition: border-color var(--dur-hov) ease;
+}
+
+.textarea:focus {
+  border-color: var(--accent);
+}
+
+.textarea::placeholder {
+  color: var(--muted);
+}
+
+.saveBtn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: none;
+  border-radius: 24px;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur-tap) var(--ease-tap),
+    background var(--dur-hov) ease;
+}
+
+.saveBtn:active {
+  transform: scale(var(--tap-scale));
+}
+
+.saveBtn:hover {
+  background: var(--accent2);
+}
