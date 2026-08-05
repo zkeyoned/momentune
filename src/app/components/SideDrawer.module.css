@@ -1,0 +1,195 @@
+/* ============================================================
+   SideDrawer — 左滑抽屉导航
+   - 宽 70vw, 最宽 320px; 右侧两角圆角, 左侧贴边直角
+   - 深灰磨砂: #2e3136 → #1c1e21, 右上角弱泛光
+   - 投影往右打, 浮在页面上; 0.3s 先快后慢
+   - 当前页整行橙 #f5a623 高亮 + 左缘 2px 竖线 + 图标背光
+   ============================================================ */
+
+.root {
+  /* 锚定在 .app-shell(机身面板)内, 桌面宽屏下抽屉也从机身左缘滑出 */
+  position: absolute;
+  inset: 0;
+  z-index: 300;
+  pointer-events: none;
+}
+
+/* —— 右侧暗纱 —— */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 9, 10, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+.overlay[data-visible='true'] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.overlay[data-dragging] {
+  transition: none;
+}
+
+/* —— 抽屉本体 —— */
+.drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 70%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(172deg, #2e3136 0%, #272a2e 42%, #1c1e21 100%);
+  border-radius: 0 18px 18px 0;
+  /* 投影往右打, 浮在页面上 */
+  box-shadow:
+    14px 0 40px rgba(0, 0, 0, 0.5),
+    4px 0 12px rgba(0, 0, 0, 0.3);
+  /* 全闭时连投影一起藏到屏外 */
+  transform: translateX(calc(-100% - 48px));
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  pointer-events: auto;
+  padding-top: env(safe-area-inset-top, 0px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.drawer[data-open='true'] {
+  transform: translateX(0);
+}
+.drawer[data-dragging] {
+  transition: none;
+}
+
+/* 右上角弱泛光(磨砂塑料被左上光打到) */
+.drawer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(130% 55% at 88% 0%, rgba(255, 255, 255, 0.07), transparent 55%);
+  pointer-events: none;
+}
+/* 右缘一丝亮边: 光从左上来, 抽屉右侧面微微受光 */
+.drawer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+/* —— 品牌区 —— */
+.brand {
+  position: relative;
+  padding: 28px 24px 18px;
+}
+.brandName {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: #c6c9cd;
+  /* 刻在深色件上: 字下面一条极细的暗边 */
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
+}
+.brandSub {
+  margin-top: 7px;
+  font-family: var(--font-mono);
+  font-size: 0.52rem;
+  letter-spacing: 0.3em;
+  color: rgba(198, 201, 205, 0.35);
+}
+
+/* 几乎看不见的细分割线 */
+.divider {
+  height: 1px;
+  margin: 0 24px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* —— 五项导航 —— */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 12px;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 48px;
+  padding: 0 14px 0 18px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #9ba0a6;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--dur-hov) ease, color var(--dur-hov) ease;
+}
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+}
+.itemIcon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.itemZh {
+  flex: 1;
+}
+
+/* 右侧英文装饰小字 */
+.itemEn {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  letter-spacing: 0.18em;
+  color: rgba(155, 160, 166, 0.38);
+}
+
+/* 当前页: 整行橙高亮 + 左缘 2px 竖线 + 图标背光 */
+.item.active {
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.1);
+}
+.item.active::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 13px;
+  bottom: 13px;
+  width: 2px;
+  border-radius: 1px;
+  background: #f5a623;
+  box-shadow: 0 0 6px rgba(245, 166, 35, 0.7);
+}
+.item.active .itemIcon {
+  filter: drop-shadow(0 0 4px rgba(245, 166, 35, 0.65));
+}
+.item.active .itemEn {
+  color: rgba(245, 166, 35, 0.5);
+}
+
+/* 收藏: 未开放置灰 */
+.item.disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+}

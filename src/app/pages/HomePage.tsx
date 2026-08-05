@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAnalysisStore } from '../stores/analysisStore';
 import { useJournalStore } from '../stores/journalStore';
+import { useUiStore } from '../stores/uiStore';
 import { SAMPLE_PHOTOS } from '../services/mockApi';
 import type { SamplePhoto } from '../services/mockApi';
 import { isNative, hapticImpact, hapticNotify } from '../services/nativeBridge';
@@ -43,6 +44,8 @@ export function HomePage() {
   const navigate = useNavigate();
   const setPending = useAnalysisStore((s) => s.setPending);
   const recentPhoto = useJournalStore((s) => s.journals[0]?.photoUrl);
+  const drawerOpen = useUiStore((s) => s.drawerOpen);
+  const toggleDrawer = useUiStore((s) => s.toggleDrawer);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -193,22 +196,43 @@ export function HomePage() {
           )}
         </div>
 
-        <div className={styles.nameplates}>
+        {/* 屏幕下方实体按键排: 英文刻字 + 键帽 + 凹槽线 */}
+        <div className={styles.keyRow}>
           <button
             type="button"
-            className={styles.nameplate}
-            data-active={autoMood || undefined}
+            className={styles.pkey}
+            data-on={autoMood || undefined}
             onClick={() => setAutoMood((v) => !v)}
+            aria-pressed={autoMood}
+            aria-label="情绪自动"
           >
-            情绪·自动
+            <span className={styles.pkeyLabel}>MOOD</span>
+            <span className={styles.pkeyCap} aria-hidden />
+            <span className={styles.pkeyGroove} aria-hidden />
           </button>
           <button
             type="button"
-            className={styles.nameplate}
-            data-active={gridOn || undefined}
+            className={styles.pkey}
+            data-on={gridOn || undefined}
             onClick={() => setGridOn((v) => !v)}
+            aria-pressed={gridOn}
+            aria-label="网格"
           >
-            网格
+            <span className={styles.pkeyLabel}>GRID</span>
+            <span className={styles.pkeyCap} aria-hidden />
+            <span className={styles.pkeyGroove} aria-hidden />
+          </button>
+          <button
+            type="button"
+            className={styles.pkey}
+            data-on={drawerOpen || undefined}
+            onClick={toggleDrawer}
+            aria-pressed={drawerOpen}
+            aria-label="菜单"
+          >
+            <span className={styles.pkeyLabel}>MENU</span>
+            <span className={styles.pkeyCap} aria-hidden />
+            <span className={styles.pkeyGroove} aria-hidden />
           </button>
         </div>
 
@@ -231,7 +255,9 @@ export function HomePage() {
             disabled={!native && !camera.isReady}
             aria-label="拍照"
           >
-            <span className={styles.shutterInner} />
+            <span className={styles.shutterBody} aria-hidden>
+              <span className={styles.shutterHub} aria-hidden />
+            </span>
           </button>
 
           <button
@@ -241,14 +267,15 @@ export function HomePage() {
             aria-label="翻转摄像头"
           >
             <span className={styles.flipKnob} aria-hidden>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
-                <path d="M4 9a8 8 0 0114-3" strokeLinecap="round" />
-                <path d="M20 15a8 8 0 01-14 3" strokeLinecap="round" />
-                <path d="M4 4v5h5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M20 20v-5h-5" strokeLinecap="round" strokeLinejoin="round" />
+              {/* 刻线图标: 两道弧形箭头首尾相对绕圈, 中心小圆点代表镜头 */}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+                <path d="M5.2 12a6.8 6.8 0 0 1 11.9-4.5" strokeLinecap="round" />
+                <path d="M18.8 12a6.8 6.8 0 0 1-11.9 4.5" strokeLinecap="round" />
+                <path d="M17.6 4.6l-.6 3.1-3.1-.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M6.4 19.4l.6-3.1 3.1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="12" r="1.7" />
               </svg>
             </span>
-            <span className={styles.flipLabel}>翻转摄像头</span>
           </button>
         </div>
 

@@ -1,0 +1,33 @@
+/* ============================================================
+   MenuButton — 顶栏菜单键(三横线刻痕图标)
+   灰色 + 一丝白色下高光, 像刻在机身上; 无文字
+   ============================================================ */
+
+.menuBtn {
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  /* 抵消内边距, 让图标视觉上与顶栏文字左对齐 */
+  margin-left: -6px;
+  border: 0;
+  background: transparent;
+  color: #8f9499;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur-tap) var(--ease-tap);
+}
+
+.menuBtn svg {
+  width: 22px;
+  height: 22px;
+  /* 刻痕: 线条下面一线白微光 */
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.22));
+}
+
+.menuBtn:active {
+  transform: scale(var(--tap-scale));
+}

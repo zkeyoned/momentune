@@ -470,7 +470,7 @@ export function MusicPlayer({ onToggleLyrics, inline = false }: MusicPlayerProps
       }
     : {
         position: 'fixed',
-        bottom: 'calc(var(--nav-height) + var(--safe-bottom) + 4px)',
+        bottom: 'calc(var(--safe-bottom) + 12px)',
         left: '50%',
         transform: 'translateX(-50%)',
         width: 'calc(100% - 24px)',

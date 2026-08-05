@@ -171,7 +171,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  height: var(--nav-height);
+  height: 72px;
   border-bottom: 1px solid var(--lcd-line);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;

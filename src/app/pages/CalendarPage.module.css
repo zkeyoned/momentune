@@ -58,6 +58,14 @@
   background: transparent;
 }
 
+/* 顶栏左上: 抽屉菜单键行 */
+.topBar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  margin-bottom: 4px;
+}
+
 .tagline {
   position: relative;
   z-index: 1;

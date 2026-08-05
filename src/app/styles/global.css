@@ -84,7 +84,6 @@
 
   /* —— 布局 token —— */
   --app-max-width: 480px;
-  --nav-height: 72px;
   --player-height: 64px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -100,9 +99,16 @@
      银色 CCD 相机主题变量 (全 App 统一,固定不随日夜变)
      所有页面/组件引用这些变量,禁止单页写死颜色
      ============================================================ */
-  /* 机身高光叠层(叠在 --metal-body 上) */
-  --metal-body: linear-gradient(to bottom, #f4f5f6 0%, #d8dadd 8%, #b8bcc0 22%, #cfd2d5 38%, #9fa4a9 60%, #c6c9cd 80%, #888d92 100%);
-  --metal-highlight: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.5) 42%, transparent 54%);
+  /* 机身: 竖向拉丝细纹(1px 亮 / 1px 暗, 3px 周期)叠在银灰渐变上
+     远看成均匀银灰, 近看有丝 */
+  --metal-body:
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 1px,
+      rgba(0, 0, 0, 0.032) 1px, rgba(0, 0, 0, 0.032) 2px,
+      transparent 2px, transparent 3px),
+    linear-gradient(to bottom, #f4f5f6 0%, #d8dadd 8%, #b8bcc0 22%, #cfd2d5 38%, #9fa4a9 60%, #c6c9cd 80%, #888d92 100%);
+  /* 斜向高光带: 约 125°, 更陡更弱, 集中在左上到中上区域, 不扫到机身底部 */
+  --metal-highlight: linear-gradient(125deg, transparent 30%, rgba(255,255,255,0.28) 42%, rgba(255,255,255,0.28) 46%, transparent 56%);
 
   /* LCD 外框 */
   --lcd-frame: linear-gradient(150deg, #3a3d40, #1b1d1f 40%, #2c2f32 70%, #101214);
@@ -189,6 +195,9 @@ html[data-theme="dark"] {
 
 html,
 body {
+  /* 保证高度链在 iOS Safari / 各种浏览器下都能占满视口 */
+  height: 100%;
+  min-height: 100dvh;
   /* 全局背景:两团 glow 径向渐变叠在 --bg 上 */
   background:
     radial-gradient(circle at 20% 12%, var(--glow-1), transparent 55%),
@@ -218,6 +227,7 @@ body::before {
 /* —— App shell —— */
 #root {
   height: 100%;
+  min-height: 100dvh;
 }
 
 .app-shell {
@@ -225,6 +235,7 @@ body::before {
   max-width: var(--app-max-width);
   margin: 0 auto;
   height: 100%;
+  min-height: 100dvh;
   background: transparent;
   position: relative;
   display: flex;
@@ -235,7 +246,10 @@ body::before {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + var(--space-sm));
+  /* 机身背景兜底: 当页面内容未占满时, 下方仍显示金属机身色而非白底 */
+  background: var(--metal-body);
+  /* 底部只保留安全区, 不再为已删除的底部导航留大段空白 */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* —— Typography —— */

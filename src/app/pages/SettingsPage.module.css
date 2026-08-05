@@ -73,6 +73,15 @@
   background: transparent;
 }
 
+/* 顶栏左上: 抽屉菜单键行(页头整体居中, 此行强制居左) */
+.topBar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: var(--space-xs);
+}
+
 /* 胶片编号小标签 · 橙色等宽日期戳 */
 .filmBadge {
   position: relative;

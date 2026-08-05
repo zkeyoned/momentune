@@ -13,6 +13,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  min-height: 100%;
   height: 100%;
   overflow: hidden;
   padding: 0;
@@ -25,6 +26,16 @@
   position: absolute;
   inset: 0;
   background: var(--metal-highlight);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 机身底部暗角: 光从左上打来, 底部应更暗, 压住多余空白与高光 */
+.page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.42) 0%, rgba(0, 0, 0, 0.18) 14%, transparent 34%);
   pointer-events: none;
   z-index: 1;
 }
@@ -166,34 +177,41 @@
   flex-direction: column;
   align-items: center;
   background: transparent;
-  padding: 14px var(--space-md) calc(env(safe-area-inset-bottom, 0px) + 6px);
+  padding: 14px var(--space-md) 14px;
   gap: 11px;
   z-index: 2;
 }
 
-/* —— 取景屏: 黑色亮面 LCD 厚边框 —— */
+/* —— 取景屏: 凹进机身的深色厚框(框圆 14px / 屏方 6px) —— */
 .viewfinder {
   position: relative;
-  width: min(100%, 380px, 54vh * 3 / 4);
+  width: min(100%, 380px, 64vh * 3 / 4);
   aspect-ratio: 3 / 4;
-  background: var(--lcd-frame);
-  padding: 9px;
-  border-radius: 10px;
+  background: linear-gradient(160deg, #3a3d42 0%, #2e3134 45%, #26282c 100%);
+  padding: 10px;
+  border-radius: 14px;
   overflow: hidden;
   flex-shrink: 0;
   box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    /* 坑外沿一圈细白高光(机身表面被光打到的坑边) */
+    0 0 0 1px rgba(255, 255, 255, 0.24),
+    /* 整机轻微投影 */
+    0 10px 22px rgba(0, 0, 0, 0.3),
+    /* 框内侧上缘压暗(坑的上壁背光) */
+    inset 0 2px 5px rgba(0, 0, 0, 0.45),
+    /* 框内侧下缘一线微亮 */
+    inset 0 -1px 0 rgba(255, 255, 255, 0.14);
   -webkit-tap-highlight-color: transparent;
 }
 
-/* 摄像头实时画面: 屏幕内凹感 */
+/* 摄像头实时画面: 凹坑里的屏幕, 圆角收小到 6px */
 .video {
   position: absolute;
-  top: 9px;
-  left: 9px;
-  width: calc(100% - 18px);
-  height: calc(100% - 18px);
+  top: 10px;
+  left: 10px;
+  width: calc(100% - 20px);
+  height: calc(100% - 20px);
+  border-radius: 6px;
   object-fit: cover;
   background: var(--lcd-bg);
   box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.9);
@@ -203,20 +221,29 @@
   transform: scaleX(-1);
 }
 
-/* —— 屏幕玻璃斜向反光层 —— */
+/* —— 屏幕玻璃层: 斜向反光 + 凹坑四壁阴影 —— */
 .glassReflect {
   position: absolute;
-  inset: 9px;
+  inset: 10px;
   z-index: 3;
+  border-radius: 6px;
   background: linear-gradient(105deg, transparent 55%, rgba(255, 255, 255, 0.14) 65%, transparent 78%);
+  box-shadow:
+    /* 坑上壁背光最暗 */
+    inset 0 6px 14px rgba(0, 0, 0, 0.8),
+    /* 左右壁次暗 */
+    inset 1px 0 8px rgba(0, 0, 0, 0.5),
+    inset -1px 0 8px rgba(0, 0, 0, 0.5),
+    /* 坑下壁反而带一线微亮 */
+    inset 0 -1px 1px rgba(255, 255, 255, 0.16);
   pointer-events: none;
 }
 
 /* —— 屏内 HUD —— */
 .moodLabel {
   position: absolute;
-  top: 17px;
-  left: 19px;
+  top: 18px;
+  left: 20px;
   z-index: 4;
   font-family: var(--font-mono);
   font-size: 0.62rem;
@@ -229,8 +256,8 @@
 
 .battery {
   position: absolute;
-  top: 17px;
-  right: 19px;
+  top: 18px;
+  right: 20px;
   z-index: 4;
   display: flex;
   gap: 2px;
@@ -252,8 +279,8 @@
 
 .dateStamp {
   position: absolute;
-  right: 17px;
-  bottom: 17px;
+  right: 18px;
+  bottom: 18px;
   z-index: 4;
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -271,16 +298,17 @@
   background: rgba(255, 255, 255, 0.25);
   pointer-events: none;
 }
-.gridH1 { top: calc(9px + (100% - 18px) * 0.3333); left: 9px; right: 9px; height: 1px; }
-.gridH2 { top: calc(9px + (100% - 18px) * 0.6666); left: 9px; right: 9px; height: 1px; }
-.gridV1 { left: calc(9px + (100% - 18px) * 0.3333); top: 9px; bottom: 9px; width: 1px; }
-.gridV2 { left: calc(9px + (100% - 18px) * 0.6666); top: 9px; bottom: 9px; width: 1px; }
+.gridH1 { top: calc(10px + (100% - 20px) * 0.3333); left: 10px; right: 10px; height: 1px; }
+.gridH2 { top: calc(10px + (100% - 20px) * 0.6666); left: 10px; right: 10px; height: 1px; }
+.gridV1 { left: calc(10px + (100% - 20px) * 0.3333); top: 10px; bottom: 10px; width: 1px; }
+.gridV2 { left: calc(10px + (100% - 20px) * 0.6666); top: 10px; bottom: 10px; width: 1px; }
 
 /* —— 快门闭合黑屏闪 —— */
 .flash {
   position: absolute;
-  inset: 9px;
+  inset: 10px;
   z-index: 5;
+  border-radius: 6px;
   background: var(--lcd-bg);
   pointer-events: none;
   animation: flashIn 60ms ease-out forwards;
@@ -293,8 +321,9 @@
 /* —— 取景屏中央占位提示 —— */
 .vfHint {
   position: absolute;
-  inset: 9px;
+  inset: 10px;
   z-index: 4;
+  border-radius: 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -314,33 +343,70 @@
   letter-spacing: 0.06em;
 }
 
-/* —— 屏幕下方铭牌: 金属凹槽胶囊 —— */
-.nameplates {
+/* —— 屏幕下方实体按键排: MOOD / GRID / MENU —— */
+.keyRow {
   display: flex;
-  gap: 10px;
+  gap: 26px;
   margin-top: 12px;
   flex-shrink: 0;
 }
-.nameplate {
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  letter-spacing: 0.08em;
-  padding: 6px 14px;
-  border-radius: 999px;
-  border: none;
+/* 每颗键纵向三层: 英文刻字 / 键帽 / 凹槽线 */
+.pkey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px 2px;
+  background: transparent;
+  border: 0;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background var(--dur-hov) ease, color var(--dur-hov) ease,
-    box-shadow var(--dur-hov) ease;
-  background: var(--chip-metal);
-  color: var(--chip-metal-ink);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.9),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.2);
 }
-.nameplate[data-active] {
-  background: var(--chip-active);
-  color: var(--chip-active-ink);
+/* 顶层: 英文刻字(深灰 + 字下一丝白微光 = 刻进金属被光打到) */
+.pkeyLabel {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  color: #565b61;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+  transition: color var(--dur-hov) ease, text-shadow var(--dur-hov) ease;
+}
+/* 中层: 键帽(横胶囊, 白→浅灰渐变, 顶内高光 + 底内阴影 + 外投影) */
+.pkeyCap {
+  width: 44px;
+  height: 17px;
+  border-radius: 9px;
+  background: linear-gradient(to bottom, #fcfcfd, #d4d7da);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.22),
+    0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform var(--dur-tap) var(--ease-tap),
+    background var(--dur-hov) ease, box-shadow var(--dur-tap) ease;
+}
+/* 底层: 凹槽装饰线(凹进去的小横条) */
+.pkeyGroove {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  background: #9fa4a9;
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.55);
+}
+/* 开启/按下态: 键帽下沉 + 刻字橙色背光 */
+.pkey[data-on] .pkeyCap {
+  transform: translateY(1px);
+  background: linear-gradient(to bottom, #b9bdc1, #969ba0);
+  box-shadow:
+    inset 0 2px 3px rgba(0, 0, 0, 0.38),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.35);
+}
+.pkey[data-on] .pkeyLabel {
+  color: #f5a623;
+  text-shadow:
+    0 0 6px rgba(245, 166, 35, 0.85),
+    0 1px 0 rgba(0, 0, 0, 0.2);
 }
 
 /* —— 主操作行: 相册 / 快门 / 翻转 —— */
@@ -352,7 +418,7 @@
   margin-top: 4px;
   flex-shrink: 0;
   padding-top: 4px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 /* 左: 相册入口(银框小方窗) */
@@ -388,7 +454,7 @@
   object-fit: cover;
 }
 
-/* 中: 镀铬大圆快门钮 */
+/* 中: 三层金属快门钮 — 凹槽环 / 同心圆纹按钮主体 / 中心凸台 */
 .shutter {
   width: 92px;
   height: 92px;
@@ -400,13 +466,12 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  /* 外圈高光环 */
-  background: radial-gradient(circle at 38% 30%, #ffffff, #cfd2d5 40%, #8b9095 80%, #b8bcc0);
+  /* 最外层: 凹进机身的凹槽环(上暗下亮) */
+  background: radial-gradient(circle at 50% 45%, #878c91 0%, #6e7378 62%, #7f8489 100%);
   box-shadow:
-    0 4px 10px rgba(0, 0, 0, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.25),
-    inset 0 2px 3px rgba(255, 255, 255, 0.7),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+    inset 0 3px 5px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 2px rgba(255, 255, 255, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.3);
   transition: box-shadow var(--dur-hov) ease;
   -webkit-tap-highlight-color: transparent;
 }
@@ -414,33 +479,50 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-.shutterInner {
-  width: 60px;
-  height: 60px;
+/* 中层: 按钮主体(CD 同心圆拉丝 + 左上高光斑 + 上浅下深) */
+.shutterBody {
+  width: 74px;
+  height: 74px;
   border-radius: 50%;
-  /* 内芯浅银 */
-  background: linear-gradient(180deg, #E8EBEF, #C5CBD3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 42%),
+    repeating-radial-gradient(circle at 50% 50%,
+      rgba(255, 255, 255, 0.14) 0px, rgba(255, 255, 255, 0.14) 1px,
+      rgba(0, 0, 0, 0.05) 1px, rgba(0, 0, 0, 0.05) 2px),
+    linear-gradient(to bottom, #f3f4f5, #c6cacf 58%, #a6abb0);
   box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.25),
-    inset 0 -1px 2px rgba(255, 255, 255, 0.4);
-  transition: width var(--dur-tap) var(--ease-tap),
-    height var(--dur-tap) var(--ease-tap),
-    box-shadow var(--dur-tap) var(--ease-tap),
-    background var(--dur-hov) ease;
+    0 4px 9px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.85),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.22);
+  transition: transform var(--dur-tap) var(--ease-tap),
+    box-shadow var(--dur-tap) var(--ease-tap);
 }
-/* 按下: 内芯缩到 56px 且阴影变浅 */
-.shutter:active .shutterInner {
-  width: 56px;
-  height: 56px;
+/* 中心凸台 */
+.shutterHub {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(to bottom, #fafbfb, #d2d6d9);
   box-shadow:
-    inset 0 1px 2px rgba(0, 0, 0, 0.15),
-    inset 0 -1px 1px rgba(255, 255, 255, 0.3);
+    0 1px 3px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
-.shutter:disabled .shutterInner {
-  background: linear-gradient(180deg, #B8BFC8, #8A929E);
+/* 按下: 主体下沉, 投影收浅 */
+.shutter:active .shutterBody {
+  transform: translateY(1px);
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.35),
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.4);
+}
+.shutter:disabled .shutterBody {
+  filter: saturate(0.6) brightness(0.92);
 }
 
-/* 右: 翻转摄像头(银色小圆钮) */
+/* 右: 翻转摄像头(同心圆拉丝金属小圆钮 + 刻线图标, 机身无中文) */
 .flipBtn {
   position: relative;
   display: flex;
@@ -458,44 +540,38 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  /* 同快门材质 */
-  background: radial-gradient(circle at 38% 30%, #ffffff, #cfd2d5 40%, #8b9095 80%, #b8bcc0);
+  /* 与快门主体同款同心圆拉丝 */
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 45%),
+    repeating-radial-gradient(circle at 50% 50%,
+      rgba(255, 255, 255, 0.15) 0px, rgba(255, 255, 255, 0.15) 1px,
+      rgba(0, 0, 0, 0.05) 1px, rgba(0, 0, 0, 0.05) 2px),
+    linear-gradient(to bottom, #eef0f1, #c2c6ca 60%, #a8adb2);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--chip-metal-ink);
   box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.3),
-    inset 0 2px 3px rgba(255, 255, 255, 0.7),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+    0 3px 8px rgba(0, 0, 0, 0.32),
+    inset 0 2px 2px rgba(255, 255, 255, 0.75),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.2);
   transition: transform var(--dur-tap) var(--ease-tap);
 }
 .flipKnob svg {
   width: 24px;
   height: 24px;
+  /* 刻上去的效果: 线条下面一线白微光 */
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.55));
 }
 .flipBtn:active .flipKnob {
   transform: scale(0.92);
-}
-.flipLabel {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 8px;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.08em;
-  color: #4a4f54;
-  opacity: 0.8;
 }
 
 /* —— 机身左下角扬声器阵列 —— */
 .speaker {
   position: absolute;
   left: 16px;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  bottom: 10px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;

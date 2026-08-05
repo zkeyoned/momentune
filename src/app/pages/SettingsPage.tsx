@@ -1,4 +1,5 @@
 import { PlatformLogin } from '../components/PlatformLogin';
+import { MenuButton } from '../components/MenuButton';
 import { useUserStore } from '../stores/userStore';
 import { useThemeStore, type ThemeMode } from '../stores/themeStore';
 import styles from './SettingsPage.module.css';
@@ -20,6 +21,9 @@ export function SettingsPage() {
       <div className={styles.lcdScreen}>
         <div className={styles.lcdInner}>
       <header className={styles.header}>
+        <div className={styles.topBar}>
+          <MenuButton />
+        </div>
         <span className={styles.filmBadge} aria-hidden>ROLL · 03</span>
         <h1 className={styles.title}>设置</h1>
       </header>

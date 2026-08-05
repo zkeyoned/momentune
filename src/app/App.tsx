@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { BottomNav } from './components/BottomNav';
+import { SideDrawer } from './components/SideDrawer';
 import { MusicPlayer } from './components/MusicPlayer';
 import { useThemeStore } from './stores/themeStore';
 import { HomePage } from './pages/HomePage';
@@ -36,7 +36,7 @@ function AppLayout() {
           <Route path="*" element={<HomePage />} />
         </Routes>
       </main>
-      <BottomNav />
+      <SideDrawer />
       {/* ResultPage 有自己的内嵌播放器,全局悬浮条在该路由下隐藏避免双播放器 */}
       {pathname !== '/result' && <MusicPlayer />}
     </div>

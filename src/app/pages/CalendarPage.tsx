@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useJournals } from '../hooks/useJournals';
 import { usePlayerStore } from '../stores/playerStore';
 import { hapticTap } from '../hooks/useHapticTap';
+import { MenuButton } from '../components/MenuButton';
 import type { Song } from '@algorithm/index';
 import styles from './CalendarPage.module.css';
 
@@ -132,6 +133,9 @@ export function CalendarPage() {
       {/* —— 页头:italic "memories" + 年月 + 左右箭头 —— */}
       <header className={styles.header}>
         <div className={styles.headerGlow} aria-hidden />
+        <div className={styles.topBar}>
+          <MenuButton />
+        </div>
         <p className={styles.tagline}>memories</p>
         <div className={styles.calHead}>
           <button className={styles.calNav} onClick={prevMonth} aria-label="上个月">

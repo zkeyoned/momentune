@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useJournals } from '../hooks/useJournals';
 import { hapticTap } from '../hooks/useHapticTap';
+import { MenuButton } from '../components/MenuButton';
 import styles from './TimelinePage.module.css';
 
 const MONTH_LABELS_EN = [
@@ -44,6 +45,7 @@ export function TimelinePage() {
         <div className={styles.headerGlow} aria-hidden />
         <div className={styles.headerRow}>
           <div className={styles.headerLeft}>
+            <MenuButton />
             <p className={styles.tagline}>moments in melody</p>
             <h1 className={styles.title}>Momentune</h1>
           </div>
