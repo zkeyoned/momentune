@@ -17,10 +17,10 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     StatusBar: {
-      // 状态栏白字,配 App 深色场景(拍照/播放)
-      style: 'LIGHT',
-      backgroundColor: '#0d1117',
-      overlaysWebView: false,
+      // 状态栏黑字,配机身银色场景
+      style: 'DARK',
+      backgroundColor: '#e9ebec',
+      overlaysWebView: true,
     },
     Camera: {
       // 允许同时用相机和相册
@@ -28,7 +28,7 @@ const config: CapacitorConfig = {
     },
   },
   ios: {
-    contentInset: 'always',
+    contentInset: 'never',
     scrollEnabled: false,
     limitsNavigationsToAppBoundDomains: true,
   },
