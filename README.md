@@ -89,8 +89,74 @@ npm run fetch:urls   # 下载完整83首音频/封面/歌词到本地（约300MB
 
 > 注：从旧版本升级时，需手动把本地 `.env` 里的 `VITE_QWEN_API_KEY` 改名为 `QWEN_API_KEY`（去掉 `VITE_` 前缀），否则 key 会被打进前端 bundle，失去服务端保护。
 
+## 移动端形态
+
+Momentune 同时提供三种分发通道，开箱即用：
+
+| 形态 | 入口 | 适用场景 |
+|------|------|----------|
+| **PWA** | iPhone Safari → 分享 → 添加到主屏幕 | 最快：无需签名，1 分钟上手 |
+| **iOS 原生 App** | Xcode 真机 Run（免费 Apple ID 即可签名） | 完整体验：相机/相册调用、状态栏一体化 |
+| **桌面浏览器** | https://momentune.vercel.app | 演示/评审用 |
+
+### PWA 体验
+
+构建产物已开启 workbox 静态资源缓存，支持离线二次打开。银色机身图标 + `theme-color #e9ebec` + `display: standalone` + 竖屏锁定，从桌面图标打开是全屏无地址栏。
+
+### iOS 原生 App
+
+Capacitor 包装，仓库内已生成完整 `ios/App/App.xcodeproj` 工程（`ios/` 在 `.gitignore` 内，本地构建产物）。改动落到 `capacitor.config.ts` 即可生效：
+
+```bash
+# 同步 web 资产到 ios 工程（含 typecheck + vite build + cap sync）
+npm run cap:sync
+
+# 打开工程
+open ios/App/App.xcodeproj
+# Xcode → Signing & Capabilities 选 Personal Team → Cmd+R 真机运行
+```
+
+免费 Apple ID 签名限制：证书 7 天过期，到期重新 Run 即可，无需 688 元/年的开发者会员。
+
+### 原生壳 API 通道
+
+iOS 原生壳页面 origin 为 `capacitor://localhost`，相对路径 `/api/*` 会全部失败。所有 API 调用经 `src/app/services/apiBase.ts` 解析：
+- Web 环境：原样相对路径（Vercel Serverless Functions）
+- 原生环境：拼 `https://momentune.vercel.app` 前缀
+
 ## 赛事信息
 
 - 赛事：TRAE AI 创造力大赛
 - 赛道：生活娱乐 — 造点新花样
 - 初赛截止：2026 年 7 月 15 日
+- 完整项目介绍：[docs/Momentune-项目介绍.md](docs/Momentune-项目介绍.md)
+- 算法设计文档：[docs/算法设计.md](docs/算法设计.md)
+- 交付说明：[docs/交付说明.md](docs/交付说明.md)
+
+## 提交包说明
+
+源码根目录即为比赛提交包，**不包含** `node_modules/` / `dist/` / `ios/` / `.vercel/`（在 `.gitignore` 中，评委按下方"快速跑起来"步骤安装依赖即可）。仓库内已含：
+
+- 15 首精选演示音频（`public/demo-audio/`，128kbps，约 59MB），覆盖 V-A 四象限
+- 5 张示例照片（`public/samples/`，SVG 渐变占位图）
+- 完整算法源码 + 739 单测（`npm run verify` 通过）
+- 完整 iOS 工程（本地 `npm run cap:sync` 后生成）
+
+## 快速跑起来
+
+```bash
+# 1. 装依赖
+npm install
+
+# 2. 验证（typecheck 0 错误 + 全部测试通过）
+npm run verify
+
+# 3. 启动 Web 版（含本地 API 模拟）
+npm run dev
+# → 浏览器打开 https://localhost:5173
+
+# 4. 启动 iOS 原生 App（需 macOS + Xcode）
+npm run cap:sync
+open ios/App/App.xcodeproj
+# Xcode 选 Personal Team → Cmd+R
+```
